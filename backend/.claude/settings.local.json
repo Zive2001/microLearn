@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node server.js)",
+      "Bash(npm run check-ip:*)",
+      "Bash(npm run test-mongodb:*)",
+      "Bash(nslookup:*)",
+      "Bash(ping:*)",
+      "Bash(npm run:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -26,25 +26,89 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB Connection
 const connectDB = async () => {
     try {
+        // Check if MONGODB_URI exists
+        if (!process.env.MONGODB_URI) {
+            throw new Error('MONGODB_URI environment variable is not defined');
+        }
+
         const conn = await mongoose.connect(process.env.MONGODB_URI, {
-            // Mongoose 8 automatically handles these options
+            serverSelectionTimeoutMS: 5000, // 5 second timeout
+            socketTimeoutMS: 45000, // 45 second socket timeout
         });
-        console.log(`MongoDB Connected: ${conn.connection.host}`);
+        
+        console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+        
+        // Handle connection errors after initial connection
+        mongoose.connection.on('error', (err) => {
+            console.error('❌ MongoDB connection error:', err);
+        });
+        
+        mongoose.connection.on('disconnected', () => {
+            console.warn('⚠️ MongoDB disconnected. Attempting to reconnect...');
+        });
+        
+        mongoose.connection.on('reconnected', () => {
+            console.log('✅ MongoDB reconnected');
+        });
+        
     } catch (error) {
-        console.error('Database connection error:', error.message);
-        process.exit(1);
+        console.error('❌ Database connection failed:', error.message);
+        console.error('');
+        console.error('🔧 Troubleshooting steps:');
+        console.error('1. Check if your MongoDB Atlas cluster is running');
+        console.error('2. Verify your IP address is whitelisted in MongoDB Atlas');
+        console.error('3. Confirm your database credentials are correct');
+        console.error('4. Check your internet connection');
+        console.error('');
+        
+        // Don't exit the process, let the server run without database
+        console.warn('⚠️ Server will continue running without database connection');
+        console.warn('⚠️ Database-dependent features will not work until connection is restored');
     }
 };
 
 // Connect to database
 connectDB();
 
+// Middleware to check database connection for API routes
+const checkDatabaseConnection = (req, res, next) => {
+    if (req.path.startsWith('/api') && req.path !== '/api/health') {
+        if (mongoose.connection.readyState !== 1) {
+            return res.status(503).json({
+                success: false,
+                message: 'Database connection is not available. Please try again later.',
+                error: 'SERVICE_UNAVAILABLE'
+            });
+        }
+    }
+    next();
+};
+
+app.use(checkDatabaseConnection);
+
 // Routes (we'll add these step by step)
 app.get('/api/health', (req, res) => {
+    const dbStatus = mongoose.connection.readyState;
+    const dbStates = {
+        0: 'disconnected',
+        1: 'connected',
+        2: 'connecting',
+        3: 'disconnecting'
+    };
+    
     res.json({ 
         message: 'Adaptive Learning System API is running!',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        database: {
+            status: dbStates[dbStatus] || 'unknown',
+            connected: dbStatus === 1
+        },
+        server: {
+            uptime: process.uptime(),
+            memory: process.memoryUsage(),
+            version: process.version
+        }
     });
 });
 
@@ -67,10 +131,10 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Handle 404 routes
-app.use('*', (req, res) => {
-    res.status(404).json({ message: 'Route not found' });
-});
+// Handle 404 routes - will be added back later
+// app.all('*', (req, res) => {
+//     res.status(404).json({ message: 'Route not found' });
+// });
 
 const PORT = process.env.PORT || 5000;
 
