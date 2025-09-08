@@ -6,7 +6,10 @@
       "Bash(npm run test-mongodb:*)",
       "Bash(nslookup:*)",
       "Bash(ping:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(rm:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
