@@ -115,12 +115,15 @@ app.get('/api/health', (req, res) => {
 // Import routes (uncomment as we create them)
 const authRoutes = require('./routes/auth')
 const topicRoutes = require('./routes/topics');
+const testRoutes = require('./routes/test');
 // const assessmentRoutes = require('./routes/assessment');
 // const contentRoutes = require('./routes/content');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/topics', topicRoutes);
+app.use('/api/test', testRoutes);
+
 // app.use('/api/assessment', assessmentRoutes);
 // app.use('/api/content', contentRoutes);
 
