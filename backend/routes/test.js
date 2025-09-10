@@ -2,6 +2,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const openaiService = require('../services/openaiService');
+const youtubeService = require('../services/youtubeService');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -21,6 +22,107 @@ router.get('/openai-health', async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'OpenAI health check failed',
+            error: error.message
+        });
+    }
+});
+
+// @desc    Test YouTube video search
+// @route   POST /api/test/youtube-search
+// @access  Public (for development)
+router.post('/youtube-search', [
+    body('topic')
+        .isIn(['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind'])
+        .withMessage('Invalid topic'),
+    body('level')
+        .isIn(['Beginner', 'Intermediate', 'Professional'])
+        .withMessage('Invalid level'),
+    body('maxVideos')
+        .optional()
+        .isInt({ min: 1, max: 10 })
+        .withMessage('Max videos must be between 1 and 10')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
+
+        const { topic, level, maxVideos = 3 } = req.body;
+        const startTime = Date.now();
+
+        const videos = await youtubeService.searchEducationalVideos(topic, level, maxVideos);
+        const responseTime = Date.now() - startTime;
+
+        res.json({
+            success: true,
+            data: {
+                topic,
+                level,
+                totalVideos: videos.length,
+                videos: videos.map(video => ({
+                    videoId: video.videoId,
+                    title: video.title,
+                    channelTitle: video.channelTitle,
+                    duration: video.durationText,
+                    url: video.url,
+                    viewCount: video.viewCount.toLocaleString(),
+                    educationalScore: video.aiAnalysis?.overallScore || 'N/A',
+                    reasoning: video.aiAnalysis?.reasoning || 'No AI analysis'
+                }))
+            },
+            metadata: {
+                responseTime: `${responseTime}ms`,
+                searchedAt: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('YouTube search test error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'YouTube search failed',
+            error: error.message
+        });
+    }
+});
+
+// @desc    Test user-specific video recommendations
+// @route   GET /api/test/user-recommendations/:topic
+// @access  Private (for development)
+router.get('/user-recommendations/:topic', protect, async (req, res) => {
+    try {
+        const { topic } = req.params;
+        
+        if (!['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind'].includes(topic)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid topic'
+            });
+        }
+
+        const startTime = Date.now();
+        const recommendations = await youtubeService.getRecommendationsForUser(req.user._id, topic);
+        const responseTime = Date.now() - startTime;
+
+        res.json({
+            success: true,
+            data: recommendations,
+            metadata: {
+                responseTime: `${responseTime}ms`,
+                generatedAt: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('User recommendations test error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get user recommendations',
             error: error.message
         });
     }
@@ -285,6 +387,137 @@ router.post('/full-assessment-flow', [
         res.status(500).json({
             success: false,
             message: 'Full assessment flow test failed',
+            error: error.message
+        });
+    }
+});
+
+// @desc    Test complete system integration (Assessment + YouTube)
+// @route   POST /api/test/complete-flow
+// @access  Public (for development)
+router.post('/complete-flow', [
+    body('topic').isIn(['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind']),
+    body('userLevel').isIn(['Beginner', 'Intermediate', 'Professional'])
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
+
+        const { topic, userLevel } = req.body;
+        const testFlow = {
+            steps: [],
+            totalTime: 0,
+            success: true
+        };
+
+        // Step 1: Assessment Question Generation
+        const step1Start = Date.now();
+        try {
+            const question = await openaiService.generateQuestion(topic, userLevel.toLowerCase());
+            testFlow.steps.push({
+                step: 1,
+                name: 'Generate Assessment Question',
+                success: true,
+                time: Date.now() - step1Start,
+                data: { questionGenerated: true, topic, difficulty: userLevel }
+            });
+        } catch (error) {
+            testFlow.steps.push({
+                step: 1,
+                name: 'Generate Assessment Question',
+                success: false,
+                error: error.message,
+                time: Date.now() - step1Start
+            });
+            testFlow.success = false;
+        }
+
+        // Step 2: YouTube Video Recommendations
+        const step2Start = Date.now();
+        try {
+            const videoRecommendations = await youtubeService.searchEducationalVideos(topic, userLevel, 3);
+            testFlow.steps.push({
+                step: 2,
+                name: 'Get YouTube Recommendations',
+                success: true,
+                time: Date.now() - step2Start,
+                data: {
+                    videosFound: videoRecommendations.length,
+                    videos: videoRecommendations.map(v => ({
+                        title: v.title,
+                        duration: v.durationText,
+                        score: v.aiAnalysis?.overallScore || 'N/A'
+                    }))
+                }
+            });
+        } catch (error) {
+            testFlow.steps.push({
+                step: 2,
+                name: 'Get YouTube Recommendations',
+                success: false,
+                error: error.message,
+                time: Date.now() - step2Start
+            });
+            testFlow.success = false;
+        }
+
+        // Step 3: Learning Path Generation
+        const step3Start = Date.now();
+        try {
+            const mockAssessmentResults = {
+                topic,
+                score: userLevel === 'Beginner' ? 30 : userLevel === 'Intermediate' ? 65 : 85,
+                level: userLevel,
+                weakAreas: ['advanced concepts'],
+                strongAreas: ['basic syntax']
+            };
+            
+            const recommendations = await openaiService.generateLearningRecommendations(mockAssessmentResults);
+            testFlow.steps.push({
+                step: 3,
+                name: 'Generate Learning Path',
+                success: true,
+                time: Date.now() - step3Start,
+                data: { learningPathGenerated: true, hasRecommendations: !!recommendations }
+            });
+        } catch (error) {
+            testFlow.steps.push({
+                step: 3,
+                name: 'Generate Learning Path',
+                success: false,
+                error: error.message,
+                time: Date.now() - step3Start
+            });
+            testFlow.success = false;
+        }
+
+        testFlow.totalTime = testFlow.steps.reduce((total, step) => total + step.time, 0);
+
+        res.json({
+            success: testFlow.success,
+            message: testFlow.success ? 'Complete system integration test passed!' : 'Some components failed',
+            data: testFlow,
+            summary: {
+                topic,
+                userLevel,
+                assessmentWorking: testFlow.steps[0]?.success || false,
+                youtubeWorking: testFlow.steps[1]?.success || false,
+                recommendationsWorking: testFlow.steps[2]?.success || false,
+                totalTime: `${testFlow.totalTime}ms`
+            }
+        });
+
+    } catch (error) {
+        console.error('Complete flow test error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Complete system test failed',
             error: error.message
         });
     }
