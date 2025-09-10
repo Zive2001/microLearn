@@ -117,7 +117,7 @@ const authRoutes = require('./routes/auth')
 const topicRoutes = require('./routes/topics');
 const testRoutes = require('./routes/test');
 const assessmentRoutes = require('./routes/assessment');
-// const assessmentRoutes = require('./routes/assessment');
+const videoRoutes = require('./routes/videoRoutes');
 // const contentRoutes = require('./routes/content');
 
 // Use routes
@@ -125,8 +125,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/topics', topicRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/assessment', assessmentRoutes);
+app.use('/api/videos', videoRoutes);
 
-// app.use('/api/assessment', assessmentRoutes);
 // app.use('/api/content', contentRoutes);
 
 // Global error handling middleware
