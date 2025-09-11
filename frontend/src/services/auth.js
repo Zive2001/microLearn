@@ -1,64 +1,13 @@
 // src/services/auth.js
-import { apiClient, handleApiResponse, handleApiError } from './api';
+import { authAPI, userJourneyAPI } from './api';
 
 export const authService = {
-  // User Registration
-  register: async (userData) => {
-    try {
-      const response = await apiClient.post('/auth/register', userData);
-      return handleApiResponse(response);
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  // User Login
-  login: async (credentials) => {
-    try {
-      const response = await apiClient.post('/auth/login', credentials);
-      const data = handleApiResponse(response);
-      
-      // Store token and user data
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-      
-      return data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  // Get User Profile
-  getProfile: async () => {
-    try {
-      const response = await apiClient.get('/auth/profile');
-      return handleApiResponse(response);
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  // Update User Profile
-  updateProfile: async (profileData) => {
-    try {
-      const response = await apiClient.put('/auth/profile', profileData);
-      return handleApiResponse(response);
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  // Get Dashboard Data
-  getDashboard: async () => {
-    try {
-      const response = await apiClient.get('/auth/dashboard');
-      return handleApiResponse(response);
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
+  // Use unified API services for core auth functions
+  register: (userData) => userJourneyAPI.completeRegistration(userData),
+  login: (email, password) => userJourneyAPI.completeLogin(email, password),
+  getProfile: () => authAPI.getProfile(),
+  updateProfile: (profileData) => authAPI.updateProfile(profileData),
+  getDashboard: () => userJourneyAPI.getUserDashboard(),
 
   // Logout
   logout: () => {

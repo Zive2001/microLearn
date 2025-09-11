@@ -3,7 +3,7 @@ import { createContext, useContext, useReducer, useEffect } from 'react';
 import { topicsService } from '../services/topics';
 import { assessmentService } from '../services/assessment';
 import { microlearningService } from '../services/microlearning';
-import { useAuth } from './AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 // App Context
 const AppContext = createContext();

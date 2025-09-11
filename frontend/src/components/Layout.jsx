@@ -2,14 +2,14 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { 
-  HomeIcon, 
-  BookOpenIcon, 
-  AcademicCapIcon, 
-  VideoCameraIcon,
-  UserIcon,
-  LogOutIcon,
-  MenuIcon,
-  XIcon
+  Home as HomeIcon, 
+  BookOpen as BookOpenIcon, 
+  GraduationCap as AcademicCapIcon, 
+  Video as VideoCameraIcon,
+  User as UserIcon,
+  LogOut as LogOutIcon,
+  Menu as MenuIcon,
+  X as XIcon
 } from 'lucide-react';
 import { useState } from 'react';
 

@@ -63,14 +63,14 @@ const userSchema = new mongoose.Schema({
         interestedAreas: [{
             type: String,
             enum: [
-                'Web Development',
-                'Mobile Development', 
-                'Data Science',
-                'Machine Learning',
-                'DevOps',
-                'UI/UX Design',
-                'Database Management',
-                'Cybersecurity'
+                'javascript',
+                'react', 
+                'python',
+                'typescript',
+                'nodejs',
+                'css',
+                'database',
+                'mobile'
             ]
         }],
         preferredContentLength: {
