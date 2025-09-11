@@ -570,4 +570,257 @@ router.post('/search', protect, [
     }
 });
 
+// @desc    Process recommended video for microlearning content generation
+// @route   POST /api/microlearning/process-recommendation
+// @access  Private
+router.post('/process-recommendation', protect, [
+    require('express-validator').body('videoId')
+        .notEmpty()
+        .withMessage('Video ID is required'),
+    require('express-validator').body('topic')
+        .isIn(['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind'])
+        .withMessage('Invalid topic'),
+    require('express-validator').body('title')
+        .optional()
+        .isString()
+        .withMessage('Title must be string'),
+    require('express-validator').body('description')
+        .optional()
+        .isString()
+        .withMessage('Description must be string')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
+
+        const { videoId, topic, title, description } = req.body;
+        const userId = req.user._id;
+
+        // Construct YouTube URL from videoId
+        const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+        // Import video controller function
+        const { processYouTubeURL } = require('../controllers/videoController');
+
+        // Create a mock request object with the required data
+        const mockReq = {
+            body: {
+                url: youtubeUrl,
+                title: title || `Microlearning: ${topic}`,
+                description: description || `Generated microlearning content for ${topic}`
+            },
+            user: { _id: userId }
+        };
+
+        // Create a response wrapper to capture the result
+        let processResult = null;
+        let processError = null;
+
+        const mockRes = {
+            status: (code) => ({
+                json: (data) => {
+                    if (code === 201) {
+                        processResult = data;
+                    } else {
+                        processError = { code, data };
+                    }
+                }
+            }),
+            json: (data) => {
+                processResult = data;
+            }
+        };
+
+        // Call the YouTube processing function
+        await processYouTubeURL(mockReq, mockRes);
+
+        if (processError) {
+            return res.status(processError.code).json(processError.data);
+        }
+
+        if (!processResult) {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to process video recommendation'
+            });
+        }
+
+        // Add the topic and source information to the response
+        const enhancedResult = {
+            ...processResult,
+            data: {
+                ...processResult.data,
+                sourceType: 'recommendation',
+                originalTopic: topic,
+                selectedFromRecommendations: true,
+                processingSteps: [
+                    'Video download and processing',
+                    'Transcript extraction',
+                    'CLT-bLM script generation', 
+                    'Micro-video segmentation',
+                    'Content ready for rendering'
+                ]
+            },
+            metadata: {
+                processedAt: new Date().toISOString(),
+                userId,
+                topic,
+                videoId,
+                youtubeUrl
+            }
+        };
+
+        res.status(201).json(enhancedResult);
+
+    } catch (error) {
+        console.error('Error processing recommendation for microlearning:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to process video recommendation',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// @desc    Get processing status for recommendation-based video
+// @route   GET /api/microlearning/recommendation-status/:videoId
+// @access  Private
+router.get('/recommendation-status/:videoId', protect, [
+    param('videoId').notEmpty().withMessage('Video ID is required')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
+
+        const { videoId } = req.params;
+        const userId = req.user._id;
+
+        // Import necessary models
+        const Video = require('../models/Video');
+        const MicroVideo = require('../models/MicroVideo');
+
+        // Find the video record
+        const video = await Video.findOne({ _id: videoId, uploadedBy: userId });
+        if (!video) {
+            return res.status(404).json({
+                success: false,
+                message: 'Video not found or access denied'
+            });
+        }
+
+        // Get associated micro-videos if completed
+        let microVideos = [];
+        if (video.processingStatus === 'completed') {
+            microVideos = await MicroVideo.find({ originalVideoId: videoId })
+                .select('title sequence timeRange processingStatus cltBlmScript keypoints')
+                .sort({ sequence: 1 });
+        }
+
+        // Calculate processing progress
+        const getProgressPercentage = (status) => {
+            switch (status) {
+                case 'pending': return 10;
+                case 'processing': return 50;
+                case 'completed': return 100;
+                case 'failed': return 0;
+                default: return 0;
+            }
+        };
+
+        const response = {
+            success: true,
+            data: {
+                videoId: video._id,
+                title: video.title,
+                description: video.description,
+                sourceUrl: video.sourceUrl,
+                processingStatus: video.processingStatus,
+                processingError: video.processingError,
+                progress: getProgressPercentage(video.processingStatus),
+                
+                // Video metadata
+                originalDuration: video.originalDuration,
+                formattedDuration: video.formattedDuration,
+                subject: video.subject,
+                difficulty: video.difficulty,
+                tags: video.tags,
+                
+                // Micro-learning specific data
+                microVideos: {
+                    count: microVideos.length,
+                    list: microVideos.map(mv => ({
+                        id: mv._id,
+                        title: mv.title,
+                        sequence: mv.sequence,
+                        duration: mv.timeRange.duration,
+                        status: mv.processingStatus,
+                        hasScript: !!(mv.cltBlmScript && Object.keys(mv.cltBlmScript).length > 0),
+                        keypointCount: mv.keypoints?.length || 0
+                    }))
+                },
+                
+                // Processing timeline
+                processingSteps: [
+                    { step: 'Video Download', completed: true },
+                    { step: 'Transcript Extraction', completed: video.processingStatus !== 'pending' },
+                    { step: 'CLT-bLM Script Generation', completed: microVideos.length > 0 },
+                    { step: 'Micro-video Segmentation', completed: video.processingStatus === 'completed' },
+                    { step: 'Ready for Rendering', completed: video.processingStatus === 'completed' }
+                ],
+                
+                // Timestamps
+                createdAt: video.createdAt,
+                updatedAt: video.updatedAt
+            },
+            metadata: {
+                requestedAt: new Date().toISOString(),
+                userId: req.user._id
+            }
+        };
+
+        // Add next steps based on current status
+        if (video.processingStatus === 'completed' && microVideos.length > 0) {
+            response.data.nextSteps = [
+                'Videos are ready for rendering',
+                'Use POST /api/videos/microvideo/:microVideoId/render to render individual micro-videos',
+                'Configure TTS settings and visual options before rendering'
+            ];
+        } else if (video.processingStatus === 'processing') {
+            response.data.nextSteps = [
+                'Video is currently being processed',
+                'Check back in a few minutes for completion',
+                'Processing typically takes 5-8 minutes'
+            ];
+        } else if (video.processingStatus === 'failed') {
+            response.data.nextSteps = [
+                'Processing failed - check the error message',
+                'Try processing the video again',
+                'Contact support if the issue persists'
+            ];
+        }
+
+        res.json(response);
+
+    } catch (error) {
+        console.error('Error getting recommendation status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get processing status',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
 module.exports = router;
