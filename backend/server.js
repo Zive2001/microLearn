@@ -13,7 +13,12 @@ app.use(morgan('combined'));
 
 // CORS configuration for frontend connection
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: [
+        'http://localhost:5173', // Vite default port
+        'http://localhost:5174', // Alternative Vite port
+        'http://localhost:3000', // React default port
+        process.env.FRONTEND_URL
+    ].filter(Boolean), // Remove undefined values
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']

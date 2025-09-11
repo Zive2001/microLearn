@@ -1,106 +1,83 @@
-// src/App.jsx
+// src/App.jsx - Phase 1 & 2: Landing Page & User Registration Flow
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
-import { AppProvider } from './context/AppContext';
 
-// Layout Components
-import Layout from './components/Layout';
-import AuthLayout from './components/AuthLayout';
-
-// Auth Pages
+// Auth Pages (self-contained layouts)
 import Login from './pages/Login';
 import Register from './pages/Register';
 
-// Main App Pages
-import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import TopicSelection from './pages/TopicSelection';
-import AssessmentSelection from './pages/AssessmentSelection';
-import AssessmentQuiz from './pages/AssessmentQuiz';
-import AssessmentResults from './pages/AssessmentResults';
-import VideoRecommendations from './pages/VideoRecommendations';
-import LearningPath from './pages/LearningPath';
-import Profile from './pages/Profile';
-
-// Protected Route Component
-import ProtectedRoute from './components/ProtectedRoute';
+// Phase 1: Landing Page
+import LandingPage from './pages/LandingPage';
 
 function App() {
   return (
     <AuthProvider>
-      <AppProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              
-              {/* Auth Routes */}
-              <Route path="/auth" element={<AuthLayout />}>
-                <Route path="login" element={<Login />} />
-                <Route path="register" element={<Register />} />
-                <Route index element={<Navigate to="/auth/login" replace />} />
-              </Route>
+      <Router>
+        <div className="min-h-screen">
+          <Routes>
+            {/* Phase 1: Public Landing Page */}
+            <Route path="/" element={<LandingPage />} />
+            
+            {/* Authentication Routes (self-contained layouts) */}
+            <Route path="/auth/login" element={<Login />} />
+            <Route path="/auth/register" element={<Register />} />
+            <Route path="/auth" element={<Navigate to="/auth/login" replace />} />
 
-              {/* Protected App Routes */}
-              <Route path="/app" element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }>
-                {/* Dashboard */}
-                <Route index element={<Navigate to="/app/dashboard" replace />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                
-                {/* Topic Selection */}
-                <Route path="topics" element={<TopicSelection />} />
-                
-                {/* Assessment Flow */}
-                <Route path="assessment">
-                  <Route index element={<AssessmentSelection />} />
-                  <Route path=":topic" element={<AssessmentQuiz />} />
-                  <Route path=":topic/results" element={<AssessmentResults />} />
-                </Route>
-                
-                {/* Video Recommendations */}
-                <Route path="recommendations">
-                  <Route index element={<VideoRecommendations />} />
-                  <Route path=":topic" element={<VideoRecommendations />} />
-                  <Route path="learning-path/:topic" element={<LearningPath />} />
-                </Route>
-                
-                {/* User Profile */}
-                <Route path="profile" element={<Profile />} />
-              </Route>
+            {/* Temporary Dashboard Redirect (for Phase 2 testing) */}
+            <Route path="/dashboard" element={
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center bg-white p-12 rounded-lg border border-gray-200 shadow-sm">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-4">🎉 Welcome to MicroLearn!</h1>
+                  <p className="text-gray-600 mb-6">Phase 2 Complete - Registration successful!</p>
+                  <p className="text-sm text-gray-500 mb-6">Dashboard coming in Phase 3...</p>
+                  <button 
+                    onClick={() => window.location.href = '/'} 
+                    className="px-6 py-3 bg-gray-900 text-white font-medium rounded-md hover:bg-gray-800 transition-colors duration-200"
+                  >
+                    Back to Landing Page
+                  </button>
+                </div>
+              </div>
+            } />
 
-              {/* Fallback Route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            {/* Fallback Route - Redirect to Landing Page */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
 
-            {/* Global Toast Notifications */}
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
+          {/* Global Toast Notifications - Notion Style */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#1f2937',
+                color: '#fff',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                fontSize: '14px',
+                fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
+              },
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
                 },
-                success: {
-                  duration: 3000,
-                  theme: {
-                    primary: 'green',
-                    secondary: 'black',
-                  },
+              },
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
                 },
-              }}
-            />
-          </div>
-        </Router>
-      </AppProvider>
+              },
+            }}
+          />
+        </div>
+      </Router>
     </AuthProvider>
   );
 }
