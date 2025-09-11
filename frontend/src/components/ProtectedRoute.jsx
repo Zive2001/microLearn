@@ -9,10 +9,10 @@ const ProtectedRoute = ({ children }) => {
   // Show loading spinner while checking auth status
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-gray-900 mx-auto"></div>
+          <p className="mt-3 text-sm text-gray-600">Loading...</p>
         </div>
       </div>
     );
