@@ -4,26 +4,26 @@ import { AcademicCapIcon } from 'lucide-react';
 
 const AuthLayout = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* Logo */}
-        <Link to="/" className="flex justify-center items-center">
-          <AcademicCapIcon className="h-12 w-12 text-blue-600" />
-          <span className="ml-2 text-2xl font-bold text-gray-900">
+        <Link to="/" className="flex justify-center items-center mb-8">
+          <AcademicCapIcon className="h-10 w-10 text-gray-900" />
+          <span className="ml-2 text-xl font-semibold text-gray-900">
             AdaptiveLearn
           </span>
         </Link>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+        <div className="bg-white py-8 px-6 border border-gray-200 rounded-lg shadow-sm">
           <Outlet />
         </div>
       </div>
 
       {/* Footer */}
       <div className="mt-8 text-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-500">
           Discover your programming potential with AI-powered learning
         </p>
       </div>

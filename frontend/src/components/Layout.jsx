@@ -17,7 +17,7 @@ const Layout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/app/dashboard', icon: HomeIcon },
@@ -34,162 +34,176 @@ const Layout = () => {
   const isActive = (href) => location.pathname === href || location.pathname.startsWith(href + '/');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            {/* Logo and Desktop Navigation */}
-            <div className="flex items-center">
-              <Link to="/app/dashboard" className="flex-shrink-0 flex items-center">
-                <AcademicCapIcon className="h-8 w-8 text-blue-600" />
-                <span className="ml-2 text-xl font-bold text-gray-900">
+    <div className="min-h-screen bg-white flex">
+      {/* Sidebar */}
+      <div className="hidden md:flex md:w-64 md:flex-col">
+        <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200">
+          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+            {/* Logo */}
+            <div className="flex items-center flex-shrink-0 px-4 mb-8">
+              <Link to="/app/dashboard" className="flex items-center">
+                <AcademicCapIcon className="h-8 w-8 text-gray-900" />
+                <span className="ml-2 text-xl font-semibold text-gray-900">
                   AdaptiveLearn
                 </span>
               </Link>
-              
-              {/* Desktop Navigation */}
-              <div className="hidden md:ml-10 md:flex md:space-x-8">
-                {navigation.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
-                        isActive(item.href)
-                          ? 'border-blue-500 text-gray-900'
-                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                    >
-                      <Icon className="h-4 w-4 mr-2" />
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </div>
             </div>
-
-            {/* User Menu */}
-            <div className="flex items-center space-x-4">
-              {/* User Info - Desktop */}
-              <div className="hidden md:flex md:items-center md:space-x-4">
-                <div className="text-sm">
-                  <p className="text-gray-900 font-medium">
-                    {user?.profile?.firstName} {user?.profile?.lastName}
-                  </p>
-                  <p className="text-gray-500 text-xs">{user?.profile?.profession}</p>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Link
-                    to="/app/profile"
-                    className={`p-2 rounded-full transition-colors ${
-                      isActive('/app/profile')
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <UserIcon className="h-5 w-5" />
-                  </Link>
-                  
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                  >
-                    <LogOutIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Mobile menu button */}
-              <button
-                type="button"
-                className="md:hidden p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? (
-                  <XIcon className="h-6 w-6" />
-                ) : (
-                  <MenuIcon className="h-6 w-6" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Navigation Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden">
-            <div className="pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+            
+            {/* Navigation */}
+            <nav className="px-3 space-y-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center px-4 py-2 text-base font-medium transition-colors ${
+                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
                       isActive(item.href)
-                        ? 'bg-blue-50 border-r-4 border-blue-500 text-blue-700'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
-                    onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Icon className="h-5 w-5 mr-3" />
+                    <Icon className={`mr-3 h-5 w-5 ${
+                      isActive(item.href) ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'
+                    }`} />
                     {item.name}
                   </Link>
                 );
               })}
-            </div>
-            
-            {/* Mobile User Menu */}
-            <div className="pt-4 pb-3 border-t border-gray-200 bg-gray-50">
-              <div className="px-4">
-                <div className="text-base font-medium text-gray-800">
-                  {user?.profile?.firstName} {user?.profile?.lastName}
+            </nav>
+          </div>
+          
+          {/* User menu */}
+          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+            <div className="flex-shrink-0 w-full group block">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
+                    <UserIcon className="h-5 w-5 text-gray-400" />
+                  </div>
                 </div>
-                <div className="text-sm text-gray-500">{user?.email}</div>
-              </div>
-              <div className="mt-3 space-y-1">
-                <Link
-                  to="/app/profile"
-                  className="flex items-center px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <UserIcon className="h-5 w-5 mr-3" />
-                  Profile
-                </Link>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-gray-900 group-hover:text-gray-900">
+                    {user?.profile?.firstName} {user?.profile?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500 group-hover:text-gray-700">
+                    {user?.email}
+                  </p>
+                </div>
                 <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-base font-medium text-gray-500 hover:text-red-600 hover:bg-red-50"
+                  onClick={handleLogout}
+                  className="ml-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                 >
-                  <LogOutIcon className="h-5 w-5 mr-3" />
-                  Sign out
+                  <LogOutIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
           </div>
-        )}
-      </nav>
-
-      {/* Main Content */}
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <Outlet />
         </div>
-      </main>
+      </div>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-auto">
-        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-sm text-gray-500">
-            <p>&copy; 2025 AdaptiveLearn. Built with AI-powered personalization.</p>
+      {/* Mobile sidebar */}
+      {sidebarOpen && (
+        <div className="md:hidden fixed inset-0 flex z-40">
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+            <div className="absolute top-0 right-0 -mr-12 pt-2">
+              <button
+                type="button"
+                className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <XIcon className="h-6 w-6 text-white" />
+              </button>
+            </div>
+            <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
+              <div className="flex-shrink-0 flex items-center px-4 mb-8">
+                <AcademicCapIcon className="h-8 w-8 text-gray-900" />
+                <span className="ml-2 text-xl font-semibold text-gray-900">
+                  AdaptiveLearn
+                </span>
+              </div>
+              <nav className="px-3 space-y-1">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                        isActive(item.href)
+                          ? 'bg-gray-100 text-gray-900'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <Icon className={`mr-3 h-5 w-5 ${
+                        isActive(item.href) ? 'text-gray-500' : 'text-gray-400 group-hover:text-gray-500'
+                      }`} />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
+                    <UserIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.profile?.firstName} {user?.profile?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    handleLogout();
+                  }}
+                  className="ml-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md"
+                >
+                  <LogOutIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </footer>
+      )}
+
+      {/* Main content */}
+      <div className="flex flex-col w-0 flex-1 overflow-hidden">
+        {/* Top bar for mobile */}
+        <div className="md:hidden relative z-10 flex-shrink-0 flex h-16 bg-white shadow border-b border-gray-200">
+          <button
+            type="button"
+            className="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <MenuIcon className="h-6 w-6" />
+          </button>
+          <div className="flex-1 px-4 flex justify-between items-center">
+            <div className="flex items-center">
+              <AcademicCapIcon className="h-8 w-8 text-gray-900" />
+              <span className="ml-2 text-lg font-semibold text-gray-900">
+                AdaptiveLearn
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main content area */}
+        <main className="flex-1 relative overflow-y-auto focus:outline-none">
+          <div className="py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+              <Outlet />
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
