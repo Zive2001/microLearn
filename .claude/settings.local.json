@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node server.js)",
+      "Bash(npm run check-ip:*)",
+      "Bash(npm run test-mongodb:*)",
+      "Bash(nslookup:*)",
+      "Bash(ping:*)",
+      "Bash(npm run:*)",
+      "Bash(rm:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)",
+      "Bash(npm install)",
+      "Bash(timeout 10 npm start)",
+      "Bash(timeout 5 npm start)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(timeout:*)",
+      "Bash(find:*)",
+      "Bash(netstat:*)",
+      "Bash(TASKKILL /F /PID 19872)",
+      "Bash(cmd.exe:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
