@@ -299,7 +299,7 @@ const AssessmentQuiz = () => {
 
         // Navigate to results with session data
         setTimeout(() => {
-          navigate(`/app/assessment-results/${sessionId}`, {
+          navigate(`/app/assessment-results/${topic}/${sessionId}`, {
             state: {
               finalResults: response.finalResults,
               sessionId: sessionId,
@@ -346,7 +346,7 @@ const AssessmentQuiz = () => {
 
       // Navigate to results
       setTimeout(() => {
-        navigate(`/app/assessment-results/${sessionId}`, {
+        navigate(`/app/assessment-results/${topic}/${sessionId}`, {
           state: {
             finalResults,
             sessionId,
