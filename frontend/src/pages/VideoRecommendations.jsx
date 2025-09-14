@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import toast from 'react-hot-toast';
+// import TestQuizAPI from '../components/TestQuizAPI'; // Removed for production
+import TutorialQuizButton from '../components/TutorialQuizButton';
+import MicrolearningPreview from '../components/MicrolearningPreview';
 
 const VideoRecommendations = () => {
   const { topic } = useParams();
@@ -31,6 +34,7 @@ const VideoRecommendations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userLevel, setUserLevel] = useState(null);
   const [recommendationData, setRecommendationData] = useState(null);
+  const [microlearningReadyVideos, setMicrolearningReadyVideos] = useState(new Set());
 
   // Get topic metadata
   const topicMeta = topic ? getTopicMeta(topic) : null;
@@ -216,6 +220,37 @@ const VideoRecommendations = () => {
       toast('Video will open when available', {
         icon: 'ℹ️',
         duration: 2000
+      });
+    }
+  };
+
+  const handleMicrolearningReady = (content) => {
+    console.log('🎬 Microlearning content ready:', content);
+
+    // Mark this video as having microlearning content ready
+    setMicrolearningReadyVideos(prev => new Set([...prev, content.videoId]));
+
+    toast.success('Microlearning content is ready! Quiz now available! 🎯');
+  };
+
+  const handleQuizStart = (video, sessionId, action) => {
+    console.log('🎯 Quiz action:', { video: video.title, sessionId, action });
+
+    if (action === 'new') {
+      toast.success(`Started new quiz for "${video.title}"!`);
+      // TODO: Navigate to quiz page when created
+      // navigate(`/app/quiz/session/${sessionId}`);
+      toast('Quiz page coming soon! Session ID: ' + sessionId, {
+        icon: '🚧',
+        duration: 4000
+      });
+    } else if (action === 'resume') {
+      toast.success(`Resuming quiz for "${video.title}"!`);
+      // TODO: Navigate to quiz page when created
+      // navigate(`/app/quiz/session/${sessionId}`);
+      toast('Quiz resume coming soon! Session ID: ' + sessionId, {
+        icon: '🚧',
+        duration: 4000
       });
     }
   };
@@ -431,6 +466,23 @@ const VideoRecommendations = () => {
                     ))}
                   </div>
                 )}
+
+                {/* Microlearning Content */}
+                <div className="mt-3 pt-3 border-t border-[#E9E9E7]">
+                  <MicrolearningPreview
+                    video={video}
+                    onContentReady={handleMicrolearningReady}
+                    showFullPreview={false}
+                    className="mb-3"
+                  />
+
+                  {/* Quiz Button */}
+                  <TutorialQuizButton
+                    video={video}
+                    onQuizStart={handleQuizStart}
+                    className="w-full justify-center"
+                  />
+                </div>
               </div>
             </div>
           ))}
