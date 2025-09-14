@@ -123,10 +123,6 @@ const topicRoutes = require('./routes/topics');
 const testRoutes = require('./routes/test');
 const assessmentRoutes = require('./routes/assessment');
 const microlearningRoutes = require('./routes/microlearning');
-const videoRoutes = require('./routes/videos');
-const testVideoRoutes = require('./routes/test-videos');
-const quizTestRoutes = require('./routes/quiz-test');
-const quizRoutes = require('./routes/quiz');
 // const assessmentRoutes = require('./routes/assessment');
 // const contentRoutes = require('./routes/content');
 
@@ -136,10 +132,6 @@ app.use('/api/topics', topicRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/assessment', assessmentRoutes);
 app.use('/api/microlearning', microlearningRoutes);
-app.use('/api/videos', videoRoutes);
-app.use('/api/test-videos', testVideoRoutes);
-app.use('/api/quiz-test', quizTestRoutes);
-app.use('/api/quiz', quizRoutes);
 
 // app.use('/api/assessment', assessmentRoutes);
 // app.use('/api/content', contentRoutes);

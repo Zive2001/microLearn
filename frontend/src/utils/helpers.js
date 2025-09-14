@@ -79,6 +79,17 @@ export const formatPercentage = (value, decimals = 0) => {
 
 // Topic utilities
 export const getTopicMeta = (topicSlug) => {
+  // Handle null, undefined, or "undefined" string
+  if (!topicSlug || topicSlug === 'undefined' || topicSlug === 'null') {
+    console.warn('⚠️ getTopicMeta called with invalid topicSlug:', topicSlug);
+    return {
+      name: 'Unknown Topic',
+      icon: '❓',
+      color: '#6B7280',
+      category: 'Unknown'
+    };
+  }
+
   return TOPIC_META[topicSlug] || {
     name: topicSlug,
     icon: '📚',

@@ -5,12 +5,17 @@
       "Bash(node:*)",
       "Bash(pkill:*)",
       "Bash(curl:*)",
-      "Bash(find:*)",
-      "Bash(npm install:*)",
-      "Bash(taskkill:*)",
       "Bash(netstat:*)",
-      "Bash(tskill:*)",
-      "Bash(git merge:*)"
+      "Bash(findstr:*)",
+      "Bash(nslookup:*)",
+      "Bash(ping:*)",
+      "Bash(ipconfig /flushdns)",
+      "Bash(if [ -z \"$OPENAI_API_KEY\" ])",
+      "Bash(else echo \"✅ OPENAI_API_KEY is configured\")",
+      "Bash(fi)",
+      "Bash(taskkill:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
