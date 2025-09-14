@@ -55,7 +55,8 @@ function App() {
                 <Route path="topics" element={<TopicSelection />} />
                 <Route path="assessment" element={<AssessmentSelection />} />
                 <Route path="assessment/:topic" element={<AssessmentQuiz />} />
-                <Route path="assessment-results/:resultId" element={<AssessmentResults />} />
+                <Route path="assessment-results/:sessionId" element={<AssessmentResults />} />
+                <Route path="assessment-results/session/:sessionId" element={<AssessmentResults />} />
                 <Route path="recommendations/:topic" element={<VideoRecommendations />} />
                 <Route path="learning-path/:topic" element={<LearningPath />} />
                 <Route path="profile" element={<Profile />} />

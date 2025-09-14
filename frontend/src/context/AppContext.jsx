@@ -228,6 +228,24 @@ export function AppProvider({ children }) {
     }
   };
 
+  // Update topic with assessment results
+  const updateTopicAssessment = (topicSlug, assessmentData) => {
+    const updatedTopics = selectedTopics.map(topic => {
+      const currentSlug = topic.topic || topic.slug || topic;
+      if (currentSlug === topicSlug) {
+        return {
+          ...topic,
+          knowledgeLevel: assessmentData.level,
+          assessmentScore: assessmentData.score,
+          lastAssessmentDate: new Date().toISOString(),
+          assessmentId: assessmentData.sessionId || assessmentData.id
+        };
+      }
+      return topic;
+    });
+    dispatch({ type: APP_ACTIONS.SET_SELECTED_TOPICS, payload: updatedTopics });
+  };
+
   const fetchAssessmentHistory = async (limit = 10) => {
     try {
       if (!isAuthenticated) return;
@@ -363,7 +381,10 @@ export function AppProvider({ children }) {
     fetchQuickRecommendations,
     
     // Dashboard
-    fetchDashboardData
+    fetchDashboardData,
+
+    // Assessment updates
+    updateTopicAssessment
   };
 
   return (

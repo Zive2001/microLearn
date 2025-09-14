@@ -4,7 +4,16 @@
       "Bash(npm run dev:*)",
       "Bash(node:*)",
       "Bash(pkill:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(nslookup:*)",
+      "Bash(ping:*)",
+      "Bash(ipconfig /flushdns)",
+      "Bash(if [ -z \"$OPENAI_API_KEY\" ])",
+      "Bash(else echo \"✅ OPENAI_API_KEY is configured\")",
+      "Bash(fi)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

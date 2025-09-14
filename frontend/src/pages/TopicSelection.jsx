@@ -304,14 +304,14 @@ const TopicSelection = () => {
                       {isSelected ? (
                         <>
                           <Link
-                            to={`/assessment/${topic.slug}`}
+                            to={`/app/assessment/${topic.slug}`}
                             className="flex-1 bg-[#2383E2] text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0F62FE] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >
                             Take Assessment
                           </Link>
                           <Link
-                            to={`/recommendations/${topic.slug}`}
+                            to={`/app/recommendations/${topic.slug}`}
                             className="flex-1 bg-white border border-[#E9E9E7] text-[#37352F] text-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#F7F6F3] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >

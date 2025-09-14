@@ -125,7 +125,7 @@ const Header = () => {
             </Link>
             <Link
               to="/auth/register"
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200 text-sm"
+              className="px-3 py-2 bg-[#0d1b2a] hover:bg-gray-900 text-white font-medium rounded-md transition-colors duration-200 text-sm"
             >
               Start Learning
             </Link>

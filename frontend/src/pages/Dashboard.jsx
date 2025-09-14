@@ -45,6 +45,14 @@ const Dashboard = () => {
 
   const assessedTopics = selectedTopics?.filter(topic => topic.knowledgeLevel) || [];
   const unassessedTopics = selectedTopics?.filter(topic => !topic.knowledgeLevel) || [];
+
+  // Debug logging to understand selectedTopics data structure
+  if (selectedTopics && selectedTopics.length > 0) {
+    console.log('🔍 Dashboard Debug - selectedTopics:', selectedTopics);
+    console.log('🔍 Dashboard Debug - first topic structure:', selectedTopics[0]);
+    console.log('🔍 Dashboard Debug - assessed topics:', assessedTopics);
+    console.log('🔍 Dashboard Debug - unassessed topics:', unassessedTopics);
+  }
   const stats = dashboardData?.stats || {};
   const quickRecommendations = dashboardData?.quickRecommendations?.recommendations || [];
 
@@ -103,7 +111,10 @@ const Dashboard = () => {
                 <div>
                   <p className="text-sm text-[#6B6B6B]">Avg Score</p>
                   <p className="text-xl font-semibold text-[#37352F]">
-                    {stats.averageScore || 0}%
+                    {assessedTopics.length > 0
+                      ? Math.round(assessedTopics.reduce((sum, topic) => sum + (topic.assessmentScore || 0), 0) / assessedTopics.length)
+                      : 0
+                    }%
                   </p>
                 </div>
               </div>
@@ -114,7 +125,7 @@ const Dashboard = () => {
           <div className="mt-8 lg:mt-0 lg:ml-8">
             <div className="w-48 h-48 bg-[#F7F6F3] rounded-xl flex items-center justify-center">
               <img 
-                src="/illustrations/dashboard-hero.svg" 
+                src="/dashboard.png" 
                 alt="Dashboard illustration" 
                 className="w-full h-full object-contain p-4"
                 onError={(e) => {
@@ -171,26 +182,27 @@ const Dashboard = () => {
               /* Topics Progress */
               <div className="space-y-4">
                 {/* Assessed Topics */}
-                {assessedTopics.map((topic) => {
-                  const meta = getTopicMeta(topic.topic);
+                {assessedTopics.map((topicData) => {
+                  const topicSlug = topicData.topic || topicData.slug || topicData;
+                  const meta = getTopicMeta(topicSlug);
                   return (
-                    <div key={topic.topic} className="flex items-center justify-between p-4 bg-[#F7F6F3] rounded-lg">
+                    <div key={topicSlug} className="flex items-center justify-between p-4 bg-[#F7F6F3] rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="text-2xl">{meta.icon}</div>
                         <div>
                           <h3 className="font-medium text-[#37352F]">{meta.name}</h3>
                           <div className="flex items-center space-x-2">
-                            <span className={getLevelBadgeClasses(topic.knowledgeLevel)}>
-                              {topic.knowledgeLevel}
+                            <span className={getLevelBadgeClasses(topicData.knowledgeLevel)}>
+                              {topicData.knowledgeLevel}
                             </span>
                             <span className="text-sm text-[#6B6B6B]">
-                              Score: {topic.assessmentScore}%
+                              Score: {topicData.assessmentScore}%
                             </span>
                           </div>
                         </div>
                       </div>
                       <Link
-                        to={`/app/recommendations/${topic.topic}`}
+                        to={`/app/recommendations/${topicSlug}`}
                         className="inline-flex items-center px-3 py-2 text-sm bg-white border border-[#E9E9E7] rounded-lg hover:bg-[#F7F6F3] transition-colors"
                       >
                         View Videos
@@ -200,10 +212,11 @@ const Dashboard = () => {
                 })}
 
                 {/* Unassessed Topics */}
-                {unassessedTopics.map((topic) => {
-                  const meta = getTopicMeta(topic.topic);
+                {unassessedTopics.map((topicData) => {
+                  const topicSlug = topicData.topic || topicData.slug || topicData;
+                  const meta = getTopicMeta(topicSlug);
                   return (
-                    <div key={topic.topic} className="flex items-center justify-between p-4 border border-[#E9E9E7] rounded-lg">
+                    <div key={topicSlug} className="flex items-center justify-between p-4 border border-[#E9E9E7] rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="text-2xl opacity-50">{meta.icon}</div>
                         <div>
@@ -212,7 +225,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <Link
-                        to={`/app/assessment/${topic.topic}`}
+                        to={`/app/assessment/${topicSlug}`}
                         className="inline-flex items-center px-3 py-2 text-sm bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
                       >
                         Take Assessment

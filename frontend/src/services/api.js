@@ -222,9 +222,18 @@ export const assessmentAPI = {
   // Start new assessment
   startAssessment: async (topic, config = {}) => {
     try {
+      console.log('📝 API Request - Start Assessment:');
+      console.log('  Topic:', topic);
+      console.log('  Config:', config);
+      console.log('  Payload:', { topic, config });
+
       const response = await api.post('/assessment/start', { topic, config });
       return handleApiResponse(response);
     } catch (error) {
+      console.error('❌ Assessment API Error:');
+      console.error('  Topic sent:', topic);
+      console.error('  Config sent:', config);
+      console.error('  Error response:', error.response?.data);
       throw handleApiError(error);
     }
   },
