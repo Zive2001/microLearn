@@ -29,7 +29,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.11.0",
+    "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -41,7 +41,8 @@
     "mongoose": "^8.8.3",
     "morgan": "^1.10.0",
     "openai": "^5.19.1",
-    "youtube-transcript": "^1.2.1"
+    "youtube-transcript": "^1.2.1",
+    "yt-dlp-wrap": "^2.3.12"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",

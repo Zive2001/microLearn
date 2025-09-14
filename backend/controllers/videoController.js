@@ -101,9 +101,9 @@ class VideoController {
 
             console.log(`✅ Transcript extracted: ${transcriptData.wordCount} words, ${transcriptData.estimatedDuration}s duration`);
 
-            // Step 2: Generate basic CLT-bLM analysis and segments
+            // Step 2: Generate CLT-bLM analysis using OpenAI
             console.log(`🧠 Step 2: Generating CLT-bLM analysis...`);
-            const cltAnalysis = await this.generateBasicCLTAnalysis(
+            const cltAnalysis = await openaiService.generateCLTAnalysis(
                 transcriptData.fullText,
                 video.topic,
                 transcriptData.estimatedDuration
@@ -134,190 +134,11 @@ class VideoController {
     }
 
     /**
-     * Generate enhanced CLT-bLM analysis using OpenAI for educational shorts
-     * @param {string} transcript - Full video transcript
-     * @param {string} topic - Video topic
-     * @param {number} duration - Video duration in seconds
-     * @returns {Object} CLT analysis with educational shorts plan
-     */
-    async generateBasicCLTAnalysis(transcript, topic, duration) {
-        const prompt = `You are an expert educational content creator. Transform this YouTube video into engaging educational shorts using CLT-bLM principles.
-
-ORIGINAL TRANSCRIPT:
-${transcript.substring(0, 4000)}${transcript.length > 4000 ? '...' : ''}
-
-TOPIC: ${topic}
-ORIGINAL DURATION: ${Math.floor(duration/60)} minutes
-
-TASK: Create 3-5 educational micro-learning segments (5-8 minutes each) that:
-
-1. **Cognitive Load Theory (CLT):**
-   - ONE main concept per segment
-   - Minimize extraneous information
-   - Build from simple to complex
-
-2. **Micro-Learning Principles:**
-   - Focused learning objectives
-   - Standalone segments
-   - Practical, actionable content
-
-3. **Educational Shorts Format:**
-   - Engaging titles
-   - Clear explanations
-   - Real-world examples
-
-Generate JSON response:
-{
-  "overallObjective": "What learners will master after all segments",
-  "totalSegments": 4,
-  "estimatedTotalDuration": 28,
-  "segments": [
-    {
-      "segmentNumber": 1,
-      "title": "Catchy educational title",
-      "duration": 420,
-      "learningObjective": "Specific skill/knowledge gained",
-      "keyPoints": ["3-4 main concepts to cover"],
-      "practicalExample": "Real-world use case",
-      "cognitiveLoad": 4,
-      "difficulty": "Beginner",
-      "educationalScript": "Complete script for this segment (200-300 words)",
-      "visualCues": ["What visuals/examples to show"]
-    }
-  ],
-  "learningPath": "How segments connect for complete understanding"
-}
-
-Create educational shorts that are better than the original - more focused, clearer, and optimized for learning!`;
-
-        try {
-            const response = await openaiService.openai.chat.completions.create({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are an expert educational content designer specializing in Cognitive Load Theory and micro-learning. Always respond with valid JSON only.'
-                    },
-                    {
-                        role: 'user',
-                        content: prompt
-                    }
-                ],
-                max_tokens: 1500,
-                temperature: 0.7
-            });
-
-            const content = response.choices[0].message.content.trim();
-            return JSON.parse(content);
-
-        } catch (error) {
-            console.error('Error in CLT analysis:', error);
-
-            // Fallback: Create basic time-based segments
-            return this.createBasicTimeSegments(duration, topic);
-        }
-    }
-
-    /**
-     * Create educational segments as fallback with enhanced content
-     * @param {number} duration - Video duration in seconds
-     * @param {string} topic - Video topic
-     * @returns {Object} Enhanced educational segment structure
-     */
-    createBasicTimeSegments(duration, topic) {
-        const segmentDuration = 420; // 7 minutes per segment
-        const segments = [];
-
-        // Define topic-specific educational content
-        const topicContent = {
-            javascript: [
-                {
-                    title: "JavaScript Fundamentals: Variables & Data Types",
-                    learningObjective: "Master JavaScript variables and understand different data types",
-                    keyPoints: ["Variable declarations (let, const, var)", "Primitive data types", "Variable scope basics"],
-                    practicalExample: "Creating variables for a user profile form",
-                    educationalScript: "Welcome to JavaScript Fundamentals! In this segment, we'll master variables - the building blocks of any program. Variables are like labeled containers that store information. JavaScript gives us three ways to create variables: let, const, and var. Let's explore when to use each one and understand the different types of data we can store.",
-                    visualCues: ["Code examples", "Variable declaration syntax", "Data type demonstrations"]
-                },
-                {
-                    title: "JavaScript Functions: Building Reusable Code",
-                    learningObjective: "Create and use functions to organize your JavaScript code",
-                    keyPoints: ["Function declarations vs expressions", "Parameters and return values", "Function scope"],
-                    practicalExample: "Building calculator functions",
-                    educationalScript: "Functions are the workhorses of JavaScript! Think of functions as mini-programs that perform specific tasks. They help us write cleaner, more organized code by grouping related instructions together. In this segment, we'll learn how to create functions, pass information to them, and get results back.",
-                    visualCues: ["Function syntax", "Parameter examples", "Return statement demos"]
-                },
-                {
-                    title: "JavaScript Control Flow: Making Decisions",
-                    learningObjective: "Use conditional statements and loops to control program flow",
-                    keyPoints: ["If-else statements", "Comparison operators", "Basic loops"],
-                    practicalExample: "Creating a grade calculator with conditions",
-                    educationalScript: "Programs need to make decisions and repeat actions - that's where control flow comes in! We'll explore if-else statements that let our code choose different paths based on conditions, and loops that repeat actions efficiently. These are essential tools for creating dynamic, interactive programs.",
-                    visualCues: ["Flowchart diagrams", "Conditional logic examples", "Loop demonstrations"]
-                }
-            ],
-            react: [
-                {
-                    title: "React Basics: Components & JSX",
-                    learningObjective: "Understand React components and JSX syntax",
-                    keyPoints: ["What is a component", "JSX fundamentals", "Component structure"],
-                    practicalExample: "Creating a welcome card component",
-                    educationalScript: "Welcome to React! React is all about components - think of them as custom LEGO blocks for building user interfaces. In this segment, we'll explore what components are, how JSX makes writing them intuitive, and build our first functional component together.",
-                    visualCues: ["Component tree diagrams", "JSX syntax examples", "Live coding demo"]
-                },
-                {
-                    title: "React State: Managing Dynamic Data",
-                    learningObjective: "Learn to manage changing data with React state",
-                    keyPoints: ["useState hook", "State updates", "Re-rendering concepts"],
-                    practicalExample: "Building a counter app with state",
-                    educationalScript: "State is what makes React components dynamic and interactive! When data in your app changes, React automatically updates the user interface. We'll learn the useState hook - your key to managing changing data in React components.",
-                    visualCues: ["State diagram", "Hook syntax", "Interactive examples"]
-                }
-            ],
-            python: [
-                {
-                    title: "Python Fundamentals: Variables & Basic Operations",
-                    learningObjective: "Master Python variables and basic operations",
-                    keyPoints: ["Variable assignment", "Basic data types", "Simple operations"],
-                    practicalExample: "Creating a simple calculator",
-                    educationalScript: "Python makes programming intuitive and fun! In this segment, we'll start with variables - Python's way of storing and working with data. You'll learn how Python's simple syntax makes it perfect for beginners while remaining powerful for experts.",
-                    visualCues: ["Python syntax", "Variable examples", "Operation demonstrations"]
-                }
-            ]
-        };
-
-        const content = topicContent[topic] || topicContent.javascript;
-
-        content.forEach((segmentData, index) => {
-            segments.push({
-                segmentNumber: index + 1,
-                title: segmentData.title,
-                duration: segmentDuration,
-                learningObjective: segmentData.learningObjective,
-                keyPoints: segmentData.keyPoints,
-                practicalExample: segmentData.practicalExample,
-                cognitiveLoad: 4 + index, // Gradually increase complexity
-                difficulty: index === 0 ? "Beginner" : index === 1 ? "Intermediate" : "Intermediate",
-                educationalScript: segmentData.educationalScript,
-                visualCues: segmentData.visualCues
-            });
-        });
-
-        return {
-            overallObjective: `Master ${topic} fundamentals through focused micro-learning segments`,
-            totalSegments: segments.length,
-            estimatedTotalDuration: Math.floor((segments.length * segmentDuration) / 60),
-            segments: segments,
-            learningPath: `Progressive learning from basic concepts to practical applications in ${topic}`
-        };
-    }
-
-    /**
-     * Create MicroVideo database records for educational shorts
-     * @param {string} videoId - Parent video ID
-     * @param {Object} cltAnalysis - Enhanced CLT analysis results
-     * @param {Object} transcriptData - Original transcript data
-     * @returns {Array} Created micro-video documents
+     * Create micro-video segments from CLT-bLM analysis
+     * @param {string} videoId - Original video ID
+     * @param {Object} cltAnalysis - CLT-bLM analysis results
+     * @param {Object} transcriptData - Transcript data with segments
+     * @returns {Array} Array of created MicroVideo documents
      */
     async createMicroVideoSegments(videoId, cltAnalysis, transcriptData) {
         const microVideos = [];
@@ -330,23 +151,32 @@ Create educational shorts that are better than the original - more focused, clea
                 title: segment.title,
                 sequence: segment.segmentNumber || (i + 1),
                 timeRange: {
-                    startTime: 0, // Educational shorts don't use original video timing
-                    endTime: segment.duration || 420,
+                    startTime: i * 420, // 7 minutes per segment
+                    endTime: (i + 1) * 420,
                     duration: segment.duration || 420
                 },
+
+                // Extract relevant portion of transcript for this segment
+                segmentTranscript: transcriptService.extractTranscriptForTimeRange(
+                    transcriptData.segments,
+                    i * 420,
+                    (i + 1) * 420
+                ),
+
+                // Enhanced CLT-bLM script data
                 cltBlmScript: {
                     learningObjective: segment.learningObjective,
                     keypoints: segment.keyPoints || [],
                     cognitiveLoad: segment.cognitiveLoad || 5,
-                    prerequisites: segment.prerequisites || [],
-                    // Enhanced fields for educational shorts
-                    practicalExample: segment.practicalExample,
-                    difficulty: segment.difficulty,
-                    educationalScript: segment.educationalScript,
-                    visualCues: segment.visualCues || []
+                    practicalExample: segment.practicalExample || '',
+                    educationalScript: segment.educationalScript || '',
+                    visualCues: segment.visualCues || [],
+                    difficulty: segment.difficulty || 'Intermediate',
+                    estimatedWatchTime: Math.ceil((segment.educationalScript?.length || 0) / 200) // ~200 chars per minute reading
                 },
-                segmentTranscript: segment.educationalScript || 'Generated educational content',
-                processingStatus: 'completed'
+
+                processingStatus: 'ready_for_generation',
+                createdAt: new Date()
             });
 
             await microVideo.save();
@@ -357,51 +187,50 @@ Create educational shorts that are better than the original - more focused, clea
     }
 
     /**
-     * Get processing status for a video
+     * Get video processing status
      * @route GET /api/videos/:videoId/status
      */
-    async getProcessingStatus(req, res) {
+    async getVideoStatus(req, res) {
         try {
             const { videoId } = req.params;
-            const userId = req.user._id;
 
-            const video = await Video.findOne({ _id: videoId, uploadedBy: userId });
+            const video = await Video.findById(videoId);
             if (!video) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Video not found or access denied'
+                    message: 'Video not found'
                 });
             }
 
-            // Get micro-videos if completed
-            let microVideos = [];
+            // Get micro-videos count if processing is complete
+            let microVideosCount = 0;
             if (video.processingStatus === 'completed') {
-                microVideos = await MicroVideo.getByVideoId(videoId);
+                microVideosCount = await MicroVideo.countDocuments({ originalVideoId: videoId });
             }
 
             res.json({
                 success: true,
                 data: {
                     videoId: video._id,
-                    title: video.title,
                     youtubeVideoId: video.youtubeVideoId,
-                    processingStatus: video.processingStatus,
-                    processingError: video.processingError,
-                    originalDuration: video.originalDuration,
-                    formattedDuration: video.formattedDuration,
+                    title: video.title,
                     topic: video.topic,
-                    microVideosCount: microVideos.length,
+                    processingStatus: video.processingStatus,
+                    progress: this.getProcessingProgress(video.processingStatus),
+                    microVideosCount,
+                    formattedDuration: video.formattedDuration || 'Unknown',
                     createdAt: video.createdAt,
-                    updatedAt: video.updatedAt
+                    updatedAt: video.updatedAt,
+                    error: video.errorMessage || null
                 }
             });
 
         } catch (error) {
-            console.error('Error getting processing status:', error);
+            console.error('Error getting video status:', error);
             res.status(500).json({
                 success: false,
-                message: 'Failed to get processing status',
-                error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+                message: 'Failed to get video status',
+                error: error.message
             });
         }
     }
@@ -413,49 +242,14 @@ Create educational shorts that are better than the original - more focused, clea
     async getMicroVideos(req, res) {
         try {
             const { videoId } = req.params;
-            const userId = req.user._id;
 
-            // Verify video belongs to user
-            const video = await Video.findOne({ _id: videoId, uploadedBy: userId });
-            if (!video) {
-                return res.status(404).json({
-                    success: false,
-                    message: 'Video not found or access denied'
-                });
-            }
-
-            if (video.processingStatus !== 'completed') {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Video processing not yet completed',
-                    currentStatus: video.processingStatus
-                });
-            }
-
-            // Get all micro-videos
-            const microVideos = await MicroVideo.getByVideoId(videoId);
+            const microVideos = await MicroVideo.find({ originalVideoId: videoId })
+                .sort({ sequence: 1 })
+                .select('title sequence timeRange cltBlmScript.learningObjective cltBlmScript.keypoints processingStatus createdAt');
 
             res.json({
                 success: true,
-                data: {
-                    parentVideo: {
-                        id: video._id,
-                        title: video.title,
-                        duration: video.formattedDuration,
-                        topic: video.topic
-                    },
-                    microVideos: microVideos.map(mv => ({
-                        id: mv._id,
-                        title: mv.title,
-                        sequence: mv.sequence,
-                        timeRange: mv.timeRangeFormatted,
-                        learningObjective: mv.cltBlmScript.learningObjective,
-                        keypoints: mv.cltBlmScript.keypoints,
-                        cognitiveLoad: mv.cltBlmScript.cognitiveLoad,
-                        youtubeEmbedUrl: `https://www.youtube.com/embed/${video.youtubeVideoId}?start=${mv.timeRange.startTime}&end=${mv.timeRange.endTime}`
-                    })),
-                    totalSegments: microVideos.length
-                }
+                data: microVideos
             });
 
         } catch (error) {
@@ -463,9 +257,24 @@ Create educational shorts that are better than the original - more focused, clea
             res.status(500).json({
                 success: false,
                 message: 'Failed to get micro-videos',
-                error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+                error: error.message
             });
         }
+    }
+
+    /**
+     * Get processing progress percentage
+     * @param {string} status - Processing status
+     * @returns {number} Progress percentage
+     */
+    getProcessingProgress(status) {
+        const progressMap = {
+            'pending': 0,
+            'processing': 50,
+            'completed': 100,
+            'failed': -1
+        };
+        return progressMap[status] || 0;
     }
 }
 
