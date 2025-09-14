@@ -267,13 +267,22 @@ export const assessmentAPI = {
   },
 
   // Submit answer
-  submitAnswer: async (sessionId, questionId, userAnswer, timeSpent = 0) => {
+  submitAnswer: async (sessionId, questionId, userAnswer, questionTimeSpent = 0, totalTimeSpent = 0) => {
     try {
-      const response = await api.post(`/assessment/${sessionId}/answer`, {
+      const payload = {
         questionId,
         userAnswer,
-        timeSpent
+        timeSpent: questionTimeSpent,
+        totalTimeSpent: totalTimeSpent
+      };
+
+      console.log('📤 Submitting answer with timing data:', {
+        questionTimeSpent,
+        totalTimeSpent,
+        payload
       });
+
+      const response = await api.post(`/assessment/${sessionId}/answer`, payload);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -389,12 +398,46 @@ export const microlearningAPI = {
   getRecommendations: async (topic, options = {}) => {
     try {
       const params = {};
-      if (options.maxVideos) params.maxVideos = options.maxVideos;
-      if (options.includeAlternative) params.includeAlternative = options.includeAlternative;
-      
+
+      // Backend validation: maxVideos must be between 1 and 10
+      if (options.maxVideos) {
+        params.maxVideos = Math.min(Math.max(parseInt(options.maxVideos), 1), 10);
+      }
+
+      // Backend validation: includeAlternative must be boolean string
+      if (options.includeAlternative !== undefined) {
+        params.includeAlternative = options.includeAlternative.toString();
+      }
+
+      console.log('🎬 Getting recommendations:', { topic, options, params });
+      console.log('🎬 Full URL will be:', `/microlearning/recommendations/${topic}?${new URLSearchParams(params).toString()}`);
+
       const response = await api.get(`/microlearning/recommendations/${topic}`, { params });
-      return handleApiResponse(response);
+      const result = handleApiResponse(response);
+
+      console.log('🎬 Recommendations response:', result);
+
+      return result;
     } catch (error) {
+      console.error('❌ Recommendations error:', error);
+
+      // Log detailed error info for debugging
+      if (error.response?.data?.errors) {
+        console.error('❌ Validation errors:', error.response.data.errors);
+      }
+      if (error.response?.data) {
+        console.error('❌ Full error response:', error.response.data);
+      }
+
+      // Enhanced error handling for specific cases
+      if (error.message.includes('assessment')) {
+        throw new Error('Please complete an assessment for this topic first to get personalized recommendations.');
+      }
+
+      if (error.message.includes('not selected')) {
+        throw new Error('Please select this topic in your learning preferences first.');
+      }
+
       throw handleApiError(error);
     }
   },
@@ -402,11 +445,23 @@ export const microlearningAPI = {
   // Generate learning path for topic
   generateLearningPath: async (topic, maxVideos = 5) => {
     try {
+      console.log('🛤️ Generating learning path:', { topic, maxVideos });
+
       const response = await api.get(`/microlearning/learning-path/${topic}`, {
         params: { maxVideos }
       });
-      return handleApiResponse(response);
+      const result = handleApiResponse(response);
+
+      console.log('🛤️ Learning path response:', result);
+
+      return result;
     } catch (error) {
+      console.error('❌ Learning path error:', error);
+
+      if (error.message.includes('assessment')) {
+        throw new Error('Assessment required for learning path generation. Please complete an assessment first.');
+      }
+
       throw handleApiError(error);
     }
   },
@@ -414,9 +469,16 @@ export const microlearningAPI = {
   // Get available topics for microlearning
   getAvailableTopics: async () => {
     try {
+      console.log('🎯 Getting available topics');
+
       const response = await api.get('/microlearning/available-topics');
-      return handleApiResponse(response);
+      const result = handleApiResponse(response);
+
+      console.log('🎯 Available topics response:', result);
+
+      return result;
     } catch (error) {
+      console.error('❌ Available topics error:', error);
       throw handleApiError(error);
     }
   },
@@ -424,9 +486,16 @@ export const microlearningAPI = {
   // Get quick recommendations (1 video per topic)
   getQuickRecommendations: async () => {
     try {
+      console.log('⚡ Getting quick recommendations');
+
       const response = await api.get('/microlearning/quick-recommendations');
-      return handleApiResponse(response);
+      const result = handleApiResponse(response);
+
+      console.log('⚡ Quick recommendations response:', result);
+
+      return result;
     } catch (error) {
+      console.error('❌ Quick recommendations error:', error);
       throw handleApiError(error);
     }
   },
