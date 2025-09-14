@@ -30,6 +30,7 @@ const VideoRecommendations = () => {
   const [levelFilter, setLevelFilter] = useState(searchParams.get('level') || 'all');
   const [isLoading, setIsLoading] = useState(true);
   const [userLevel, setUserLevel] = useState(null);
+  const [recommendationData, setRecommendationData] = useState(null);
 
   // Get topic metadata
   const topicMeta = topic ? getTopicMeta(topic) : null;
@@ -51,12 +52,39 @@ const VideoRecommendations = () => {
         setIsLoading(true);
         
         // Use backend service to get recommendations
+        // Note: Backend limits maxVideos to 1-10, so we'll request 10
         const recommendations = await microlearningAPI.getRecommendations(topic, {
-          maxVideos: 20,
+          maxVideos: 10,
           includeAlternative: true
         });
-        
-        setVideos(recommendations.videos || []);
+
+        console.log('✅ Received recommendations:', recommendations);
+        console.log('✅ Recommendations structure:', {
+          userLevel: recommendations.userLevel,
+          userScore: recommendations.userScore,
+          totalVideos: recommendations.totalVideos,
+          recommendationsArray: recommendations.recommendations,
+          recommendationsLength: recommendations.recommendations?.length
+        });
+
+        // Set recommendation metadata
+        setRecommendationData({
+          userLevel: recommendations.userLevel,
+          userScore: recommendations.userScore,
+          totalVideos: recommendations.totalVideos,
+          metadata: recommendations.metadata
+        });
+
+        // Set user level from recommendations
+        setUserLevel(recommendations.userLevel);
+
+        // Set videos from recommendations - FIXED: using 'recommendations' not 'videos'
+        const recommendationVideos = recommendations.recommendations || [];
+        console.log('✅ Setting videos:', recommendationVideos.length, 'videos');
+        if (recommendationVideos.length > 0) {
+          console.log('✅ First video structure:', recommendationVideos[0]);
+        }
+        setVideos(recommendationVideos);
       } catch (error) {
         console.error('Error loading recommendations:', error);
         toast.error('Failed to load video recommendations');
@@ -270,20 +298,26 @@ const VideoRecommendations = () => {
             >
               {/* Thumbnail */}
               <div className="relative aspect-video bg-gray-100">
-                {video.thumbnail ? (
-                  <img
-                    src={video.thumbnail}
-                    alt={video.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2383E2] to-[#0F62FE]">
-                  <PlayIcon className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
-                </div>
+                {video.thumbnails?.medium || video.thumbnails?.default || video.thumbnail ? (
+                  <>
+                    <img
+                      src={video.thumbnails?.medium || video.thumbnails?.default || video.thumbnail}
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2383E2] to-[#0F62FE]">
+                      <PlayIcon className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2383E2] to-[#0F62FE]">
+                    <PlayIcon className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
+                  </div>
+                )}
                 
                 {/* Duration & Score Overlay */}
                 <div className="absolute top-2 right-2 flex space-x-2">
@@ -320,9 +354,9 @@ const VideoRecommendations = () => {
                   <p className="text-xs text-[#6B6B6B] font-medium">
                     {video.channelTitle}
                   </p>
-                  {video.level && (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getLevelColor(video.level)}`}>
-                      {video.level}
+                  {(video.level || video.originalLevel || video.difficulty) && (
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getLevelColor(video.level || video.originalLevel || video.difficulty)}`}>
+                      {video.level || video.originalLevel || video.difficulty}
                     </span>
                   )}
                 </div>
@@ -344,15 +378,15 @@ const VideoRecommendations = () => {
                   </div>
                 </div>
 
-                {/* Tags */}
-                {video.tags && video.tags.length > 0 && (
+                {/* Tags - from keyTopics or tags */}
+                {(video.keyTopics || video.tags) && (video.keyTopics?.length > 0 || video.tags?.length > 0) && (
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {video.tags.slice(0, 3).map((tag, index) => (
+                    {(video.keyTopics || video.tags)?.slice(0, 3).map((tag, index) => (
                       <span
                         key={index}
                         className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F7F6F3] text-[#6B6B6B]"
                       >
-                        {tag}
+                        {typeof tag === 'string' ? tag : tag.name || 'Topic'}
                       </span>
                     ))}
                   </div>
