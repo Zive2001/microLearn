@@ -75,9 +75,9 @@ const Login = () => {
           </p>
 
           {/* Illustration placeholder */}
-          <div className="w-80 h-80 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center mb-8 mx-auto">
+          <div className="w-100 h-100 bg-gray-50 rounded-lg border border-none flex items-center justify-center mb-8 mx-auto">
             <img 
-              src="/illustrations/notion-login-hero.svg"
+              src="/login.png"
               alt="Welcome back illustration"
               className="w-full h-full object-contain p-6"
               onError={(e) => {

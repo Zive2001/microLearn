@@ -152,7 +152,7 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold text-[#37352F]">Your Progress</h2>
               <Link 
                 to="/app/topics"
-                className="text-sm text-[#2383E2] hover:text-[#0F62FE] font-medium"
+                className="text-sm text-[#212529] hover:text-[#212529] font-medium"
               >
                 Manage Topics →
               </Link>
@@ -226,7 +226,7 @@ const Dashboard = () => {
                       </div>
                       <Link
                         to={`/app/assessment/${topicSlug}`}
-                        className="inline-flex items-center px-3 py-2 text-sm bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
+                        className="inline-flex items-center px-3 py-2 text-sm bg-[#212529] text-white rounded-lg hover:bg-[#212427] transition-colors"
                       >
                         Take Assessment
                       </Link>
@@ -339,7 +339,7 @@ const Dashboard = () => {
           </div>
 
           {/* Learning Tip */}
-          <div className="bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded-xl p-6 text-white">
+          <div className="bg-gradient-to-br from-[#0d1b2a] to-[#1b263b] rounded-xl p-6 text-white">
             <div className="flex items-start space-x-3 mb-4">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
