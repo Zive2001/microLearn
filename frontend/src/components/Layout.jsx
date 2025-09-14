@@ -23,7 +23,7 @@ const Layout = () => {
     { name: 'Dashboard', href: '/app/dashboard', icon: HomeIcon },
     { name: 'Topics', href: '/app/topics', icon: BookOpenIcon },
     { name: 'Assessment', href: '/app/assessment', icon: AcademicCapIcon },
-    { name: 'Videos', href: '/app/recommendations', icon: VideoCameraIcon },
+    // { name: 'Videos', href: '/app/recommendations', icon: VideoCameraIcon },
   ];
 
   const handleLogout = () => {
