@@ -123,7 +123,8 @@ const topicRoutes = require('./routes/topics');
 const testRoutes = require('./routes/test');
 const assessmentRoutes = require('./routes/assessment');
 const microlearningRoutes = require('./routes/microlearning');
-// const assessmentRoutes = require('./routes/assessment');
+const quizRoutes = require('./routes/quiz');
+const clipQuizRoutes = require('./routes/clipQuiz');
 // const contentRoutes = require('./routes/content');
 
 // Use routes
@@ -132,6 +133,8 @@ app.use('/api/topics', topicRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/assessment', assessmentRoutes);
 app.use('/api/microlearning', microlearningRoutes);
+app.use('/api/quiz', quizRoutes);
+app.use('/api/clip-quiz', clipQuizRoutes);
 
 // app.use('/api/assessment', assessmentRoutes);
 // app.use('/api/content', contentRoutes);

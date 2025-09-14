@@ -13,7 +13,8 @@
     "test-mongodb": "node utils/test-mongodb.js",
     "setup-local-mongodb": "node utils/setup-local-mongodb.js --local",
     "mongodb-help": "node utils/setup-local-mongodb.js",
-    "seed-topics": "node utils/seedTopics.js"
+    "seed-topics": "node utils/seedTopics.js",
+    "test-clip-quiz": "node utils/testClipBasedQuizFlow.js"
   },
   "keywords": [
     "adaptive-learning",
@@ -29,7 +30,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.11.0",
+    "axios": "^1.12.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

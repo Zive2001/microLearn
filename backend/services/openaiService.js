@@ -1,10 +1,19 @@
 // services/openaiService.js
 const OpenAI = require('openai');
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization of OpenAI client
+let openai = null;
+
+const getOpenAIClient = () => {
+    if (!openai) {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+            throw new Error('OpenAI API key not found. Please check your OPENAI_API_KEY environment variable.');
+        }
+        openai = new OpenAI({ apiKey });
+    }
+    return openai;
+};
 
 // Difficulty levels with parameters
 const DIFFICULTY_LEVELS = {
@@ -73,7 +82,18 @@ class OpenAIService {
      */
     async generateQuestion(topic, difficulty = 'intermediate', previousQuestions = []) {
         try {
-            const difficultyConfig = DIFFICULTY_LEVELS[difficulty.toLowerCase()];
+            // Map different difficulty formats to consistent keys
+            const difficultyMap = {
+                'easy': 'beginner',
+                'medium': 'intermediate', 
+                'hard': 'advanced',
+                'beginner': 'beginner',
+                'intermediate': 'intermediate',
+                'advanced': 'advanced'
+            };
+            
+            const mappedDifficulty = difficultyMap[difficulty.toLowerCase()] || 'intermediate';
+            const difficultyConfig = DIFFICULTY_LEVELS[mappedDifficulty];
             const topicContext = TOPIC_CONTEXTS[topic.toLowerCase()] || {
                 focus: `${topic} programming concepts and practices`,
                 examples: 'fundamental concepts, syntax, best practices',
@@ -121,7 +141,7 @@ Respond with a JSON object in this exact format:
 
 Ensure the JSON is valid and complete.`;
 
-            const response = await openai.chat.completions.create({
+            const response = await getOpenAIClient().chat.completions.create({
                 model: this.model,
                 messages: [
                     {
@@ -216,7 +236,7 @@ Respond with JSON:
   "improvementSuggestions": "What they should focus on next"
 }`;
 
-            const response = await openai.chat.completions.create({
+            const response = await getOpenAIClient().chat.completions.create({
                 model: this.model,
                 messages: [
                     {
@@ -289,7 +309,7 @@ Provide specific, actionable learning recommendations in JSON format:
   "practiceAreas": ["hands-on practice suggestion 1", "hands-on practice suggestion 2"]
 }`;
 
-            const response = await openai.chat.completions.create({
+            const response = await getOpenAIClient().chat.completions.create({
                 model: this.model,
                 messages: [
                     {
@@ -319,7 +339,7 @@ Provide specific, actionable learning recommendations in JSON format:
      */
     async checkAPIHealth() {
         try {
-            const response = await openai.chat.completions.create({
+            const response = await getOpenAIClient().chat.completions.create({
                 model: 'gpt-3.5-turbo',
                 messages: [{ role: 'user', content: 'Hello' }],
                 max_tokens: 10
