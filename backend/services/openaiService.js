@@ -104,23 +104,25 @@ Question Requirements:
 
 Generate a ${difficultyConfig.level} level multiple-choice question about ${topic}. The question should test ${difficultyConfig.description} and be suitable for someone learning ${topic}.
 
+IMPORTANT: Randomize the position of the correct answer. Do NOT always use "A" as the correct answer.
+
 Respond with a JSON object in this exact format:
 {
   "question": "Your question here",
   "options": {
     "A": "First option",
-    "B": "Second option", 
+    "B": "Second option",
     "C": "Third option",
     "D": "Fourth option"
   },
-  "correctAnswer": "A",
+  "correctAnswer": "B",
   "explanation": "Brief explanation of why this answer is correct",
   "difficulty": "${difficulty}",
   "topic": "${topic}",
   "estimatedTime": 60
 }
 
-Ensure the JSON is valid and complete.`;
+CRITICAL: The correctAnswer field should vary between A, B, C, and D randomly. Mix up which option is correct to ensure fair assessment. Ensure the JSON is valid and complete.`;
 
             const response = await openai.chat.completions.create({
                 model: this.model,
@@ -156,6 +158,25 @@ Ensure the JSON is valid and complete.`;
                 if (!questionData[field]) {
                     throw new Error(`Missing required field: ${field}`);
                 }
+            }
+
+            // Validate correct answer is valid option
+            if (!['A', 'B', 'C', 'D'].includes(questionData.correctAnswer)) {
+                throw new Error(`Invalid correct answer: ${questionData.correctAnswer}. Must be A, B, C, or D.`);
+            }
+
+            // If AI still defaulted to 'A', randomize the answer position
+            if (questionData.correctAnswer === 'A' && Math.random() < 0.7) { // 70% chance to randomize
+                const newCorrectAnswer = ['B', 'C', 'D'][Math.floor(Math.random() * 3)];
+                const correctContent = questionData.options[questionData.correctAnswer];
+                const newContent = questionData.options[newCorrectAnswer];
+
+                // Swap the options
+                questionData.options[questionData.correctAnswer] = newContent;
+                questionData.options[newCorrectAnswer] = correctContent;
+                questionData.correctAnswer = newCorrectAnswer;
+
+                console.log(`🔀 Randomized answer position from A to ${newCorrectAnswer}`);
             }
 
             // Add metadata

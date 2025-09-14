@@ -6,11 +6,11 @@ class YouTubeService {
     constructor() {
         this.apiKey = process.env.YOUTUBE_API_KEY;
         this.baseURL = 'https://www.googleapis.com/youtube/v3';
-        this.maxResults = 25; // Reduced to save quota - fetch fewer but better quality
+        this.maxResults = 5; // Drastically reduced to save quota - minimal API usage
 
         // Rate limiting and caching
         this.requestCache = new Map();
-        this.cacheTimeout = 300000; // 5 minutes cache
+        this.cacheTimeout = 1800000; // 30 minutes cache - extended to save quota
         this.rateLimitDelay = 1000; // 1 second between requests
         this.lastRequestTime = 0;
 
@@ -73,9 +73,11 @@ class YouTubeService {
      * @param {number} maxVideos - Maximum videos to return (default: 3)
      */
     async searchEducationalVideos(topic, level, maxVideos = 3) {
+        // Define cache key at function scope
+        const cacheKey = `${topic}_${level}_${maxVideos}`;
+
         try {
             // Check cache first
-            const cacheKey = `${topic}_${level}_${maxVideos}`;
             const cachedResult = this.getCachedResult(cacheKey);
             if (cachedResult) {
                 return cachedResult;
