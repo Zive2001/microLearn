@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
 import { getTopicMeta, formatNumber, formatDuration } from '../utils/helpers';
-import { microlearningService } from '../services/microlearning';
+import { microlearningAPI } from '../services/api';
 import { 
   Play as PlayIcon, 
   Clock as ClockIcon, 
@@ -51,7 +51,7 @@ const VideoRecommendations = () => {
         setIsLoading(true);
         
         // Use backend service to get recommendations
-        const recommendations = await microlearningService.getRecommendations(topic, {
+        const recommendations = await microlearningAPI.getRecommendations(topic, {
           maxVideos: 20,
           includeAlternative: true
         });

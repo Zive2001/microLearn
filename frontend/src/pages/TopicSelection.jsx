@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
-import { getTopicMeta, groupBy } from '../utils/helpers';
-import { TOPICS } from '../constants';
 import { 
   CheckCircle2 as CheckCircleIcon,
   Circle as CircleIcon,
@@ -11,18 +9,23 @@ import {
   ArrowRight as ArrowRightIcon,
   Sparkles as SparklesIcon,
   Filter as FilterIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Clock,
+  Star,
+  Users,
+  TrendingUp
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import toast from 'react-hot-toast';
 
 const TopicSelection = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { 
     allTopics, 
     selectedTopics, 
     isLoading, 
     fetchAllTopics, 
+    fetchSelectedTopics,
     selectTopics 
   } = useApp();
   const navigate = useNavigate();
@@ -34,34 +37,52 @@ const TopicSelection = () => {
 
   useEffect(() => {
     fetchAllTopics();
-  }, []);
+    if (isAuthenticated) {
+      fetchSelectedTopics();
+    }
+  }, [isAuthenticated]);
 
-  // Create mock topics if backend doesn't provide them
-  const mockTopics = Object.values(TOPICS).map(topicSlug => ({
-    slug: topicSlug,
-    description: `Master ${getTopicMeta(topicSlug).name} programming concepts and best practices`
-  }));
+  // Handle backend response format
+  const displayTopics = Array.isArray(allTopics) 
+    ? allTopics.flat() 
+    : allTopics?.data 
+      ? allTopics.data.flatMap(categoryGroup => 
+          (categoryGroup.topics || []).map(topic => ({
+            ...topic,
+            category: categoryGroup._id
+          }))
+        )
+      : [];
 
-  const displayTopics = allTopics.length > 0 ? allTopics : mockTopics;
 
   // Filter topics based on search and category
   const filteredTopics = displayTopics.filter(topic => {
-    const meta = getTopicMeta(topic.slug);
-    const matchesSearch = meta.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         topic.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || meta.category === categoryFilter;
+    const matchesSearch = topic.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         topic.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         topic.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCategory = categoryFilter === 'all' || topic.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
   // Group topics by category
-  const topicsByCategory = groupBy(filteredTopics, (topic) => getTopicMeta(topic.slug).category);
+  const topicsByCategory = filteredTopics.reduce((groups, topic) => {
+    const category = topic.category;
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(topic);
+    return groups;
+  }, {});
 
-  // Get unique categories
-  const categories = ['all', ...new Set(displayTopics.map(topic => getTopicMeta(topic.slug).category))];
+  // Get unique categories from the backend response
+  const categories = ['all'];
+  if (allTopics?.data) {
+    categories.push(...allTopics.data.map(group => group._id));
+  }
 
   // Check if topic is already selected
   const isTopicSelected = (topicSlug) => {
-    return selectedTopics.some(topic => topic.topic === topicSlug);
+    return selectedTopics.some(topic => topic.slug === topicSlug || topic.topic === topicSlug);
   };
 
   // Handle topic selection for learning
@@ -180,31 +201,66 @@ const TopicSelection = () => {
             
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {topics.map((topic) => {
-                const meta = getTopicMeta(topic.slug);
                 const isSelected = isTopicSelected(topic.slug);
                 const isSelectedForLearning = selectedForLearning.has(topic.slug);
                 
                 return (
                   <div
                     key={topic.slug}
-                    className="bg-white rounded-xl shadow-sm border border-[#E9E9E7] p-6 hover:shadow-md transition-all"
+                    className={`bg-white rounded-xl shadow-sm border p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${
+                      isSelectedForLearning 
+                        ? 'border-[#2383E2] bg-[#2383E2]/5' 
+                        : 'border-[#E9E9E7] hover:border-[#D3D3D1]'
+                    }`}
+                    onClick={() => !isSelected && toggleTopicSelection(topic.slug)}
                   >
                     {/* Topic Header */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="text-2xl">{meta.icon}</div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-[#37352F]">
-                            {meta.name}
-                          </h3>
-                          <p className="text-sm text-[#6B6B6B]">{topic.description}</p>
+                      <div className="flex items-start space-x-3 flex-1">
+                        <div 
+                          className="text-2xl w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${topic.color}20`, color: topic.color }}
+                        >
+                          {topic.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="text-lg font-semibold text-[#37352F]">
+                              {topic.name}
+                            </h3>
+                            {topic.featured && (
+                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            )}
+                          </div>
+                          <p className="text-sm text-[#6B6B6B] mb-3 line-clamp-2">{topic.description}</p>
+                          
+                          {/* Topic Metadata */}
+                          <div className="flex items-center gap-4 text-xs text-[#6B6B6B]">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{topic.estimatedDuration}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <TrendingUp className="h-3 w-3" />
+                              <span>{topic.difficulty}</span>
+                            </div>
+                            {topic.totalLearners > 0 && (
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                <span>{topic.totalLearners.toLocaleString()}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
                       {!isSelected && (
                         <button
-                          onClick={() => toggleTopicSelection(topic.slug)}
-                          className="flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleTopicSelection(topic.slug);
+                          }}
+                          className="flex-shrink-0 p-1 rounded-md hover:bg-[#F7F6F3] transition-colors"
                         >
                           {isSelectedForLearning ? (
                             <CheckCircleIcon className="h-6 w-6 text-[#2383E2]" />
@@ -214,6 +270,25 @@ const TopicSelection = () => {
                         </button>
                       )}
                     </div>
+                    
+                    {/* Tags */}
+                    {topic.tags && topic.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {topic.tags.slice(0, 3).map((tag, index) => (
+                          <span 
+                            key={index}
+                            className="px-2 py-1 bg-[#F7F6F3] text-[#6B6B6B] text-xs rounded-md"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {topic.tags.length > 3 && (
+                          <span className="px-2 py-1 bg-[#F7F6F3] text-[#6B6B6B] text-xs rounded-md">
+                            +{topic.tags.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    )}
                     
                     {/* Status */}
                     {isSelected && (
@@ -225,32 +300,44 @@ const TopicSelection = () => {
                     )}
                     
                     {/* Actions */}
-                    <div className="flex space-x-3">
+                    <div className="flex space-x-2">
                       {isSelected ? (
                         <>
                           <Link
-                            to={`/app/assessment/${topic.slug}`}
-                            className="flex-1 bg-[#2383E2] text-white text-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#0F62FE] transition-colors"
+                            to={`/assessment/${topic.slug}`}
+                            className="flex-1 bg-[#2383E2] text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0F62FE] transition-colors"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Take Assessment
                           </Link>
                           <Link
-                            to={`/app/recommendations/${topic.slug}`}
-                            className="flex-1 bg-white border border-[#E9E9E7] text-[#37352F] text-center px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#F7F6F3] transition-colors"
+                            to={`/recommendations/${topic.slug}`}
+                            className="flex-1 bg-white border border-[#E9E9E7] text-[#37352F] text-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#F7F6F3] transition-colors"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             View Videos
                           </Link>
                         </>
                       ) : (
                         <button
-                          onClick={() => toggleTopicSelection(topic.slug)}
-                          className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleTopicSelection(topic.slug);
+                          }}
+                          className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                             isSelectedForLearning
-                              ? 'bg-[#2383E2] text-white hover:bg-[#0F62FE]'
-                              : 'bg-white border border-[#E9E9E7] text-[#37352F] hover:bg-[#F7F6F3]'
+                              ? 'bg-[#2383E2] text-white hover:bg-[#0F62FE] shadow-sm'
+                              : 'bg-white border border-[#E9E9E7] text-[#37352F] hover:bg-[#F7F6F3] hover:border-[#D3D3D1]'
                           }`}
                         >
-                          {isSelectedForLearning ? 'Selected' : 'Select Topic'}
+                          {isSelectedForLearning ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <CheckCircleIcon className="h-4 w-4" />
+                              Selected
+                            </span>
+                          ) : (
+                            'Select Topic'
+                          )}
                         </button>
                       )}
                     </div>

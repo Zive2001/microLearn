@@ -114,11 +114,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   // Login function
-  const login = async (credentials) => {
+  const login = async (email, password) => {
     try {
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
       
-      const data = await authService.login(credentials);
+      const data = await authService.login(email, password);
       
       dispatch({
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
@@ -133,9 +133,9 @@ export function AuthProvider({ children }) {
     } catch (error) {
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
-        payload: error.message
+        payload: error.message || 'Login failed. Please try again.'
       });
-      toast.error(error.message);
+      toast.error(error.message || 'Login failed. Please try again.');
       throw error;
     }
   };

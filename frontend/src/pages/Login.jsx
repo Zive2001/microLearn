@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Eye as EyeIcon, EyeOff as EyeOffIcon, BookOpen, Sparkles, Zap, Users, Trophy } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { authAPI } from '../services/api';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -17,7 +16,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname || '/app/topics';
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -31,12 +30,12 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await authAPI.login(formData.email, formData.password);
-      toast.success('Welcome back! 👋');
+      await login(formData.email, formData.password);
+      // The toast message is handled in AuthContext
       navigate(from, { replace: true });
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
-      toast.error(errorMessage);
+      // Error handling is done in AuthContext
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
