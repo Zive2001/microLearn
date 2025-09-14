@@ -33,7 +33,7 @@ router.get('/recommendations/:topic', protect, [
         }
 
         const { topic } = req.params;
-        const maxVideos = parseInt(req.query.maxVideos) || 3;
+        const maxVideos = Math.min(parseInt(req.query.maxVideos) || 3, 3); // Cap at 3 to save quota
         const includeAlternative = req.query.includeAlternative === 'true';
 
         const startTime = Date.now();
@@ -114,7 +114,7 @@ router.get('/learning-path/:topic', protect, [
         }
 
         const { topic } = req.params;
-        const maxVideos = parseInt(req.query.maxVideos) || 5;
+        const maxVideos = Math.min(parseInt(req.query.maxVideos) || 3, 3); // Cap at 3 to save quota
 
         const startTime = Date.now();
         
@@ -523,7 +523,8 @@ router.post('/search', protect, [
             });
         }
 
-        const { topic, level, maxResults = 5, customQuery } = req.body;
+        const { topic, level, maxResults = 3, customQuery } = req.body;
+        const limitedResults = Math.min(maxResults, 3); // Cap at 3 to save quota
 
         const startTime = Date.now();
         const youtubeService = require('../services/youtubeService');
@@ -533,9 +534,9 @@ router.post('/search', protect, [
         if (customQuery) {
             // Custom search implementation would go here
             // For now, use modified topic search
-            searchResults = await youtubeService.searchEducationalVideos(topic, level, maxResults);
+            searchResults = await youtubeService.searchEducationalVideos(topic, level, limitedResults);
         } else {
-            searchResults = await youtubeService.searchEducationalVideos(topic, level, maxResults);
+            searchResults = await youtubeService.searchEducationalVideos(topic, level, limitedResults);
         }
 
         const responseTime = Date.now() - startTime;
