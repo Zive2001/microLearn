@@ -40,7 +40,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.3",
     "morgan": "^1.10.0",
-    "openai": "^5.19.1"
+    "openai": "^5.19.1",
+    "youtube-transcript": "^1.2.1"
   },
   "devDependencies": {
     "concurrently": "^9.0.1",

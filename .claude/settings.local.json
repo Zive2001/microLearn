@@ -4,7 +4,12 @@
       "Bash(npm run dev:*)",
       "Bash(node:*)",
       "Bash(pkill:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(tskill:*)"
     ],
     "deny": [],
     "ask": []
