@@ -230,7 +230,10 @@ export function AppProvider({ children }) {
 
   // Update topic with assessment results
   const updateTopicAssessment = (topicSlug, assessmentData) => {
-    const updatedTopics = selectedTopics.map(topic => {
+    // Ensure we have selectedTopics from state
+    const currentSelectedTopics = state.selectedTopics || [];
+
+    const updatedTopics = currentSelectedTopics.map(topic => {
       const currentSlug = topic.topic || topic.slug || topic;
       if (currentSlug === topicSlug) {
         return {
@@ -243,6 +246,21 @@ export function AppProvider({ children }) {
       }
       return topic;
     });
+
+    // If topic wasn't found in existing topics, add it
+    if (!updatedTopics.some(topic => {
+      const currentSlug = topic.topic || topic.slug || topic;
+      return currentSlug === topicSlug;
+    })) {
+      updatedTopics.push({
+        topic: topicSlug,
+        knowledgeLevel: assessmentData.level,
+        assessmentScore: assessmentData.score,
+        lastAssessmentDate: new Date().toISOString(),
+        assessmentId: assessmentData.sessionId || assessmentData.id
+      });
+    }
+
     dispatch({ type: APP_ACTIONS.SET_SELECTED_TOPICS, payload: updatedTopics });
   };
 
@@ -351,40 +369,55 @@ export function AppProvider({ children }) {
   // Initialize data when user logs in
   useEffect(() => {
     if (isAuthenticated && user) {
+      console.log('AppContext: Initializing data for authenticated user');
       fetchDashboardData();
       fetchSelectedTopics();
       fetchActiveSessions();
+    } else {
+      console.log('AppContext: User not authenticated, skipping data fetch');
     }
   }, [isAuthenticated, user]);
 
-  // Context value
+  // Context value with debugging
   const value = {
     // State
     ...state,
-    
+
     // General actions
     clearError,
-    
+
     // Topics
     fetchAllTopics,
     fetchSelectedTopics,
     selectTopics,
-    
+
     // Assessment
     fetchAssessmentProgress,
     fetchAssessmentHistory,
     fetchActiveSessions,
-    
+
     // Recommendations
     fetchRecommendations,
     fetchLearningPath,
     fetchQuickRecommendations,
-    
+
     // Dashboard
     fetchDashboardData,
 
     // Assessment updates
-    updateTopicAssessment
+    updateTopicAssessment,
+
+    // Debug helpers
+    debugState: () => {
+      console.log('AppContext State:', {
+        selectedTopics: state.selectedTopics,
+        allTopics: state.allTopics,
+        assessmentHistory: state.assessmentHistory,
+        activeSessions: state.activeSessions,
+        isLoading: state.isLoading,
+        error: state.error
+      });
+    }
   };
 
   return (

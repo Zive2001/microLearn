@@ -26,9 +26,9 @@ import toast from 'react-hot-toast';
 const AssessmentResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { topic, resultId } = useParams();
+  const { topic, sessionId, resultId } = useParams();
   const { user } = useAuth();
-  const { updateTopicAssessment } = useApp();
+  const { updateTopicAssessment, fetchActiveSessions } = useApp();
 
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,46 +53,84 @@ const AssessmentResults = () => {
         else if (resultId) {
           resultsData = await assessmentAPI.getAssessmentResult(resultId);
         }
-        // If we have sessionId, get session results
-        else if (location.state?.sessionId) {
-          // Try to get the completed session results
-          const sessionId = location.state.sessionId;
+        // If we have sessionId from URL params, get session results
+        else if (sessionId) {
           try {
             const sessionProgress = await assessmentAPI.getSessionProgress(sessionId);
             if (sessionProgress.status === 'completed') {
               resultsData = sessionProgress.finalResults;
             }
           } catch (err) {
-            console.error('Error getting session results:', err);
+            console.error('Error getting session results from URL:', err);
+          }
+        }
+        // If we have sessionId from state, get session results
+        else if (location.state?.sessionId) {
+          try {
+            const sessionProgress = await assessmentAPI.getSessionProgress(location.state.sessionId);
+            if (sessionProgress.status === 'completed') {
+              resultsData = sessionProgress.finalResults;
+            }
+          } catch (err) {
+            console.error('Error getting session results from state:', err);
           }
         }
 
         if (!resultsData) {
-          throw new Error('No assessment results found');
+          // If no results found but we have topic and sessionId, create a basic result
+          if (topic && (sessionId || location.state?.sessionId)) {
+            console.warn('No results data found, creating fallback result');
+            resultsData = {
+              score: 0,
+              level: 'Assessment Completed',
+              performance: {
+                correctAnswers: 0,
+                totalQuestions: 0,
+                timeSpent: 0
+              },
+              analysis: null,
+              recommendations: 'Assessment completed. Please check your dashboard for updated progress.'
+            };
+          } else {
+            throw new Error('No assessment results found');
+          }
         }
 
         setResult(resultsData);
 
         // Update topic assessment data in context
         if (resultsData && topic) {
-          updateTopicAssessment(topic, {
-            level: resultsData.level,
-            score: resultsData.score,
-            sessionId: location.state?.sessionId || resultId
-          });
+          try {
+            updateTopicAssessment(topic, {
+              level: resultsData.level,
+              score: resultsData.score,
+              sessionId: location.state?.sessionId || sessionId || resultId
+            });
+
+            // Refresh active sessions to ensure completed session is removed
+            await fetchActiveSessions();
+          } catch (contextError) {
+            console.warn('Failed to update topic assessment in context:', contextError);
+            // Don't fail the whole component if context update fails
+          }
         }
 
       } catch (error) {
         console.error('Error loading assessment results:', error);
-        setError(error.message || 'Failed to load assessment results');
-        toast.error('Failed to load assessment results');
+        const errorMessage = error.message || 'Failed to load assessment results';
+        setError(errorMessage);
+
+        // Don't show toast for context errors, only for actual loading errors
+        if (!errorMessage.includes('selectedTopics')) {
+          toast.error('Failed to load assessment results');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     loadResults();
-  }, [topic, resultId, location.state]);
+  }, [topic, sessionId, resultId, location.state]);
 
   const getLevelColor = (level) => {
     switch (level?.toLowerCase()) {
@@ -179,12 +217,18 @@ const AssessmentResults = () => {
         ? JSON.parse(recommendations)
         : recommendations;
     } catch (e) {
-      parsedRecommendations = { nextSteps: [recommendations.toString()] };
+      console.warn('Failed to parse recommendations:', e);
+      parsedRecommendations = { nextSteps: [typeof recommendations === 'string' ? recommendations : 'No specific recommendations available'] };
+    }
+
+    // Ensure parsedRecommendations is an object
+    if (typeof parsedRecommendations !== 'object' || parsedRecommendations === null) {
+      parsedRecommendations = { nextSteps: ['Continue practicing to improve your skills'] };
     }
 
     return (
       <div className="space-y-4">
-        {parsedRecommendations.studyPlan && (
+        {parsedRecommendations.studyPlan && typeof parsedRecommendations.studyPlan === 'string' && (
           <div>
             <h4 className="font-semibold text-[#37352F] mb-2 flex items-center">
               <BookOpenIcon className="h-4 w-4 mr-2" />
@@ -196,7 +240,7 @@ const AssessmentResults = () => {
           </div>
         )}
 
-        {parsedRecommendations.practiceAreas && parsedRecommendations.practiceAreas.length > 0 && (
+        {parsedRecommendations.practiceAreas && Array.isArray(parsedRecommendations.practiceAreas) && parsedRecommendations.practiceAreas.length > 0 && (
           <div>
             <h4 className="font-semibold text-[#37352F] mb-2 flex items-center">
               <TargetIcon className="h-4 w-4 mr-2" />
@@ -205,14 +249,14 @@ const AssessmentResults = () => {
             <div className="flex flex-wrap gap-2">
               {parsedRecommendations.practiceAreas.map((area, index) => (
                 <span key={index} className="px-3 py-1 bg-[#2383E2]/10 text-[#2383E2] rounded-full text-sm">
-                  {area}
+                  {typeof area === 'string' ? area : 'Focus Area'}
                 </span>
               ))}
             </div>
           </div>
         )}
 
-        {parsedRecommendations.nextSteps && parsedRecommendations.nextSteps.length > 0 && (
+        {parsedRecommendations.nextSteps && Array.isArray(parsedRecommendations.nextSteps) && parsedRecommendations.nextSteps.length > 0 && (
           <div>
             <h4 className="font-semibold text-[#37352F] mb-2 flex items-center">
               <LightbulbIcon className="h-4 w-4 mr-2" />
@@ -220,9 +264,44 @@ const AssessmentResults = () => {
             </h4>
             <ul className="list-disc list-inside space-y-1 text-[#6B6B6B]">
               {parsedRecommendations.nextSteps.map((step, index) => (
-                <li key={index}>{step}</li>
+                <li key={index}>{typeof step === 'string' ? step : 'Continue learning'}</li>
               ))}
             </ul>
+          </div>
+        )}
+
+        {/* Handle object-style recommendations (like week1, week2, week3) */}
+        {Object.keys(parsedRecommendations).some(key => key.startsWith('week')) && (
+          <div>
+            <h4 className="font-semibold text-[#37352F] mb-2 flex items-center">
+              <BookOpenIcon className="h-4 w-4 mr-2" />
+              Learning Plan
+            </h4>
+            <div className="space-y-3">
+              {Object.entries(parsedRecommendations)
+                .filter(([key]) => key.startsWith('week'))
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([weekKey, weekData]) => (
+                  <div key={weekKey} className="p-3 bg-[#F7F6F3] rounded-lg">
+                    <h5 className="font-medium text-[#37352F] mb-2 capitalize">
+                      {weekKey.replace(/([a-z])(\d)/, '$1 $2')}
+                    </h5>
+                    {typeof weekData === 'string' ? (
+                      <p className="text-sm text-[#6B6B6B]">{weekData}</p>
+                    ) : typeof weekData === 'object' && weekData !== null ? (
+                      <div className="text-sm text-[#6B6B6B]">
+                        {Object.entries(weekData).map(([key, value]) => (
+                          <div key={key} className="mb-1">
+                            <strong className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</strong> {typeof value === 'string' ? value : JSON.stringify(value)}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-[#6B6B6B]">Week content available</p>
+                    )}
+                  </div>
+                ))}
+            </div>
           </div>
         )}
       </div>

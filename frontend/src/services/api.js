@@ -77,7 +77,16 @@ export const handleApiResponse = (response) => {
 // Helper function to handle API errors
 export const handleApiError = (error) => {
   const message = error.response?.data?.message || error.message || 'An error occurred';
-  console.error('API Error:', error);
+  console.error('API Error Details:');
+  console.error('  Status:', error.response?.status);
+  console.error('  Message:', message);
+  console.error('  Full error:', error);
+
+  // Don't log sensitive data, but log structure for debugging
+  if (error.response?.data) {
+    console.error('  Response data keys:', Object.keys(error.response.data));
+  }
+
   throw new Error(message);
 };
 
@@ -233,7 +242,16 @@ export const assessmentAPI = {
       console.error('❌ Assessment API Error:');
       console.error('  Topic sent:', topic);
       console.error('  Config sent:', config);
+      console.error('  Full error:', error);
       console.error('  Error response:', error.response?.data);
+      console.error('  Error status:', error.response?.status);
+      console.error('  Error message:', error.message);
+
+      // Enhanced error handling for specific cases
+      if (error.response?.data?.message?.includes('active assessment session')) {
+        console.log('🔄 Active session detected - this should be handled by the component');
+      }
+
       throw handleApiError(error);
     }
   },
