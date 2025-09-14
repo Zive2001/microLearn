@@ -1,4 +1,5 @@
 // services/openaiService.js
+require('dotenv').config(); // Load environment variables
 const OpenAI = require('openai');
 
 // Initialize OpenAI client
@@ -310,6 +311,108 @@ Provide specific, actionable learning recommendations in JSON format:
         } catch (error) {
             console.error('Error generating recommendations:', error);
             throw new Error(`Failed to generate recommendations: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generate CLT-bLM analysis for educational content creation
+     * @param {string} transcript - Video transcript
+     * @param {string} topic - Content topic
+     * @param {number} duration - Video duration in seconds
+     * @returns {Object} CLT-bLM analysis with educational segments
+     */
+    async generateCLTAnalysis(transcript, topic, duration) {
+        try {
+            const prompt = `You are an expert educational content creator. Create comprehensive educational shorts for this topic using CLT-bLM principles.
+
+TOPIC: ${topic}
+VIDEO CONTEXT: Educational content about ${topic}
+TARGET DURATION: ${Math.floor(duration/60)} minutes worth of content
+
+REFERENCE CONTENT (if available):
+${transcript.substring(0, 2000)}${transcript.length > 2000 ? '...' : ''}
+
+TASK: Create 3-5 educational micro-learning segments (5-8 minutes each) that cover essential ${topic} concepts:
+
+1. **Cognitive Load Theory (CLT):**
+   - ONE main concept per segment
+   - Minimize extraneous information
+   - Build from simple to complex
+
+2. **Micro-Learning Principles:**
+   - Focused learning objectives
+   - Standalone segments
+   - Practical, actionable content
+
+3. **Educational Shorts Format:**
+   - Engaging titles
+   - Clear explanations
+   - Real-world examples
+
+Generate JSON response:
+{
+  "overallObjective": "What learners will master after all segments",
+  "totalSegments": 4,
+  "estimatedTotalDuration": 28,
+  "segments": [
+    {
+      "segmentNumber": 1,
+      "title": "Catchy educational title",
+      "duration": 420,
+      "learningObjective": "Specific skill/knowledge gained",
+      "keyPoints": ["3-4 main concepts to cover"],
+      "practicalExample": "Real-world use case",
+      "cognitiveLoad": 4,
+      "difficulty": "Beginner",
+      "educationalScript": "Complete script for this segment (200-300 words)",
+      "visualCues": ["What visuals/examples to show"]
+    }
+  ],
+  "learningPath": "How segments connect for complete understanding"
+}
+
+Create educational shorts that are better than the original - more focused, clearer, and optimized for learning!`;
+
+            const response = await openai.chat.completions.create({
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are an expert educational content designer specializing in Cognitive Load Theory and micro-learning. Always respond with valid JSON only.'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                max_tokens: 2000,
+                temperature: 0.7,
+            });
+
+            const content = response.choices[0].message.content.trim();
+
+            // Parse the JSON response
+            let analysisData;
+            try {
+                analysisData = JSON.parse(content);
+            } catch (parseError) {
+                console.error('❌ JSON parsing error:', parseError);
+                console.error('Raw content:', content);
+                throw new Error('Invalid JSON response from OpenAI CLT analysis');
+            }
+
+            // Validate response structure
+            if (!analysisData.segments || !Array.isArray(analysisData.segments)) {
+                throw new Error('Invalid CLT analysis structure: missing segments array');
+            }
+
+            console.log(`✅ OpenAI CLT-bLM Response received: ${analysisData.segments.length} segments generated`);
+
+            return analysisData;
+
+        } catch (error) {
+            console.error('❌ Error in CLT analysis:', error);
+            throw new Error(`Failed to generate CLT analysis: ${error.message}`);
         }
     }
 

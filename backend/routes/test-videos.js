@@ -100,7 +100,7 @@ router.get('/:videoId/status', mockUser, [
             });
         }
 
-        await videoController.getProcessingStatus(req, res);
+        await videoController.getVideoStatus(req, res);
     } catch (error) {
         console.error('❌ TEST ERROR:', error);
         res.status(500).json({
