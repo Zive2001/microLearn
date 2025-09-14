@@ -9,7 +9,8 @@
       "Bash(npm install:*)",
       "Bash(taskkill:*)",
       "Bash(netstat:*)",
-      "Bash(tskill:*)"
+      "Bash(tskill:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
