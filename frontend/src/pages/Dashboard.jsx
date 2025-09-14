@@ -238,12 +238,12 @@ const Dashboard = () => {
               </div>
 
               <div className="space-y-4">
-                {quickRecommendations.slice(0, 3).map((rec) => {
+                {quickRecommendations.slice(0, 3).map((rec, index) => {
                   const meta = getTopicMeta(rec.topic);
                   const video = rec.recommendation;
                   
                   return (
-                    <div key={rec.topic} className="flex items-center space-x-4 p-4 border border-[#E9E9E7] rounded-lg hover:bg-[#F7F6F3] transition-colors">
+                    <div key={`${rec.topic}-${index}`} className="flex items-center space-x-4 p-4 border border-[#E9E9E7] rounded-lg hover:bg-[#F7F6F3] transition-colors">
                       <div className="flex-shrink-0">
                         <div className="w-16 h-12 bg-black rounded flex items-center justify-center">
                           <PlayIcon className="h-6 w-6 text-white" />
@@ -349,7 +349,7 @@ const Dashboard = () => {
               
               <div className="space-y-3">
                 {dashboardData.recentHistory.slice(0, 3).map((activity, index) => (
-                  <div key={index} className="flex items-center space-x-3">
+                  <div key={`activity-${activity.topic || activity.id || index}`} className="flex items-center space-x-3">
                     <div className="flex-shrink-0">
                       <div className="w-2 h-2 bg-[#2383E2] rounded-full"></div>
                     </div>
