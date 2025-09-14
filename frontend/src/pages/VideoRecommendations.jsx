@@ -45,12 +45,12 @@ const VideoRecommendations = () => {
   }, [userTopicData]);
 
   useEffect(() => {
-    const loadRecommendations = async () => {
+    const loadRecommendations = async (retryCount = 0) => {
       if (!topic) return;
-      
+
       try {
         setIsLoading(true);
-        
+
         // Use backend service to get recommendations
         // Note: Backend limits maxVideos to 1-10, so we'll request 10
         const recommendations = await microlearningAPI.getRecommendations(topic, {
@@ -86,9 +86,46 @@ const VideoRecommendations = () => {
         }
         setVideos(recommendationVideos);
       } catch (error) {
-        console.error('Error loading recommendations:', error);
-        toast.error('Failed to load video recommendations');
-        
+        console.error('❌ Error loading recommendations:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          url: error.config?.url
+        });
+
+        // Handle specific error types
+        if (error.response?.status === 400 && error.response?.data?.action === 'complete_assessment') {
+          toast.error('Please complete the assessment first to get personalized recommendations');
+          // Redirect to assessment after a delay
+          setTimeout(() => {
+            window.location.href = `/app/assessment/${topic}`;
+          }, 3000);
+          return;
+        }
+
+        if (error.response?.status === 400 && error.response?.data?.action === 'select_topic') {
+          toast.error('Please select this topic first in your learning path');
+          setTimeout(() => {
+            window.location.href = '/app/topics';
+          }, 3000);
+          return;
+        }
+
+        // For 500 errors, attempt retry once
+        if (error.response?.status === 500 && retryCount === 0) {
+          console.log('🔄 Retrying recommendation request...');
+          setTimeout(() => loadRecommendations(1), 2000); // Retry after 2 seconds
+          return;
+        }
+
+        // For 500 errors, show more specific message after retry
+        if (error.response?.status === 500) {
+          toast.error('YouTube service temporarily unavailable. Showing sample videos.');
+        } else {
+          toast.error('Failed to load video recommendations');
+        }
+
         // Fallback to mock data
         setVideos([
           {
@@ -176,7 +213,10 @@ const VideoRecommendations = () => {
     if (video.url && video.url !== '#') {
       window.open(video.url, '_blank', 'noopener,noreferrer');
     } else {
-      toast.info('Video will open when available');
+      toast('Video will open when available', {
+        icon: 'ℹ️',
+        duration: 2000
+      });
     }
   };
 

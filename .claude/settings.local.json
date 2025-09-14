@@ -15,7 +15,8 @@
       "Bash(fi)",
       "Bash(taskkill:*)",
       "Bash(git checkout:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(cmd //c:*)"
     ],
     "deny": [],
     "ask": []
