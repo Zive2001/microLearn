@@ -1,8 +1,6 @@
 // src/context/AppContext.jsx
 import { createContext, useContext, useReducer, useEffect } from 'react';
-import { topicsService } from '../services/topics';
-import { assessmentService } from '../services/assessment';
-import { microlearningService } from '../services/microlearning';
+import { topicsAPI, assessmentAPI, microlearningAPI } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
 // App Context
@@ -183,9 +181,12 @@ export function AppProvider({ children }) {
   const fetchAllTopics = async () => {
     try {
       dispatch({ type: APP_ACTIONS.SET_LOADING, payload: true });
-      const topics = await topicsService.getAllTopics();
-      dispatch({ type: APP_ACTIONS.SET_TOPICS, payload: topics });
+      const response = await topicsAPI.getTopics();
+      // Wrap the processed response to match TopicSelection expectations
+      const wrappedResponse = { data: response };
+      dispatch({ type: APP_ACTIONS.SET_TOPICS, payload: wrappedResponse });
     } catch (error) {
+      console.error('AppContext: Error fetching topics:', error);
       handleError(error);
     } finally {
       dispatch({ type: APP_ACTIONS.SET_LOADING, payload: false });
@@ -195,7 +196,7 @@ export function AppProvider({ children }) {
   const fetchSelectedTopics = async () => {
     try {
       if (!isAuthenticated) return;
-      const topics = await topicsService.getMyTopics();
+      const topics = await topicsAPI.getSelectedTopics();
       dispatch({ type: APP_ACTIONS.SET_SELECTED_TOPICS, payload: topics });
     } catch (error) {
       handleError(error);
@@ -205,7 +206,7 @@ export function AppProvider({ children }) {
   const selectTopics = async (topicIds) => {
     try {
       dispatch({ type: APP_ACTIONS.SET_LOADING, payload: true });
-      const result = await topicsService.selectTopics(topicIds);
+      const result = await topicsAPI.selectTopics(topicIds);
       await fetchSelectedTopics(); // Refresh selected topics
       return result;
     } catch (error) {
@@ -220,7 +221,7 @@ export function AppProvider({ children }) {
   const fetchAssessmentProgress = async () => {
     try {
       if (!isAuthenticated) return;
-      const progress = await assessmentService.getProgressSummary();
+      const progress = await assessmentAPI.getProgressSummary();
       dispatch({ type: APP_ACTIONS.SET_ASSESSMENT_PROGRESS, payload: progress });
     } catch (error) {
       handleError(error);
@@ -230,7 +231,7 @@ export function AppProvider({ children }) {
   const fetchAssessmentHistory = async (limit = 10) => {
     try {
       if (!isAuthenticated) return;
-      const history = await assessmentService.getHistory(limit);
+      const history = await assessmentAPI.getAssessmentHistory(limit);
       dispatch({ type: APP_ACTIONS.SET_ASSESSMENT_HISTORY, payload: history });
     } catch (error) {
       handleError(error);
@@ -240,7 +241,7 @@ export function AppProvider({ children }) {
   const fetchActiveSessions = async () => {
     try {
       if (!isAuthenticated) return;
-      const sessions = await assessmentService.getActiveSessions();
+      const sessions = await assessmentAPI.getActiveSessions();
       dispatch({ type: APP_ACTIONS.SET_ACTIVE_SESSIONS, payload: sessions });
     } catch (error) {
       handleError(error);
@@ -251,7 +252,7 @@ export function AppProvider({ children }) {
   const fetchRecommendations = async (topic, options = {}) => {
     try {
       if (!isAuthenticated) return;
-      const recommendations = await microlearningService.getRecommendations(topic, options);
+      const recommendations = await microlearningAPI.getRecommendations(topic, options);
       dispatch({
         type: APP_ACTIONS.SET_RECOMMENDATIONS,
         payload: { topic, data: recommendations }
@@ -266,7 +267,7 @@ export function AppProvider({ children }) {
   const fetchLearningPath = async (topic, maxVideos = 5) => {
     try {
       if (!isAuthenticated) return;
-      const learningPath = await microlearningService.getLearningPath(topic, maxVideos);
+      const learningPath = await microlearningAPI.generateLearningPath(topic, maxVideos);
       dispatch({
         type: APP_ACTIONS.SET_LEARNING_PATHS,
         payload: { topic, data: learningPath }
@@ -281,7 +282,7 @@ export function AppProvider({ children }) {
   const fetchQuickRecommendations = async () => {
     try {
       if (!isAuthenticated) return;
-      const recommendations = await microlearningService.getQuickRecommendations();
+      const recommendations = await microlearningAPI.getQuickRecommendations();
       return recommendations;
     } catch (error) {
       handleError(error);
@@ -296,10 +297,10 @@ export function AppProvider({ children }) {
       
       // Fetch multiple data sources for dashboard
       const [progress, history, stats, quickRecs] = await Promise.allSettled([
-        assessmentService.getProgressSummary(),
-        assessmentService.getHistory(5),
-        microlearningService.getStats(),
-        microlearningService.getQuickRecommendations()
+        assessmentAPI.getProgressSummary(),
+        assessmentAPI.getAssessmentHistory(5),
+        microlearningAPI.getStats(),
+        microlearningAPI.getQuickRecommendations()
       ]);
 
       const dashboardData = {

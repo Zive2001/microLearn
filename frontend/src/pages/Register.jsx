@@ -56,7 +56,7 @@ const Register = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate('/app/topics', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
