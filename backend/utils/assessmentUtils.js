@@ -57,28 +57,65 @@ class AssessmentUtils {
             // Check for active sessions
             const activeSession = await AssessmentSession.findActiveSession(userId, topic);
             if (activeSession) {
+                // Check if session is stale (>2 hours old)
+                const sessionAge = Date.now() - activeSession.startedAt.getTime();
+
+                if (sessionAge > 2 * 60 * 60 * 1000) { // 2 hours
+                    // Auto-abandon stale session
+                    await AssessmentSession.findByIdAndUpdate(activeSession._id, {
+                        status: 'abandoned',
+                        completedAt: new Date()
+                    });
+
+                    return {
+                        canStart: true,
+                        wasStaleSessionAbandoned: true,
+                        message: 'Previous incomplete session was automatically abandoned due to inactivity'
+                    };
+                }
+
                 return {
                     canStart: false,
-                    reason: 'User already has an active assessment session for this topic',
-                    existingSessionId: activeSession.sessionId
+                    reason: 'User has an incomplete assessment session for this topic',
+                    existingSessionId: activeSession.sessionId,
+                    canResume: true,
+                    sessionProgress: {
+                        currentQuestion: activeSession.currentState.questionIndex,
+                        totalQuestions: activeSession.config.maxQuestions,
+                        accuracy: Math.round((activeSession.currentState.correctAnswers / Math.max(activeSession.currentState.totalQuestions, 1)) * 100)
+                    }
                 };
             }
 
-            // Check recent assessments (cooldown period)
+            // Check recent assessments (cooldown period) - reduced cooldown and allow retakes
             const recentAssessment = await AssessmentResult.findOne({
                 userId,
                 topic,
-                createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } // 24 hours
+                createdAt: { $gte: new Date(Date.now() - 2 * 60 * 60 * 1000) } // 2 hours instead of 24
             });
 
             if (recentAssessment) {
                 const hoursRemaining = Math.ceil(
-                    (recentAssessment.createdAt.getTime() + 24 * 60 * 60 * 1000 - Date.now()) / (60 * 60 * 1000)
+                    (recentAssessment.createdAt.getTime() + 2 * 60 * 60 * 1000 - Date.now()) / (60 * 60 * 1000)
                 );
+
+                // Allow retake if user wants to improve their score (score < 80)
+                if (recentAssessment.score < 80) {
+                    return {
+                        canStart: true,
+                        isRetake: true,
+                        previousScore: recentAssessment.score,
+                        previousLevel: recentAssessment.level,
+                        message: `Retake available - Previous score: ${recentAssessment.score}% (${recentAssessment.level})`
+                    };
+                }
+
                 return {
                     canStart: false,
                     reason: `Assessment cooldown active. Try again in ${hoursRemaining} hours`,
-                    cooldownHours: hoursRemaining
+                    cooldownHours: hoursRemaining,
+                    previousScore: recentAssessment.score,
+                    previousLevel: recentAssessment.level
                 };
             }
 
@@ -114,7 +151,10 @@ class AssessmentUtils {
             // Compile progress for each selected topic
             const topicProgress = user.learningProgress.selectedTopics.map(selectedTopic => {
                 const topic = selectedTopic.topic;
-                const knowledgeLevel = user.knowledgeLevels[topic];
+
+                // Get knowledge level for this topic
+                const knowledgeLevel = user.knowledgeLevels && user.knowledgeLevels[topic] ? user.knowledgeLevels[topic] : null;
+
                 const latestAssessment = assessmentResults.find(ar => ar.topic === topic);
                 const activeSession = activeSessions.find(as => as.topic === topic);
 
@@ -296,6 +336,49 @@ class AssessmentUtils {
         } catch (error) {
             console.error('Error cleaning up abandoned sessions:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Get assessment eligibility with detailed session info
+     * @param {string} userId - User ID
+     * @param {string} topic - Topic to assess
+     */
+    async getAssessmentEligibilityDetailed(userId, topic) {
+        try {
+            const baseEligibility = await this.canStartAssessment(userId, topic);
+
+            if (baseEligibility.canStart) {
+                return baseEligibility;
+            }
+
+            // If there's an existing session, provide detailed info
+            if (baseEligibility.existingSessionId && baseEligibility.canResume) {
+                const session = await AssessmentSession.findOne({
+                    sessionId: baseEligibility.existingSessionId
+                });
+
+                if (session) {
+                    const timeElapsed = Math.round((Date.now() - session.startedAt.getTime()) / 1000 / 60); // minutes
+                    const estimatedTimeRemaining = Math.max(0, (session.config.maxQuestions * 1.5) - timeElapsed); // 1.5 min per question
+
+                    return {
+                        ...baseEligibility,
+                        sessionDetails: {
+                            startedAt: session.startedAt,
+                            timeElapsed: `${timeElapsed} minutes`,
+                            estimatedTimeRemaining: `${estimatedTimeRemaining} minutes`,
+                            currentDifficulty: session.currentState.currentDifficulty,
+                            questionsAnswered: session.questions.filter(q => q.answeredAt).length
+                        }
+                    };
+                }
+            }
+
+            return baseEligibility;
+        } catch (error) {
+            console.error('Error getting detailed assessment eligibility:', error);
+            return { canStart: false, reason: 'Error checking eligibility' };
         }
     }
 

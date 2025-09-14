@@ -217,7 +217,7 @@ const Register = () => {
             
             {/* Step Illustration */}
             <div className="flex justify-center mb-8">
-              <div className="w-32 h-32 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center">
+              <div className="w-32 h-32 bg-gray-50 rounded-lg border-none border-gray-200 flex items-center justify-center">
                 <img 
                   src={`/notion-register-step-${currentStep}.png`}
                   alt={`Step ${currentStep} illustration`}
