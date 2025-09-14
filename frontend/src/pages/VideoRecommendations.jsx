@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
 import { getTopicMeta, formatNumber, formatDuration } from '../utils/helpers';
@@ -21,10 +21,12 @@ import toast from 'react-hot-toast';
 // import TestQuizAPI from '../components/TestQuizAPI'; // Removed for production
 import TutorialQuizButton from '../components/TutorialQuizButton';
 import MicrolearningPreview from '../components/MicrolearningPreview';
+import QuizProgressIndicator from '../components/QuizProgressIndicator';
 
 const VideoRecommendations = () => {
   const { topic } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedTopics, fetchRecommendations } = useApp();
   
@@ -237,21 +239,13 @@ const VideoRecommendations = () => {
     console.log('🎯 Quiz action:', { video: video.title, sessionId, action });
 
     if (action === 'new') {
-      toast.success(`Started new quiz for "${video.title}"!`);
-      // TODO: Navigate to quiz page when created
-      // navigate(`/app/quiz/session/${sessionId}`);
-      toast('Quiz page coming soon! Session ID: ' + sessionId, {
-        icon: '🚧',
-        duration: 4000
-      });
+      toast.success(`Starting quiz for "${video.title}"! 🎯`);
+      // Navigate to quiz page - start new quiz from video
+      navigate(`/app/quiz/start/${video.id}`);
     } else if (action === 'resume') {
-      toast.success(`Resuming quiz for "${video.title}"!`);
-      // TODO: Navigate to quiz page when created
-      // navigate(`/app/quiz/session/${sessionId}`);
-      toast('Quiz resume coming soon! Session ID: ' + sessionId, {
-        icon: '🚧',
-        duration: 4000
-      });
+      toast.success(`Resuming quiz for "${video.title}"! 🎯`);
+      // Navigate to existing quiz session
+      navigate(`/app/quiz/session/${sessionId}`);
     }
   };
 
@@ -473,6 +467,12 @@ const VideoRecommendations = () => {
                     video={video}
                     onContentReady={handleMicrolearningReady}
                     showFullPreview={false}
+                    className="mb-3"
+                  />
+
+                  {/* Quiz Progress Indicator */}
+                  <QuizProgressIndicator
+                    video={video}
                     className="mb-3"
                   />
 
