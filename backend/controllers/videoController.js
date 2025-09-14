@@ -93,13 +93,19 @@ class VideoController {
             console.log(`📝 Step 1: Extracting transcript for ${video.youtubeVideoId}`);
             const transcriptData = await transcriptService.extractTranscript(video.youtubeVideoId);
 
+            // REJECT MOCK DATA - Only accept real transcripts
+            if (transcriptData.isMock) {
+                throw new Error(`No real transcript available for video ${video.youtubeVideoId}. Transcript extraction failed - video may not have captions or be accessible.`);
+            }
+
+            console.log(`✅ REAL transcript extracted: ${transcriptData.wordCount} words, ${transcriptData.estimatedDuration}s duration`);
+            console.log(`📊 Transcript method: ${transcriptData.extractionMethod || 'youtube-transcript'}`);
+
             // Update video with transcript and duration
             video.transcript = transcriptData.fullText;
             video.originalDuration = transcriptData.estimatedDuration;
             video.formattedDuration = transcriptService.formatDuration(transcriptData.estimatedDuration);
             await video.save();
-
-            console.log(`✅ Transcript extracted: ${transcriptData.wordCount} words, ${transcriptData.estimatedDuration}s duration`);
 
             // Step 2: Generate CLT-bLM analysis using OpenAI
             console.log(`🧠 Step 2: Generating CLT-bLM analysis...`);

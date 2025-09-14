@@ -13,8 +13,18 @@ router.post('/process-youtube', protect, [
     body('url')
         .notEmpty()
         .withMessage('YouTube URL is required')
-        .matches(/^https:\/\/(www\.)?youtube\.com\/watch\?v=.+/)
-        .withMessage('Must be a valid YouTube URL'),
+        .custom((value) => {
+            const youtubeRegexes = [
+                /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]+/,
+                /^https?:\/\/youtu\.be\/[\w-]+/,
+                /^https?:\/\/(www\.)?youtube\.com\/embed\/[\w-]+/,
+                /^https?:\/\/m\.youtube\.com\/watch\?v=[\w-]+/
+            ];
+            if (youtubeRegexes.some(regex => regex.test(value))) {
+                return true;
+            }
+            throw new Error('Must be a valid YouTube URL');
+        }),
     body('title')
         .optional()
         .isLength({ min: 1, max: 200 })

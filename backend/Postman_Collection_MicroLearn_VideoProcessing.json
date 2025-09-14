@@ -1,0 +1,215 @@
+{
+  "info": {
+    "name": "MicroLearn Video Processing API",
+    "description": "Complete collection for testing YouTube video processing and micro-video generation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "videoId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "health"]
+        },
+        "description": "Check if all services are working (transcript, OpenAI, database)"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Process YouTube URL (Full URL)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const responseJson = pm.response.json();",
+              "    if (responseJson.success && responseJson.data.videoId) {",
+              "        pm.collectionVariables.set('videoId', responseJson.data.videoId);",
+              "        console.log('Video ID saved:', responseJson.data.videoId);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://youtu.be/W6NZfCO5SIk\",\n  \"title\": \"JavaScript Tutorial for Beginners - Mosh\",\n  \"topic\": \"javascript\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/process",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "process"]
+        },
+        "description": "Process a YouTube video using full URL format"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Process YouTube Video ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    const responseJson = pm.response.json();",
+              "    if (responseJson.success && responseJson.data.videoId) {",
+              "        pm.collectionVariables.set('videoId', responseJson.data.videoId);",
+              "        console.log('Video ID saved:', responseJson.data.videoId);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"videoId\": \"W6NZfCO5SIk\",\n  \"topic\": \"javascript\",\n  \"title\": \"JavaScript Tutorial - Video ID Test\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/process-videoid",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "process-videoid"]
+        },
+        "description": "Process a YouTube video using just the video ID"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Check Processing Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/{{videoId}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "{{videoId}}", "status"]
+        },
+        "description": "Check the processing status of a video (pending → processing → completed/failed)"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get Micro Videos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/{{videoId}}/micro-videos",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "{{videoId}}", "micro-videos"]
+        },
+        "description": "Get all generated micro-video segments with educational content"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get All Processed Videos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/all",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "all"]
+        },
+        "description": "Get all videos processed by the test user"
+      },
+      "response": []
+    },
+    {
+      "name": "7. Clean Up Test Data",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/cleanup",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "cleanup"]
+        },
+        "description": "Delete all test videos and micro-videos from database"
+      },
+      "response": []
+    },
+    {
+      "name": "Alternative URLs - youtu.be format",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://youtu.be/hdI2bqOjy3c\",\n  \"title\": \"JavaScript Crash Course - Traversy Media\",\n  \"topic\": \"javascript\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/process",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "process"]
+        },
+        "description": "Test youtu.be URL format"
+      },
+      "response": []
+    },
+    {
+      "name": "Alternative URLs - with parameters",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"url\": \"https://youtu.be/Tn6-PIqc4UM?si=example123\",\n  \"title\": \"React in 100 Seconds\",\n  \"topic\": \"react\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/test-videos/process",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test-videos", "process"]
+        },
+        "description": "Test URL with additional parameters"
+      },
+      "response": []
+    }
+  ]
+}
