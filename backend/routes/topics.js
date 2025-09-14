@@ -166,8 +166,8 @@ router.post('/select', protect, [
         .isArray({ min: 1 })
         .withMessage('At least one topic must be selected'),
     body('topics.*')
-        .isMongoId()
-        .withMessage('Invalid topic ID')
+        .isString()
+        .withMessage('Topic slug must be a string')
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -179,15 +179,15 @@ router.post('/select', protect, [
             });
         }
         
-        const { topics: topicIds } = req.body;
+        const { topics: topicSlugs } = req.body;
         
         // Verify all topics exist and are active
         const topics = await Topic.find({
-            _id: { $in: topicIds },
+            slug: { $in: topicSlugs },
             isActive: true
         });
         
-        if (topics.length !== topicIds.length) {
+        if (topics.length !== topicSlugs.length) {
             return res.status(400).json({
                 success: false,
                 message: 'Some topics are invalid or inactive'
@@ -215,7 +215,7 @@ router.post('/select', protect, [
         
         // Update topic popularity
         await Topic.updateMany(
-            { _id: { $in: topicIds } },
+            { slug: { $in: topicSlugs } },
             { $inc: { totalLearners: 1, popularity: 1 } }
         );
         
