@@ -59,6 +59,8 @@ const AssessmentQuiz = () => {
   const [performance, setPerformance] = useState(null);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [error, setError] = useState(null);
+  const [totalAssessmentTime, setTotalAssessmentTime] = useState(0);
+  const assessmentStartTimeRef = useRef(null);
 
   const topicMeta = getTopicMeta(topic);
 
@@ -106,6 +108,12 @@ const AssessmentQuiz = () => {
               setCurrentQuestion(startResponse.currentQuestion);
               setAssessmentState(ASSESSMENT_STATES.QUESTION_READY);
               questionStartTimeRef.current = Date.now();
+
+              // Track total assessment start time
+              if (!assessmentStartTimeRef.current) {
+                assessmentStartTimeRef.current = Date.now();
+                setTotalAssessmentTime(0);
+              }
             }
           } catch (error) {
             // If there's an active session error, try to handle it
@@ -151,6 +159,12 @@ const AssessmentQuiz = () => {
                       setCurrentQuestion(retryResponse.currentQuestion);
                       setAssessmentState(ASSESSMENT_STATES.QUESTION_READY);
                       questionStartTimeRef.current = Date.now();
+
+                      // Track total assessment start time
+                      if (!assessmentStartTimeRef.current) {
+                        assessmentStartTimeRef.current = Date.now();
+                        setTotalAssessmentTime(0);
+                      }
                     }
                   }
                 } else {
@@ -195,6 +209,12 @@ const AssessmentQuiz = () => {
         assessmentState === ASSESSMENT_STATES.SUBMITTING_ANSWER) {
       timer = setInterval(() => {
         setTimeElapsed(prev => prev + 1);
+
+        // Update total assessment time if we have a start time
+        if (assessmentStartTimeRef.current) {
+          const totalTime = Math.round((Date.now() - assessmentStartTimeRef.current) / 1000);
+          setTotalAssessmentTime(totalTime);
+        }
       }, 1000);
     }
     return () => {
@@ -220,6 +240,12 @@ const AssessmentQuiz = () => {
       }));
       setAssessmentState(ASSESSMENT_STATES.QUESTION_READY);
       questionStartTimeRef.current = Date.now();
+
+      // Update total assessment time
+      if (assessmentStartTimeRef.current) {
+        const totalTime = Math.round((Date.now() - assessmentStartTimeRef.current) / 1000);
+        setTotalAssessmentTime(totalTime);
+      }
 
     } catch (error) {
       console.error('Error loading next question:', error);
@@ -267,15 +293,30 @@ const AssessmentQuiz = () => {
       setAssessmentState(ASSESSMENT_STATES.SUBMITTING_ANSWER);
 
       // Calculate time spent on this question
-      const timeSpent = questionStartTimeRef.current
+      const questionTime = questionStartTimeRef.current
         ? Math.round((Date.now() - questionStartTimeRef.current) / 1000)
         : 0;
+
+      // Calculate total assessment time
+      const totalTime = assessmentStartTimeRef.current
+        ? Math.round((Date.now() - assessmentStartTimeRef.current) / 1000)
+        : 0;
+
+      setTotalAssessmentTime(totalTime);
+
+      debugLog('Time tracking:', {
+        questionTime,
+        totalTime,
+        questionStart: questionStartTimeRef.current,
+        assessmentStart: assessmentStartTimeRef.current
+      });
 
       const response = await assessmentAPI.submitAnswer(
         sessionId,
         currentQuestion.questionId,
         selectedAnswer,
-        timeSpent
+        questionTime,
+        totalTime // Pass total assessment time as additional parameter
       );
 
       // Update progress and performance
@@ -313,6 +354,12 @@ const AssessmentQuiz = () => {
         setSelectedAnswer(null);
         setAssessmentState(ASSESSMENT_STATES.QUESTION_READY);
         questionStartTimeRef.current = Date.now();
+
+        // Update total time
+        const newTotalTime = assessmentStartTimeRef.current
+          ? Math.round((Date.now() - assessmentStartTimeRef.current) / 1000)
+          : 0;
+        setTotalAssessmentTime(newTotalTime);
       } else {
         // Load next question from server
         await loadNextQuestion(sessionId);
@@ -516,7 +563,7 @@ const AssessmentQuiz = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2 text-[#6B6B6B]">
               <ClockIcon className="h-4 w-4" />
-              <span>{formatTime(timeElapsed)}</span>
+              <span>{formatTime(totalAssessmentTime)}</span>
             </div>
 
             <button

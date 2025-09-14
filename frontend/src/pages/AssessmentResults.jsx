@@ -83,10 +83,12 @@ const AssessmentResults = () => {
             resultsData = {
               score: 0,
               level: 'Assessment Completed',
+              confidence: null, // Don't show confidence for fallback results
               performance: {
                 correctAnswers: 0,
                 totalQuestions: 0,
-                timeSpent: 0
+                timeSpent: 0,
+                totalTimeSpent: 0
               },
               analysis: null,
               recommendations: 'Assessment completed. Please check your dashboard for updated progress.'
@@ -95,6 +97,17 @@ const AssessmentResults = () => {
             throw new Error('No assessment results found');
           }
         }
+
+        // Debug: Log the results data to understand structure
+        console.log('📊 Assessment Results Data:', {
+          resultsData,
+          score: resultsData.score,
+          level: resultsData.level,
+          confidence: resultsData.confidence,
+          performance: resultsData.performance,
+          timeSpent: resultsData.performance?.timeSpent,
+          totalTimeSpent: resultsData.performance?.totalTimeSpent
+        });
 
         setResult(resultsData);
 

@@ -27,6 +27,23 @@ const Dashboard = () => {
   } = useApp();
   const [greeting, setGreeting] = useState('');
 
+  // Debug logging function
+  const debugLog = (message, data) => {
+    if (import.meta.env.DEV && window.location.search.includes('debug=true')) {
+      console.log(message, data);
+    }
+  };
+
+  // Compute derived state (must be before any early returns)
+  const assessedTopics = selectedTopics?.filter(topic =>
+    topic.knowledgeLevel || topic.assessmentScore
+  ) || [];
+  const unassessedTopics = selectedTopics?.filter(topic =>
+    !topic.knowledgeLevel && !topic.assessmentScore
+  ) || [];
+  const stats = dashboardData?.stats || {};
+  const quickRecommendations = dashboardData?.quickRecommendations?.recommendations || [];
+
   useEffect(() => {
     // Set greeting based on time of day
     const hour = new Date().getHours();
@@ -39,22 +56,21 @@ const Dashboard = () => {
     fetchSelectedTopics();
   }, []);
 
+  // Debug logging to understand selectedTopics data structure
+  if (selectedTopics && selectedTopics.length > 0) {
+    debugLog('🔍 Dashboard Debug - selectedTopics:', selectedTopics);
+    debugLog('🔍 Dashboard Debug - first topic structure:', selectedTopics[0]);
+    debugLog('🔍 Dashboard Debug - assessed topics:', assessedTopics);
+    debugLog('🔍 Dashboard Debug - unassessed topics:', unassessedTopics);
+  } else {
+    debugLog('🔍 Dashboard Debug - No selectedTopics yet');
+  }
+
+  // Note: Quick recommendations are handled by AppContext initialization
+
   if (isLoading) {
     return <Loading fullScreen text="Loading your dashboard..." />;
   }
-
-  const assessedTopics = selectedTopics?.filter(topic => topic.knowledgeLevel) || [];
-  const unassessedTopics = selectedTopics?.filter(topic => !topic.knowledgeLevel) || [];
-
-  // Debug logging to understand selectedTopics data structure
-  if (selectedTopics && selectedTopics.length > 0) {
-    console.log('🔍 Dashboard Debug - selectedTopics:', selectedTopics);
-    console.log('🔍 Dashboard Debug - first topic structure:', selectedTopics[0]);
-    console.log('🔍 Dashboard Debug - assessed topics:', assessedTopics);
-    console.log('🔍 Dashboard Debug - unassessed topics:', unassessedTopics);
-  }
-  const stats = dashboardData?.stats || {};
-  const quickRecommendations = dashboardData?.quickRecommendations?.recommendations || [];
 
   return (
     <div className="space-y-8">
@@ -254,13 +270,38 @@ const Dashboard = () => {
                 {quickRecommendations.slice(0, 3).map((rec, index) => {
                   const meta = getTopicMeta(rec.topic);
                   const video = rec.recommendation;
-                  
+
                   return (
-                    <div key={`${rec.topic}-${index}`} className="flex items-center space-x-4 p-4 border border-[#E9E9E7] rounded-lg hover:bg-[#F7F6F3] transition-colors">
+                    <div
+                      key={`${rec.topic}-${video.videoId || index}`}
+                      className="flex items-center space-x-4 p-4 border border-[#E9E9E7] rounded-lg hover:bg-[#F7F6F3] transition-colors cursor-pointer"
+                      onClick={() => {
+                        if (video.url) {
+                          window.open(video.url, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
+                    >
                       <div className="flex-shrink-0">
-                        <div className="w-16 h-12 bg-black rounded flex items-center justify-center">
-                          <PlayIcon className="h-6 w-6 text-white" />
-                        </div>
+                        {video.thumbnail ? (
+                          <>
+                            <img
+                              src={video.thumbnail}
+                              alt={video.title}
+                              className="w-16 h-12 rounded object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div className="hidden w-16 h-12 bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded flex items-center justify-center">
+                              <PlayIcon className="h-6 w-6 text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-16 h-12 bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded flex items-center justify-center">
+                            <PlayIcon className="h-6 w-6 text-white" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
@@ -272,22 +313,36 @@ const Dashboard = () => {
                         </div>
                         <h3 className="font-medium text-[#37352F] truncate">{video.title}</h3>
                         <p className="text-sm text-[#6B6B6B]">
-                          {video.channelTitle} • {video.durationText}
+                          {video.channelTitle} • {video.durationText || video.duration}
                         </p>
                       </div>
                       <div className="flex-shrink-0">
-                        <a
-                          href={video.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-2 text-sm bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
-                        >
+                        <div className="inline-flex items-center px-3 py-2 text-sm bg-[#2383E2] text-white rounded-lg group-hover:bg-[#0F62FE] transition-colors">
                           Watch
-                        </a>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
+
+                {quickRecommendations.length === 0 && assessedTopics.length > 0 && (
+                  <div className="text-center py-6 text-[#6B6B6B]">
+                    <p className="mb-2">Loading personalized recommendations...</p>
+                    <p className="text-xs">Based on your assessment results</p>
+                  </div>
+                )}
+
+                {assessedTopics.length === 0 && (
+                  <div className="text-center py-6 text-[#6B6B6B]">
+                    <p className="mb-2">Complete assessments to see recommendations</p>
+                    <Link
+                      to="/app/assessment"
+                      className="text-[#2383E2] hover:text-[#0F62FE] text-sm font-medium"
+                    >
+                      Take an Assessment →
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -361,21 +416,25 @@ const Dashboard = () => {
               <h2 className="text-lg font-semibold text-[#37352F] mb-4">Recent Activity</h2>
               
               <div className="space-y-3">
-                {dashboardData.recentHistory.slice(0, 3).map((activity, index) => (
-                  <div key={`activity-${activity.topic || activity.id || index}`} className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-2 h-2 bg-[#2383E2] rounded-full"></div>
+                {dashboardData.recentHistory.slice(0, 3).map((activity, index) => {
+                  // Create unique key using multiple identifiers to avoid duplicates
+                  const uniqueKey = `activity-${activity.topic}-${activity.id || activity._id || activity.createdAt || Date.now()}-${index}`;
+                  return (
+                    <div key={uniqueKey} className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-2 h-2 bg-[#2383E2] rounded-full"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#37352F]">
+                          Completed {getTopicMeta(activity.topic).name} assessment
+                        </p>
+                        <p className="text-xs text-[#6B6B6B]">
+                          {formatTimeAgo(activity.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#37352F]">
-                        Completed {getTopicMeta(activity.topic).name} assessment
-                      </p>
-                      <p className="text-xs text-[#6B6B6B]">
-                        {formatTimeAgo(activity.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
