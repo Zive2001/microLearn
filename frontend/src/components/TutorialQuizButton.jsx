@@ -6,7 +6,7 @@ import {
   AlertCircle as AlertCircleIcon,
   Loader2 as LoaderIcon
 } from 'lucide-react';
-import { quizAPI, mockMicrolearningAPI } from '../services/api';
+import { quizAPI, mockMicrolearningAPI, quizProgressionAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const TutorialQuizButton = ({
@@ -19,10 +19,21 @@ const TutorialQuizButton = ({
   const [activeSession, setActiveSession] = useState(null);
   const [loading, setLoading] = useState(false);
   const [hasMicrolearning, setHasMicrolearning] = useState(false);
+  const [quizProgression, setQuizProgression] = useState(null);
+  const [availableQuiz, setAvailableQuiz] = useState(null);
 
   // Check if there's an active quiz session for this video
   useEffect(() => {
     checkQuizStatus();
+  }, [video?.id]);
+
+  // Refresh status when component becomes visible or microlearning status might have changed
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkQuizStatus();
+    }, 3000); // Check every 3 seconds for microlearning content
+
+    return () => clearInterval(interval);
   }, [video?.id]);
 
   const checkQuizStatus = async () => {
@@ -31,7 +42,7 @@ const TutorialQuizButton = ({
     try {
       setQuizStatus('checking');
 
-      // First check if microlearning content exists
+      // Check if microlearning content exists
       const microlearningContent = await mockMicrolearningAPI.getMicrolearningContent(video.id);
       setHasMicrolearning(!!microlearningContent);
 
@@ -40,32 +51,37 @@ const TutorialQuizButton = ({
         return;
       }
 
-      // Check for active sessions
-      const activeSession = await quizAPI.hasActiveSession(video.id);
+      // Initialize or get quiz progression
+      let progression = quizProgressionAPI.getQuizProgression(video.id);
+      if (!progression || progression.totalMicroVideos === 0) {
+        progression = quizProgressionAPI.initializeProgression(video.id, microlearningContent);
+      }
+      setQuizProgression(progression);
 
-      if (activeSession) {
-        setActiveSession(activeSession);
-        setQuizStatus('active');
+      // Get current available quiz based on progression
+      const currentQuiz = quizProgressionAPI.getCurrentAvailableQuiz(video.id);
+      setAvailableQuiz(currentQuiz);
+
+      if (!currentQuiz) {
+        // No more quizzes available - all completed
+        setQuizStatus('completed');
       } else {
-        // Check if user has completed quizzes for this video
-        const videoSessions = await quizAPI.getVideoQuizSessions(video.id);
-        const completedSessions = videoSessions.sessions?.filter(s => s.status === 'completed') || [];
+        // Check if there's an active session in localStorage
+        const activeQuizData = localStorage.getItem(`quiz_active_${video.id}`);
 
-        if (completedSessions.length > 0) {
-          setQuizStatus('completed');
+        if (activeQuizData) {
+          const sessionData = JSON.parse(activeQuizData);
+          setActiveSession(sessionData);
+          setQuizStatus('active');
         } else {
           setQuizStatus('available');
         }
       }
+
     } catch (error) {
       console.error('Error checking quiz status:', error);
-
-      // If video doesn't exist in backend or no micro-videos, mark as unavailable
-      if (error.message.includes('not found') || error.message.includes('micro-videos')) {
-        setQuizStatus('unavailable');
-      } else {
-        setQuizStatus('available');
-      }
+      // If there's any error, just mark as available if we have microlearning
+      setQuizStatus(hasMicrolearning ? 'available' : 'unavailable');
     }
   };
 
@@ -75,44 +91,35 @@ const TutorialQuizButton = ({
     setLoading(true);
 
     try {
-      // If there's an active session, resume it
-      if (activeSession) {
-        toast.success('Resuming your active quiz session!');
-        if (onQuizStart) {
-          onQuizStart(video, activeSession.sessionId, 'resume');
-        }
+      // Check if microlearning content exists first
+      if (!hasMicrolearning) {
+        toast.error('Please generate microlearning content first! 🚧');
+        setLoading(false);
         return;
       }
 
-      // Start new intermediate quiz
-      console.log('🎯 Starting tutorial quiz for video:', video.id);
+      // For our AI quiz flow, we don't need backend session creation
+      // Just trigger the callback to navigate to quiz page
+      console.log('🎯 Starting AI tutorial quiz for video:', video.id, 'Type:', availableQuiz?.sessionType);
 
-      const session = await quizAPI.startQuizSession(video.id, 'intermediate');
+      const quizTypeText = availableQuiz?.sessionType === 'final' ? 'final' : 'intermediate';
+      toast.success(`Starting ${quizTypeText} AI quiz! Good luck! 🤖`);
 
-      toast.success('Quiz started! Good luck! 🎯');
+      // Create a mock session ID for tracking
+      const mockSessionId = `ai_session_${video.id}_${Date.now()}`;
 
-      // Trigger callback to parent component
+      // Trigger callback to parent component to navigate
       if (onQuizStart) {
-        onQuizStart(video, session.sessionId, 'new');
+        onQuizStart(video, mockSessionId, 'new');
       }
 
-      // Update status
-      setActiveSession(session);
+      // Update local status
       setQuizStatus('active');
+      setActiveSession({ sessionId: mockSessionId, progressPercentage: 0 });
 
     } catch (error) {
-      console.error('Error starting quiz:', error);
-
-      if (error.message.includes('not ready for quizzing')) {
-        toast.error('This video needs to be processed for microlearning first. Coming soon! 🚧');
-        setQuizStatus('unavailable');
-      } else if (error.message.includes('active session')) {
-        toast.error('You already have an active quiz for this video!');
-        // Refresh status to get the active session
-        checkQuizStatus();
-      } else {
-        toast.error(`Failed to start quiz: ${error.message}`);
-      }
+      console.error('Error starting AI quiz:', error);
+      toast.error(`Failed to start quiz: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -141,10 +148,10 @@ const TutorialQuizButton = ({
       case 'completed':
         return {
           icon: <CheckCircleIcon className="h-4 w-4" />,
-          text: 'Quiz Completed',
+          text: quizProgression?.finalQuizCompleted ? 'All Quizzes Completed' : 'Quiz Completed',
           bgColor: 'bg-green-100 text-green-700 border-green-200',
           hoverColor: 'hover:bg-green-200',
-          disabled: false
+          disabled: quizProgression?.finalQuizCompleted
         };
 
       case 'unavailable':
@@ -158,11 +165,19 @@ const TutorialQuizButton = ({
 
       case 'available':
       default:
+        const quizText = availableQuiz?.sessionType === 'final'
+          ? '🎯 Take Final Quiz'
+          : availableQuiz?.description || 'Take Quiz';
+
         return {
           icon: <PlayIcon className="h-4 w-4" />,
-          text: 'Take Quiz',
-          bgColor: 'bg-[#2383E2] text-white',
-          hoverColor: 'hover:bg-[#0F62FE]',
+          text: quizText,
+          bgColor: availableQuiz?.sessionType === 'final'
+            ? 'bg-green-600 text-white'
+            : 'bg-[#2383E2] text-white',
+          hoverColor: availableQuiz?.sessionType === 'final'
+            ? 'hover:bg-green-700'
+            : 'hover:bg-[#0F62FE]',
           disabled: false
         };
     }
