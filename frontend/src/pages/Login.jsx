@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Eye as EyeIcon, EyeOff as EyeOffIcon, BookOpen, Sparkles, Zap, Users, Trophy } from 'lucide-react';
+import { Eye as EyeIcon, EyeOff as EyeOffIcon, BookOpen, Sparkles, Zap, Users, Trophy, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -11,12 +11,27 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { login } = useAuth();
+  const [formError, setFormError] = useState('');
+
+  const { login, error, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const from = location.state?.from?.pathname || '/app/topics';
+
+  // Clear form error when user starts typing
+  useEffect(() => {
+    if (formError) {
+      setFormError('');
+    }
+  }, [formData.email, formData.password]);
+
+  // Navigate when login successful
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -28,13 +43,36 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setFormError('');
+
+    // Basic validation
+    if (!formData.email.trim()) {
+      setFormError('Email is required');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.password.trim()) {
+      setFormError('Password is required');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!formData.email.includes('@')) {
+      setFormError('Please enter a valid email address');
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      await login(formData.email, formData.password);
-      // The toast message is handled in AuthContext
-      navigate(from, { replace: true });
+      await login(formData.email.trim(), formData.password);
+      // Navigation is handled in useEffect when isAuthenticated changes
     } catch (error) {
-      // Error handling is done in AuthContext
+      // Set local error message as fallback
+      const errorMessage = error.response?.data?.message ||
+                          error.message ||
+                          'Invalid email or password. Please try again.';
+      setFormError(errorMessage);
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
@@ -151,6 +189,16 @@ const Login = () => {
                 Welcome back! Please enter your details
               </p>
             </div>
+
+            {/* Error Messages */}
+            {(formError || error) && (
+              <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-md flex items-center">
+                <AlertCircle className="h-4 w-4 text-red-600 mr-2 flex-shrink-0" />
+                <span className="text-sm text-red-700">
+                  {formError || error}
+                </span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
