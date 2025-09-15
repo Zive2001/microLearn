@@ -30,6 +30,7 @@ import Profile from './pages/Profile';
 
 // Quiz Pages
 import TutorialQuiz from './pages/TutorialQuiz';
+import MicrolearningPage from './pages/MicrolearningPage';
 // import QuizResults from './pages/QuizResults';
 
 function App() {
@@ -65,7 +66,9 @@ function App() {
                 <Route path="learning-path/:topic" element={<LearningPath />} />
                 <Route path="profile" element={<Profile />} />
 
-                {/* Quiz Routes */}
+                {/* Microlearning & Quiz Routes */}
+                <Route path="microlearning/:videoId" element={<MicrolearningPage />} />
+                <Route path="microlearning/:videoId/:topic" element={<MicrolearningPage />} />
                 <Route path="quiz/start/:videoId" element={<TutorialQuiz />} />
                 <Route path="quiz/session/:sessionId" element={<TutorialQuiz />} />
                 {/* <Route path="quiz/results/:sessionId" element={<QuizResults />} /> */}

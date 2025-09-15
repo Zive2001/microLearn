@@ -19,9 +19,7 @@ import {
 import Loading from '../components/Loading';
 import toast from 'react-hot-toast';
 // import TestQuizAPI from '../components/TestQuizAPI'; // Removed for production
-import TutorialQuizButton from '../components/TutorialQuizButton';
-import MicrolearningPreview from '../components/MicrolearningPreview';
-import QuizProgressIndicator from '../components/QuizProgressIndicator';
+// Removed quiz-related imports as they're now handled in MicrolearningPage
 
 const VideoRecommendations = () => {
   const { topic } = useParams();
@@ -36,7 +34,7 @@ const VideoRecommendations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userLevel, setUserLevel] = useState(null);
   const [recommendationData, setRecommendationData] = useState(null);
-  const [microlearningReadyVideos, setMicrolearningReadyVideos] = useState(new Set());
+  // Removed microlearning state as it's now handled in dedicated page
 
   // Get topic metadata
   const topicMeta = topic ? getTopicMeta(topic) : null;
@@ -216,38 +214,19 @@ const VideoRecommendations = () => {
   };
 
   const handleVideoClick = (video) => {
-    if (video.url && video.url !== '#') {
-      window.open(video.url, '_blank', 'noopener,noreferrer');
-    } else {
-      toast('Video will open when available', {
-        icon: 'ℹ️',
-        duration: 2000
-      });
-    }
+    // Navigate to microlearning page instead of opening external video
+    console.log('🎬 Navigating to microlearning page for video:', video.id, video.title);
+    toast.success(`Loading microlearning content for "${video.title}"! 🎯`);
+    navigate(`/app/microlearning/${video.id}`, {
+      state: {
+        videoTitle: video.title,
+        videoData: video,
+        topic: topic
+      }
+    });
   };
 
-  const handleMicrolearningReady = (content) => {
-    console.log('🎬 Microlearning content ready:', content);
-
-    // Mark this video as having microlearning content ready
-    setMicrolearningReadyVideos(prev => new Set([...prev, content.videoId]));
-
-    toast.success('Microlearning content is ready! Quiz now available! 🎯');
-  };
-
-  const handleQuizStart = (video, sessionId, action) => {
-    console.log('🎯 Quiz action:', { video: video.title, sessionId, action });
-
-    if (action === 'new') {
-      toast.success(`Starting quiz for "${video.title}"! 🎯`);
-      // Navigate to quiz page - start new quiz from video
-      navigate(`/app/quiz/start/${video.id}`);
-    } else if (action === 'resume') {
-      toast.success(`Resuming quiz for "${video.title}"! 🎯`);
-      // Navigate to existing quiz session
-      navigate(`/app/quiz/session/${sessionId}`);
-    }
-  };
+  // Removed quiz-related handlers as they're now handled in MicrolearningPage
 
   if (isLoading) {
     return <Loading fullScreen text="Loading personalized recommendations..." />;
@@ -461,27 +440,18 @@ const VideoRecommendations = () => {
                   </div>
                 )}
 
-                {/* Microlearning Content */}
+                {/* Action Button */}
                 <div className="mt-3 pt-3 border-t border-[#E9E9E7]">
-                  <MicrolearningPreview
-                    video={video}
-                    onContentReady={handleMicrolearningReady}
-                    showFullPreview={false}
-                    className="mb-3"
-                  />
-
-                  {/* Quiz Progress Indicator */}
-                  <QuizProgressIndicator
-                    video={video}
-                    className="mb-3"
-                  />
-
-                  {/* Quiz Button */}
-                  <TutorialQuizButton
-                    video={video}
-                    onQuizStart={handleQuizStart}
-                    className="w-full justify-center"
-                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVideoClick(video);
+                    }}
+                    className="w-full px-4 py-2 bg-gradient-to-r from-[#2383E2] to-[#0F62FE] text-white rounded-lg hover:from-[#0F62FE] hover:to-[#2383E2] transition-all duration-200 font-medium text-sm flex items-center justify-center space-x-2"
+                  >
+                    <BookOpenIcon className="h-4 w-4" />
+                    <span>Start Microlearning</span>
+                  </button>
                 </div>
               </div>
             </div>

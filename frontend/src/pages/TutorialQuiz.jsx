@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   ArrowLeft as ArrowLeftIcon,
   Brain as BrainIcon,
@@ -16,6 +16,7 @@ import toast from 'react-hot-toast';
 const TutorialQuiz = () => {
   const { sessionId, videoId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Quiz state
   const [quizSession, setQuizSession] = useState(null);
@@ -60,8 +61,14 @@ const TutorialQuiz = () => {
       else if (videoId) {
         console.log('🎯 Starting new quiz for video:', videoId);
 
-        // Get microlearning content first
-        const microlearning = await mockMicrolearningAPI.getMicrolearningContent(videoId);
+        // Check if microlearning content is passed from MicrolearningPage
+        let microlearning = location.state?.microlearningContent;
+
+        if (!microlearning) {
+          // Fallback: Get microlearning content from storage
+          microlearning = await mockMicrolearningAPI.getMicrolearningContent(videoId);
+        }
+
         if (!microlearning) {
           toast.error('Please generate microlearning content first!');
           navigate(-1);
@@ -127,10 +134,24 @@ const TutorialQuiz = () => {
             }
           };
         } else {
-          // Use standard adaptive final quiz or regular quiz
+          // Check if we have specific microVideos for intermediate quiz
+          const targetMicroVideos = location.state?.microVideos || microlearning.microVideos;
+          const targetQuizType = location.state?.quizType || availableQuiz?.sessionType || 'intermediate';
+
+          // Create subset content for intermediate quizzes
+          const targetContent = targetQuizType === 'intermediate' && location.state?.microVideos
+            ? { ...microlearning, microVideos: targetMicroVideos }
+            : microlearning;
+
+          console.log('🎯 Generating quiz for:', {
+            quizType: targetQuizType,
+            microVideosCount: targetMicroVideos.length,
+            isSubset: targetMicroVideos.length < microlearning.microVideos.length
+          });
+
           quiz = await aiQuestionAPI.generateQuizFromMicrolearning(
-            microlearning,
-            availableQuiz?.sessionType || 'intermediate',
+            targetContent,
+            targetQuizType,
             weakKeyPoints
           );
         }
@@ -143,9 +164,10 @@ const TutorialQuiz = () => {
         });
 
         // Create mock quiz session (since backend might not have real data)
+        const sessionType = location.state?.quizType || availableQuiz?.sessionType || 'intermediate';
         const mockSession = {
           sessionId: `mock_session_${Date.now()}`,
-          sessionType: 'intermediate',
+          sessionType: sessionType,
           totalQuestions: quiz.questions.length,
           currentQuestionIndex: 0,
           status: 'active',
@@ -156,6 +178,8 @@ const TutorialQuiz = () => {
           progressPercentage: 0,
           currentAccuracy: 0
         };
+
+        setCurrentQuizType(sessionType);
         setQuizSession(mockSession);
 
         // Save active session to localStorage
@@ -353,13 +377,38 @@ const TutorialQuiz = () => {
         progressionUpdate: updatedProgression ? 'success' : 'failed'
       });
 
+      // Navigate back to microlearning page if we have a videoId
+      if (videoId) {
+        navigate(`/app/microlearning/${videoId}`, {
+          state: {
+            quizCompleted: true,
+            quizType: currentQuizType,
+            quizResults: completionData,
+            completedSegment: quizProgression?.currentQuizNumber || 1 // Pass which segment was completed
+          }
+        });
+      } else {
+        navigate(-1);
+      }
+
     } catch (error) {
       console.error('❌ Error recording quiz completion:', error);
       toast.error('Quiz completed but failed to save progress');
-    }
 
-    // Navigate back to video recommendations
-    navigate(-1);
+      // Still navigate back even if saving failed, but without quiz results
+      if (videoId) {
+        navigate(`/app/microlearning/${videoId}`, {
+          state: {
+            quizCompleted: true,
+            quizType: currentQuizType,
+            quizResults: null, // No results due to error
+            completedSegment: quizProgression?.currentQuizNumber || 1 // Pass which segment was completed
+          }
+        });
+      } else {
+        navigate(-1);
+      }
+    }
   };
 
   if (isLoading) {
