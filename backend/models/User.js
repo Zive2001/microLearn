@@ -86,77 +86,10 @@ const userSchema = new mongoose.Schema({
     },
 
     // Topic-Specific Knowledge Levels (will be populated after assessment)
+    // Using a flexible Schema.Types.Mixed structure to support any topic
     knowledgeLevels: {
-        javascript: {
-            level: {
-                type: String,
-                enum: ['Beginner', 'Intermediate', 'Professional'],
-                default: null
-            },
-            score: {
-                type: Number,
-                min: 0,
-                max: 100,
-                default: null
-            },
-            assessedAt: Date
-        },
-        react: {
-            level: {
-                type: String,
-                enum: ['Beginner', 'Intermediate', 'Professional'],
-                default: null
-            },
-            score: {
-                type: Number,
-                min: 0,
-                max: 100,
-                default: null
-            },
-            assessedAt: Date
-        },
-        typescript: {
-            level: {
-                type: String,
-                enum: ['Beginner', 'Intermediate', 'Professional'],
-                default: null
-            },
-            score: {
-                type: Number,
-                min: 0,
-                max: 100,
-                default: null
-            },
-            assessedAt: Date
-        },
-        nodejs: {
-            level: {
-                type: String,
-                enum: ['Beginner', 'Intermediate', 'Professional'],
-                default: null
-            },
-            score: {
-                type: Number,
-                min: 0,
-                max: 100,
-                default: null
-            },
-            assessedAt: Date
-        },
-        python: {
-            level: {
-                type: String,
-                enum: ['Beginner', 'Intermediate', 'Professional'],
-                default: null
-            },
-            score: {
-                type: Number,
-                min: 0,
-                max: 100,
-                default: null
-            },
-            assessedAt: Date
-        }
+        type: mongoose.Schema.Types.Mixed,
+        default: {}
     },
 
     // Learning Progress Tracking
@@ -233,19 +166,21 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 // Instance method to get assessment summary
 userSchema.methods.getAssessmentSummary = function() {
     const assessedTopics = [];
-    const knowledgeLevels = this.knowledgeLevels;
-    
-    for (const topic in knowledgeLevels) {
-        if (knowledgeLevels[topic].level) {
-            assessedTopics.push({
-                topic: topic,
-                level: knowledgeLevels[topic].level,
-                score: knowledgeLevels[topic].score,
-                assessedAt: knowledgeLevels[topic].assessedAt
-            });
+
+    // Handle object structure
+    if (this.knowledgeLevels && typeof this.knowledgeLevels === 'object') {
+        for (const topic in this.knowledgeLevels) {
+            if (this.knowledgeLevels[topic] && this.knowledgeLevels[topic].level) {
+                assessedTopics.push({
+                    topic: topic,
+                    level: this.knowledgeLevels[topic].level,
+                    score: this.knowledgeLevels[topic].score,
+                    assessedAt: this.knowledgeLevels[topic].assessedAt
+                });
+            }
         }
     }
-    
+
     return assessedTopics;
 };
 

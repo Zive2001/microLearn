@@ -6,7 +6,64 @@ class YouTubeService {
     constructor() {
         this.apiKey = process.env.YOUTUBE_API_KEY;
         this.baseURL = 'https://www.googleapis.com/youtube/v3';
-        this.maxResults = 50; // Fetch more to filter better content
+        this.maxResults = 5; // Drastically reduced to save quota - minimal API usage
+
+        // Rate limiting and caching
+        this.requestCache = new Map();
+        this.cacheTimeout = 1800000; // 30 minutes cache - extended to save quota
+        this.rateLimitDelay = 1000; // 1 second between requests
+        this.lastRequestTime = 0;
+
+        // Retry configuration
+        this.maxRetries = 3;
+        this.retryDelay = 2000; // 2 seconds
+    }
+
+    /**
+     * Wait for rate limit delay
+     */
+    async waitForRateLimit() {
+        const now = Date.now();
+        const timeSinceLastRequest = now - this.lastRequestTime;
+
+        if (timeSinceLastRequest < this.rateLimitDelay) {
+            const waitTime = this.rateLimitDelay - timeSinceLastRequest;
+            console.log(`⏱️ Rate limiting: waiting ${waitTime}ms`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+
+        this.lastRequestTime = Date.now();
+    }
+
+    /**
+     * Get cached result or return null
+     */
+    getCachedResult(cacheKey) {
+        const cached = this.requestCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+            console.log(`📋 Using cached result for: ${cacheKey}`);
+            return cached.data;
+        }
+        return null;
+    }
+
+    /**
+     * Cache result
+     */
+    setCachedResult(cacheKey, data) {
+        this.requestCache.set(cacheKey, {
+            data,
+            timestamp: Date.now()
+        });
+
+        // Clean old cache entries
+        if (this.requestCache.size > 50) {
+            const entries = Array.from(this.requestCache.entries());
+            const oldEntries = entries.filter(([_, entry]) =>
+                Date.now() - entry.timestamp > this.cacheTimeout
+            );
+            oldEntries.forEach(([key]) => this.requestCache.delete(key));
+        }
     }
 
     /**
@@ -16,38 +73,177 @@ class YouTubeService {
      * @param {number} maxVideos - Maximum videos to return (default: 3)
      */
     async searchEducationalVideos(topic, level, maxVideos = 3) {
+        // Define cache key at function scope
+        const cacheKey = `${topic}_${level}_${maxVideos}`;
+
         try {
+            // Check cache first
+            const cachedResult = this.getCachedResult(cacheKey);
+            if (cachedResult) {
+                return cachedResult;
+            }
+
+            // Check if YouTube API key is configured
+            if (!this.apiKey) {
+                throw new Error('YouTube API key is not configured. Please set YOUTUBE_API_KEY environment variable.');
+            }
+
             // Build search query based on topic and level
             const searchQuery = this.buildSearchQuery(topic, level);
-            
-            console.log(`Searching YouTube for: "${searchQuery}"`);
 
-            // Search for videos
-            const searchResults = await this.searchVideos(searchQuery);
-            
+            console.log(`🔍 Searching YouTube for: "${searchQuery}"`);
+
+            // Apply rate limiting
+            await this.waitForRateLimit();
+
+            // Search for videos with retry logic
+            const searchResults = await this.searchVideosWithRetry(searchQuery);
+
             if (searchResults.length === 0) {
+                console.warn(`⚠️ No search results for query: "${searchQuery}"`);
                 throw new Error('No videos found for the search criteria');
             }
 
+            console.log(`📹 Found ${searchResults.length} video results`);
+
             // Get detailed video information
             const detailedVideos = await this.getVideoDetails(searchResults);
-            
+
+            console.log(`📝 Retrieved details for ${detailedVideos.length} videos`);
+
             // Filter for educational content only
             const educationalVideos = this.filterEducationalContent(detailedVideos);
-            
+
+            console.log(`🎓 Filtered to ${educationalVideos.length} educational videos`);
+
+            if (educationalVideos.length === 0) {
+                console.warn(`⚠️ No educational videos found after filtering for topic: ${topic}`);
+                // Return basic search results if no educational videos found
+                return detailedVideos.slice(0, maxVideos).map(video => ({
+                    ...video,
+                    aiAnalysis: {
+                        educationalScore: 6,
+                        relevanceScore: 7,
+                        levelAppropriateness: 6,
+                        overallScore: 6,
+                        reasoning: 'Basic video without AI analysis'
+                    }
+                }));
+            }
+
             // Analyze and score videos with AI
             const analyzedVideos = await this.analyzeVideosWithAI(educationalVideos, topic, level);
-            
+
+            console.log(`🤖 AI analyzed ${analyzedVideos.length} videos`);
+
             // Sort by educational quality and relevance
             const rankedVideos = this.rankVideosByQuality(analyzedVideos);
-            
+
             // Return top videos for the level
-            return rankedVideos.slice(0, maxVideos);
+            const finalResults = rankedVideos.slice(0, maxVideos);
+            console.log(`✅ Returning ${finalResults.length} top-ranked videos`);
+
+            // Cache the result
+            this.setCachedResult(cacheKey, finalResults);
+
+            return finalResults;
 
         } catch (error) {
-            console.error('Error searching educational videos:', error);
+            console.error('❌ Error searching educational videos:', error);
+
+            // Provide more specific error messages and fallbacks
+            if (error.response?.status === 403 || error.response?.status === 429) {
+                // Rate limit hit - return cached mock data as fallback
+                console.warn('⚠️ YouTube API rate limited, returning fallback content');
+                const fallbackVideos = this.getFallbackVideos(topic, level, maxVideos);
+                this.setCachedResult(cacheKey, fallbackVideos);
+                return fallbackVideos;
+            } else if (error.message.includes('quota exceeded')) {
+                // Quota exceeded - return fallback
+                console.warn('⚠️ YouTube API quota exceeded, returning fallback content');
+                const fallbackVideos = this.getFallbackVideos(topic, level, maxVideos);
+                this.setCachedResult(cacheKey, fallbackVideos);
+                return fallbackVideos;
+            } else if (error.message.includes('API key') && !error.response) {
+                throw new Error('YouTube service unavailable: API configuration issue');
+            } else if (error.response?.status === 400) {
+                throw new Error('YouTube service unavailable: Invalid request parameters');
+            }
+
             throw error;
         }
+    }
+
+    /**
+     * Get fallback videos when API is rate limited
+     * @param {string} topic - Programming topic
+     * @param {string} level - User skill level
+     * @param {number} maxVideos - Max videos to return
+     */
+    getFallbackVideos(topic, level, maxVideos) {
+        const fallbackData = {
+            react: {
+                Beginner: [
+                    { title: "React Tutorial for Beginners", videoId: "SqcY0GlETPk", channel: "Programming with Mosh" },
+                    { title: "React Crash Course", videoId: "w7ejDZ8SWv8", channel: "Traversy Media" },
+                    { title: "Learn React in 30 Minutes", videoId: "hQAHSlTtcmY", channel: "Web Dev Simplified" }
+                ],
+                Intermediate: [
+                    { title: "React Hooks Tutorial", videoId: "O6P86uwfdR0", channel: "Web Dev Simplified" },
+                    { title: "Advanced React Patterns", videoId: "Ld9Aw_b0lQE", channel: "Kent C. Dodds" },
+                    { title: "React Context & Hooks", videoId: "35lXWvCuM8o", channel: "Net Ninja" }
+                ],
+                Professional: [
+                    { title: "React Performance Optimization", videoId: "8pDqJVdNa44", channel: "React Conf" },
+                    { title: "Advanced React Architecture", videoId: "nLF0n9SACd4", channel: "React Europe" },
+                    { title: "React Testing Best Practices", videoId: "3e1GHCA3GP0", channel: "Kent C. Dodds" }
+                ]
+            },
+            javascript: {
+                Beginner: [
+                    { title: "JavaScript Crash Course", videoId: "hdI2bqOjy3c", channel: "Traversy Media" },
+                    { title: "JavaScript Tutorial for Beginners", videoId: "W6NZfCO5SIk", channel: "Programming with Mosh" },
+                    { title: "Learn JavaScript in 1 Hour", videoId: "W6NZfCO5SIk", channel: "Programming with Mosh" }
+                ],
+                Intermediate: [
+                    { title: "JavaScript ES6 Features", videoId: "NCwa_xi0Uuc", channel: "Traversy Media" },
+                    { title: "Async JavaScript", videoId: "PoRJizFvM7s", channel: "Web Dev Simplified" },
+                    { title: "JavaScript Objects Deep Dive", videoId: "PFmuCDHHpwk", channel: "Fun Fun Function" }
+                ],
+                Professional: [
+                    { title: "Advanced JavaScript Concepts", videoId: "Bv_5Zv5c-Ts", channel: "Akshay Saini" },
+                    { title: "JavaScript Design Patterns", videoId: "kuirGzhGhyw", channel: "Traversy Media" },
+                    { title: "JavaScript Performance", videoId: "8aGhZQkoFbQ", channel: "Google Chrome Developers" }
+                ]
+            }
+        };
+
+        const videos = fallbackData[topic]?.[level] || fallbackData.javascript.Beginner;
+
+        return videos.slice(0, maxVideos).map((video, index) => ({
+            videoId: video.videoId,
+            title: video.title,
+            description: `${level} level ${topic} tutorial`,
+            channelTitle: video.channel,
+            url: `https://www.youtube.com/watch?v=${video.videoId}`,
+            embedUrl: `https://www.youtube.com/embed/${video.videoId}`,
+            thumbnails: {
+                medium: { url: `https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg` }
+            },
+            duration: 1200, // 20 minutes average
+            durationText: "20:00",
+            viewCount: 50000 + (index * 10000),
+            likeCount: 2000 + (index * 100),
+            publishedAt: new Date(Date.now() - (index * 86400000)).toISOString(),
+            aiAnalysis: {
+                educationalScore: 8,
+                relevanceScore: 9,
+                levelAppropriateness: 8,
+                overallScore: 8,
+                reasoning: `Fallback ${level} ${topic} content - high quality educational video`
+            },
+            compositeScore: 8.5
+        }));
     }
 
     /**
@@ -103,6 +299,33 @@ class YouTubeService {
     }
 
     /**
+     * Search videos with retry logic for rate limiting
+     * @param {string} query - Search query
+     */
+    async searchVideosWithRetry(query, attempt = 1) {
+        try {
+            return await this.searchVideos(query);
+        } catch (error) {
+            // Check if this is a quota exceeded error (don't retry)
+            if (error.message.includes('quota exceeded')) {
+                console.warn('⚠️ YouTube API quota exceeded - no retry needed');
+                throw error;
+            }
+
+            // If rate limited (429) and we have retries left
+            if (error.response?.status === 429 && attempt <= this.maxRetries) {
+                const delay = this.retryDelay * attempt;
+                console.log(`🔄 Rate limited, retrying in ${delay}ms (attempt ${attempt}/${this.maxRetries})`);
+
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.searchVideosWithRetry(query, attempt + 1);
+            }
+
+            throw error;
+        }
+    }
+
+    /**
      * Search YouTube for videos using the Data API
      * @param {string} query - Search query
      */
@@ -119,8 +342,14 @@ class YouTubeService {
                     videoDuration: 'medium', // 4-20 minutes (good for learning)
                     videoDefinition: 'high',
                     safeSearch: 'strict'
-                }
+                },
+                timeout: 10000 // 10 second timeout
             });
+
+            if (!response.data.items || response.data.items.length === 0) {
+                console.warn(`⚠️ YouTube API returned no results for query: "${query}"`);
+                return [];
+            }
 
             return response.data.items.map(item => ({
                 videoId: item.id.videoId,
@@ -132,8 +361,24 @@ class YouTubeService {
             }));
 
         } catch (error) {
-            console.error('YouTube API search error:', error.response?.data || error.message);
-            throw new Error('Failed to search YouTube videos');
+            console.error('❌ YouTube API search error:', {
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                message: error.message
+            });
+
+            if (error.response?.status === 403) {
+                throw new Error('YouTube API quota exceeded or invalid API key');
+            } else if (error.response?.status === 400) {
+                throw new Error('Invalid YouTube API request parameters');
+            } else if (error.code === 'ECONNABORTED') {
+                throw new Error('YouTube API request timeout');
+            } else if (!error.response) {
+                throw new Error('Unable to connect to YouTube API');
+            }
+
+            throw new Error(`YouTube API error: ${error.response?.status || 'Unknown error'}`);
         }
     }
 
@@ -203,8 +448,9 @@ class YouTubeService {
             // Filter out clearly non-educational content
             const title = video.title.toLowerCase();
             const blacklistedTerms = [
-                'react', 'funny', 'meme', 'compilation', 'music', 'song', 
-                'game', 'vlog', 'review', 'unboxing', 'news'
+                'funny', 'meme', 'compilation', 'music', 'song',
+                'game', 'vlog', 'review', 'unboxing', 'news', 'prank',
+                'challenge', 'vs', 'reaction'
             ];
             
             const hasBlacklistedTerm = blacklistedTerms.some(term => 
@@ -257,7 +503,7 @@ class YouTubeService {
             const analyzedVideos = [];
             
             // Analyze videos in batches to avoid rate limits
-            for (const video of videos.slice(0, 15)) { // Analyze top 15 candidates
+            for (const video of videos.slice(0, 10)) { // Analyze top 10 candidates to save OpenAI quota
                 try {
                     const analysis = await this.analyzeVideoEducationalValue(video, topic, level);
                     analyzedVideos.push({

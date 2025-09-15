@@ -28,6 +28,10 @@ import VideoRecommendations from './pages/VideoRecommendations';
 import LearningPath from './pages/LearningPath';
 import Profile from './pages/Profile';
 
+// Quiz Pages
+import TutorialQuiz from './pages/TutorialQuiz';
+// import QuizResults from './pages/QuizResults';
+
 function App() {
   return (
     <AuthProvider>
@@ -60,6 +64,11 @@ function App() {
                 <Route path="recommendations/:topic" element={<VideoRecommendations />} />
                 <Route path="learning-path/:topic" element={<LearningPath />} />
                 <Route path="profile" element={<Profile />} />
+
+                {/* Quiz Routes */}
+                <Route path="quiz/start/:videoId" element={<TutorialQuiz />} />
+                <Route path="quiz/session/:sessionId" element={<TutorialQuiz />} />
+                {/* <Route path="quiz/results/:sessionId" element={<QuizResults />} /> */}
               </Route>
 
               {/* Backward compatibility routes */}

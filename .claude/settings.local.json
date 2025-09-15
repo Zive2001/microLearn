@@ -13,7 +13,10 @@
       "Bash(if [ -z \"$OPENAI_API_KEY\" ])",
       "Bash(else echo \"✅ OPENAI_API_KEY is configured\")",
       "Bash(fi)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(cmd //c:*)"
     ],
     "deny": [],
     "ask": []

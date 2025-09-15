@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
 import { getTopicMeta, formatNumber, formatDuration } from '../utils/helpers';
@@ -18,10 +18,15 @@ import {
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import toast from 'react-hot-toast';
+// import TestQuizAPI from '../components/TestQuizAPI'; // Removed for production
+import TutorialQuizButton from '../components/TutorialQuizButton';
+import MicrolearningPreview from '../components/MicrolearningPreview';
+import QuizProgressIndicator from '../components/QuizProgressIndicator';
 
 const VideoRecommendations = () => {
   const { topic } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedTopics, fetchRecommendations } = useApp();
   
@@ -31,6 +36,7 @@ const VideoRecommendations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userLevel, setUserLevel] = useState(null);
   const [recommendationData, setRecommendationData] = useState(null);
+  const [microlearningReadyVideos, setMicrolearningReadyVideos] = useState(new Set());
 
   // Get topic metadata
   const topicMeta = topic ? getTopicMeta(topic) : null;
@@ -45,12 +51,12 @@ const VideoRecommendations = () => {
   }, [userTopicData]);
 
   useEffect(() => {
-    const loadRecommendations = async () => {
+    const loadRecommendations = async (retryCount = 0) => {
       if (!topic) return;
-      
+
       try {
         setIsLoading(true);
-        
+
         // Use backend service to get recommendations
         // Note: Backend limits maxVideos to 1-10, so we'll request 10
         const recommendations = await microlearningAPI.getRecommendations(topic, {
@@ -86,9 +92,46 @@ const VideoRecommendations = () => {
         }
         setVideos(recommendationVideos);
       } catch (error) {
-        console.error('Error loading recommendations:', error);
-        toast.error('Failed to load video recommendations');
-        
+        console.error('❌ Error loading recommendations:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          url: error.config?.url
+        });
+
+        // Handle specific error types
+        if (error.response?.status === 400 && error.response?.data?.action === 'complete_assessment') {
+          toast.error('Please complete the assessment first to get personalized recommendations');
+          // Redirect to assessment after a delay
+          setTimeout(() => {
+            window.location.href = `/app/assessment/${topic}`;
+          }, 3000);
+          return;
+        }
+
+        if (error.response?.status === 400 && error.response?.data?.action === 'select_topic') {
+          toast.error('Please select this topic first in your learning path');
+          setTimeout(() => {
+            window.location.href = '/app/topics';
+          }, 3000);
+          return;
+        }
+
+        // For 500 errors, attempt retry once
+        if (error.response?.status === 500 && retryCount === 0) {
+          console.log('🔄 Retrying recommendation request...');
+          setTimeout(() => loadRecommendations(1), 2000); // Retry after 2 seconds
+          return;
+        }
+
+        // For 500 errors, show more specific message after retry
+        if (error.response?.status === 500) {
+          toast.error('YouTube service temporarily unavailable. Showing sample videos.');
+        } else {
+          toast.error('Failed to load video recommendations');
+        }
+
         // Fallback to mock data
         setVideos([
           {
@@ -176,7 +219,33 @@ const VideoRecommendations = () => {
     if (video.url && video.url !== '#') {
       window.open(video.url, '_blank', 'noopener,noreferrer');
     } else {
-      toast.info('Video will open when available');
+      toast('Video will open when available', {
+        icon: 'ℹ️',
+        duration: 2000
+      });
+    }
+  };
+
+  const handleMicrolearningReady = (content) => {
+    console.log('🎬 Microlearning content ready:', content);
+
+    // Mark this video as having microlearning content ready
+    setMicrolearningReadyVideos(prev => new Set([...prev, content.videoId]));
+
+    toast.success('Microlearning content is ready! Quiz now available! 🎯');
+  };
+
+  const handleQuizStart = (video, sessionId, action) => {
+    console.log('🎯 Quiz action:', { video: video.title, sessionId, action });
+
+    if (action === 'new') {
+      toast.success(`Starting quiz for "${video.title}"! 🎯`);
+      // Navigate to quiz page - start new quiz from video
+      navigate(`/app/quiz/start/${video.id}`);
+    } else if (action === 'resume') {
+      toast.success(`Resuming quiz for "${video.title}"! 🎯`);
+      // Navigate to existing quiz session
+      navigate(`/app/quiz/session/${sessionId}`);
     }
   };
 
@@ -391,6 +460,29 @@ const VideoRecommendations = () => {
                     ))}
                   </div>
                 )}
+
+                {/* Microlearning Content */}
+                <div className="mt-3 pt-3 border-t border-[#E9E9E7]">
+                  <MicrolearningPreview
+                    video={video}
+                    onContentReady={handleMicrolearningReady}
+                    showFullPreview={false}
+                    className="mb-3"
+                  />
+
+                  {/* Quiz Progress Indicator */}
+                  <QuizProgressIndicator
+                    video={video}
+                    className="mb-3"
+                  />
+
+                  {/* Quiz Button */}
+                  <TutorialQuizButton
+                    video={video}
+                    onQuizStart={handleQuizStart}
+                    className="w-full justify-center"
+                  />
+                </div>
               </div>
             </div>
           ))}
