@@ -119,7 +119,7 @@ class MicroContentService {
      * Build the prompt for content generation
      */
     buildContentGenerationPrompt({ segment, videoData, segmentTranscript, previousSegment, nextSegment, isFirst, isLast, totalSegments }) {
-        return `You are an expert technical instructor. Create a focused 1000+ word educational script for a 7-minute micro-learning video.
+        return `You are an expert technical instructor. Create a structured educational script divided into 3 frames for a micro-learning video.
 
 **SEGMENT REQUIREMENTS:**
 - Topic: ${videoData.topic}
@@ -130,23 +130,55 @@ class MicroContentService {
 **ORIGINAL TRANSCRIPT CONTENT:**
 ${segmentTranscript}
 
-**CRITICAL INSTRUCTIONS:**
-1. Focus ONLY on technical education - NO motivational content, life advice, or general encouragement
-2. Cover EVERY single keypoint listed above in detail with technical explanations
-3. Extract specific technical concepts, code examples, and procedures from the transcript
-4. Provide step-by-step technical instructions where applicable
-5. Include practical coding examples and technical demonstrations
-6. Target exactly 1000+ words for 7-minute narration
-7. Use technical terminology appropriate for ${segment.cltBlmScript.difficulty || 'beginner'} level
+**FRAME STRUCTURE REQUIREMENTS:**
+Create content for exactly 3 frames that will be combined into one video:
 
-**CONTENT STRUCTURE:**
-- Start immediately with technical content (no introductions)
-- Dedicate significant sections to each keypoint
-- Include code examples from the transcript
-- Explain technical concepts in depth
-- Provide implementation details and best practices
+**FRAME 1 (Introduction & Setup - 25% of content):**
+- Introduce the main concept
+- Provide context and prerequisites
+- Set up the learning foundation
 
-Write ONLY the pure educational technical script. No JSON, no metadata, no motivational content. Start directly with technical instruction:`;
+**FRAME 2 (Core Implementation - 50% of content):**
+- Detailed technical explanations
+- Step-by-step procedures
+- Code examples and demonstrations
+- Cover majority of keypoints
+
+**FRAME 3 (Examples & Summary - 25% of content):**
+- Practical examples
+- Real-world applications
+- Key takeaways and next steps
+
+**OUTPUT FORMAT:**
+Return a JSON object with this exact structure:
+
+{
+  "frame1": {
+    "keypoints": ["2-3 main bullet points for slide display"],
+    "audioScript": "Detailed narration for frame 1 (300+ words)",
+    "estimatedDuration": 140
+  },
+  "frame2": {
+    "keypoints": ["3-4 main bullet points for slide display"],
+    "audioScript": "Detailed narration for frame 2 (600+ words)",
+    "estimatedDuration": 280
+  },
+  "frame3": {
+    "keypoints": ["2-3 main bullet points for slide display"],
+    "audioScript": "Detailed narration for frame 3 (300+ words)",
+    "estimatedDuration": 140
+  }
+}
+
+**CRITICAL RULES:**
+1. Focus ONLY on technical education - NO motivational content
+2. Cover ALL keypoints across the 3 frames
+3. Each audioScript should be detailed technical narration
+4. Keypoints should be concise slide-friendly bullet points
+5. Use appropriate technical terminology for ${segment.cltBlmScript.difficulty || 'beginner'} level
+6. Total duration should be ~560 seconds (7 minutes)
+
+Return ONLY the JSON object, no other text:`;
     }
 
     /**
@@ -157,68 +189,94 @@ Write ONLY the pure educational technical script. No JSON, no metadata, no motiv
             console.log(`📄 Raw LLM response length: ${response.length} characters`);
             console.log(`📄 Response preview: ${response.substring(0, 200)}...`);
 
-            // Handle different response formats from LLM
-            let educationalScript = response.trim();
+            let frameData = null;
+            let responseText = response.trim();
 
-            // Check if response is in markdown code block format
-            if (educationalScript.startsWith('```')) {
+            // Handle markdown code block format
+            if (responseText.startsWith('```')) {
                 const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/;
-                const match = educationalScript.match(codeBlockRegex);
+                const match = responseText.match(codeBlockRegex);
                 if (match) {
-                    // Try to parse as JSON first
-                    try {
-                        const parsed = JSON.parse(match[1]);
-                        if (parsed.educationalScript) {
-                            educationalScript = parsed.educationalScript;
-                            console.log(`📄 Extracted educational script from JSON code block`);
-                        } else {
-                            // If no educationalScript field, use the whole content
-                            educationalScript = match[1];
-                            console.log(`📄 Using content from code block as-is`);
-                        }
-                    } catch (parseError) {
-                        // If JSON parsing fails, use the content inside code block as plain text
-                        educationalScript = match[1];
-                        console.log(`📄 Using code block content as plain text (JSON parse failed)`);
-                    }
-                } else {
-                    console.log(`📄 Code block format detected but couldn't extract content`);
+                    responseText = match[1].trim();
+                    console.log(`📄 Extracted content from code block`);
                 }
             }
 
-            // If still looks like JSON without code blocks, try parsing
-            if (educationalScript.startsWith('{') && educationalScript.endsWith('}')) {
+            // Try to parse as JSON frame structure
+            if (responseText.startsWith('{') && responseText.endsWith('}')) {
                 try {
-                    const parsed = JSON.parse(educationalScript);
-                    if (parsed.educationalScript) {
-                        educationalScript = parsed.educationalScript;
-                        console.log(`📄 Extracted educational script from direct JSON`);
+                    const parsed = JSON.parse(responseText);
+
+                    // Check if it's our new frame structure
+                    if (parsed.frame1 && parsed.frame2 && parsed.frame3) {
+                        frameData = parsed;
+                        console.log(`🎬 Successfully parsed frame-based structure`);
+                        console.log(`📊 Frame 1: ${frameData.frame1.audioScript.length} chars, ${frameData.frame1.keypoints.length} keypoints`);
+                        console.log(`📊 Frame 2: ${frameData.frame2.audioScript.length} chars, ${frameData.frame2.keypoints.length} keypoints`);
+                        console.log(`📊 Frame 3: ${frameData.frame3.audioScript.length} chars, ${frameData.frame3.keypoints.length} keypoints`);
+
+                        // Calculate total stats
+                        const totalScript = frameData.frame1.audioScript + ' ' + frameData.frame2.audioScript + ' ' + frameData.frame3.audioScript;
+                        const totalDuration = frameData.frame1.estimatedDuration + frameData.frame2.estimatedDuration + frameData.frame3.estimatedDuration;
+
+                        console.log(`📊 Total script length: ${totalScript.length} characters`);
+                        console.log(`📊 Total estimated duration: ${totalDuration} seconds (${Math.round(totalDuration/60)} minutes)`);
+                        console.log(`📊 Estimated word count: ${totalScript.split(' ').length} words`);
+
+                    } else if (parsed.educationalScript) {
+                        // Legacy format - convert to frame structure
+                        console.log(`📄 Legacy format detected, using as single educational script`);
+                        responseText = parsed.educationalScript;
                     }
                 } catch (parseError) {
-                    console.log(`📄 Direct JSON parsing failed, using response as-is`);
+                    console.log(`📄 JSON parsing failed, treating as plain text: ${parseError.message}`);
                 }
             }
 
-            console.log(`✅ Using processed response as educational script`);
-            console.log(`📊 Educational script length: ${educationalScript.length} characters`);
-            console.log(`📊 Estimated word count: ${educationalScript.split(' ').length} words`);
-            console.log(`📊 Estimated duration: ${Math.ceil(educationalScript.split(' ').length / 150)} minutes`);
+            // If we have frame data, use it; otherwise create legacy structure
+            if (frameData) {
+                return {
+                    educationalScript: frameData.frame1.audioScript + ' ' + frameData.frame2.audioScript + ' ' + frameData.frame3.audioScript,
+                    frameStructure: frameData,
+                    practicalExample: "Frame-based micro-learning with synchronized slides and narration",
+                    visualCues: [
+                        ...frameData.frame1.keypoints,
+                        ...frameData.frame2.keypoints,
+                        ...frameData.frame3.keypoints
+                    ],
+                    engagementHooks: {
+                        opening: "Let's dive into this technical concept",
+                        closing: "You've mastered the key concepts"
+                    },
+                    interactiveElements: ["Frame-based learning", "Progressive concept building", "Slide synchronization"],
+                    cognitiveLoadTips: "Content is structured in digestible frames for optimal learning",
+                    transitionFlow: {
+                        fromPrevious: "Building on previous concepts",
+                        toNext: "Ready for the next learning segment"
+                    }
+                };
+            } else {
+                // Legacy fallback
+                console.log(`✅ Using response as legacy educational script`);
+                console.log(`📊 Educational script length: ${responseText.length} characters`);
+                console.log(`📊 Estimated word count: ${responseText.split(' ').length} words`);
 
-            return {
-                educationalScript: educationalScript,
-                practicalExample: "Practical application of the concepts covered in this video segment based on the original content",
-                visualCues: ["Code examples from the video", "Visual demonstrations", "Step-by-step walkthroughs", "Conceptual diagrams", "Installation screenshots"],
-                engagementHooks: {
-                    opening: "Welcome to this comprehensive learning segment",
-                    closing: "Excellent work! Let's continue to the next topic"
-                },
-                interactiveElements: ["Pause and practice what you've learned", "Think about real-world applications", "Try the examples yourself"],
-                cognitiveLoadTips: "Take your time to understand each concept before moving forward",
-                transitionFlow: {
-                    fromPrevious: "Building on what we've learned",
-                    toNext: "This prepares us for the next important topic"
-                }
-            };
+                return {
+                    educationalScript: responseText,
+                    practicalExample: "Practical application of the concepts covered in this video segment",
+                    visualCues: ["Code examples", "Visual demonstrations", "Step-by-step walkthroughs"],
+                    engagementHooks: {
+                        opening: "Welcome to this learning segment",
+                        closing: "Great work! Continue to the next topic"
+                    },
+                    interactiveElements: ["Practice what you've learned", "Think about applications"],
+                    cognitiveLoadTips: "Take your time to understand each concept",
+                    transitionFlow: {
+                        fromPrevious: "Building on what we've learned",
+                        toNext: "This prepares us for the next topic"
+                    }
+                };
+            }
 
         } catch (error) {
             console.error('❌ Error parsing content response:', error);
@@ -227,16 +285,16 @@ Write ONLY the pure educational technical script. No JSON, no metadata, no motiv
             return {
                 educationalScript: response.trim(),
                 practicalExample: "Practical application of the concepts covered in this video segment",
-                visualCues: ["Code examples from the video", "Visual demonstrations", "Conceptual diagrams"],
+                visualCues: ["Code examples", "Visual demonstrations"],
                 engagementHooks: {
-                    opening: "Welcome to this comprehensive learning segment",
-                    closing: "Excellent work! Let's continue to the next topic"
+                    opening: "Welcome to this learning segment",
+                    closing: "Continue to the next topic"
                 },
-                interactiveElements: ["Pause and think about the concepts", "Try implementing what you've learned"],
-                cognitiveLoadTips: "Take your time to understand each concept before moving forward",
+                interactiveElements: ["Practice the concepts"],
+                cognitiveLoadTips: "Take your time to understand",
                 transitionFlow: {
-                    fromPrevious: "Building on what we've learned",
-                    toNext: "This prepares us for the next important topic"
+                    fromPrevious: "Building on previous knowledge",
+                    toNext: "Preparing for next steps"
                 }
             };
         }
@@ -290,6 +348,12 @@ Write ONLY the pure educational technical script. No JSON, no metadata, no motiv
                 'cltBlmScript.visualCues': enhancedContent.visualCues,
                 processingStatus: 'completed' // Mark as completed after content generation
             };
+
+            // Add frame structure if available
+            if (enhancedContent.frameStructure) {
+                updateData['cltBlmScript.frameStructure'] = enhancedContent.frameStructure;
+                console.log(`💡 Saving frame structure with ${Object.keys(enhancedContent.frameStructure).length} frames`);
+            }
 
             await MicroVideo.findByIdAndUpdate(segmentId, updateData);
             console.log(`✅ Updated segment ${segmentId} with enhanced content`);

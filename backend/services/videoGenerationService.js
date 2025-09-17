@@ -9,7 +9,7 @@ const execAsync = promisify(exec);
 
 class VideoGenerationService {
     constructor() {
-        this.outputDir = process.env.VIDEO_OUTPUT_DIR || './generated-videos';
+        this.outputDir = process.env.VIDEO_OUTPUT_DIR || './processed-videos';
         this.tempDir = process.env.TMP_DIR || './tmp';
         this.framesDir = path.join(this.tempDir, 'frames');
 
@@ -69,8 +69,10 @@ class VideoGenerationService {
             console.log(`🎬 Starting video generation for: "${microVideo.title}"`);
 
             const settings = { ...this.defaultSettings, ...options };
-            const timestamp = Date.now();
-            const videoId = `micro_${microVideo.sequence}_${timestamp}`;
+            // Use consistent naming pattern that matches audio files
+            const videoId = microVideo.audioFilename ?
+                microVideo.audioFilename.replace(/\.(wav|mp3|m4a)$/, '') :
+                `micro_${microVideo.sequence}_${Date.now()}`;
 
             // Check FFmpeg availability
             const ffmpegCheck = await this.checkFFmpegAvailability();
@@ -111,7 +113,20 @@ class VideoGenerationService {
             const ctx = canvas.getContext('2d');
 
             // Calculate frame count based on audio duration
-            const audioDuration = microVideo.audioDuration || 30; // seconds
+            let audioDuration = microVideo.audioDuration || 30; // seconds
+
+            // If we have audio file, get actual duration
+            if (microVideo.audioFilename) {
+                const audioPath = path.resolve('./generated-audio', microVideo.audioFilename);
+                if (await this.fileExists(audioPath)) {
+                    const actualDuration = await this.getAudioDuration(audioPath);
+                    if (actualDuration) {
+                        audioDuration = actualDuration;
+                        console.log(`🎵 Using actual audio duration: ${audioDuration} seconds`);
+                    }
+                }
+            }
+
             const totalFrames = Math.ceil(audioDuration * settings.fps);
 
             // Generate educational content frames
@@ -140,10 +155,71 @@ class VideoGenerationService {
     }
 
     /**
-     * Create educational frames with CLT-bLM phases: Prepare → Initiate → Deliver → End
+     * Create educational frames with support for both frame-based and CLT-bLM structures
      */
     async createEducationalFrames(ctx, microVideo, settings, totalFrames) {
         const frames = [];
+        const { width, height } = settings;
+
+        // Check if we have the new frame-based structure
+        if (microVideo.cltBlmScript.frameStructure) {
+            console.log('🎬 Using new frame-based structure for video generation');
+            return await this.createFrameBasedVideo(ctx, microVideo, settings, totalFrames);
+        }
+
+        // Fallback to legacy CLT-bLM phases
+        console.log('📚 Using legacy CLT-bLM phases for video generation');
+        return await this.createCLTbLMBasedVideo(ctx, microVideo, settings, totalFrames);
+    }
+
+    /**
+     * Create frame-based video using the new 3-frame structure
+     */
+    async createFrameBasedVideo(ctx, microVideo, settings, totalFrames) {
+        const frames = [];
+        const { width, height } = settings;
+        const frameStruct = microVideo.cltBlmScript.frameStructure;
+
+        // Calculate frame distribution based on estimated durations
+        const totalDuration = (frameStruct.frame1?.estimatedDuration || 140) +
+                            (frameStruct.frame2?.estimatedDuration || 280) +
+                            (frameStruct.frame3?.estimatedDuration || 140);
+
+        const frame1Count = Math.floor((frameStruct.frame1?.estimatedDuration || 140) / totalDuration * totalFrames);
+        const frame2Count = Math.floor((frameStruct.frame2?.estimatedDuration || 280) / totalDuration * totalFrames);
+        const frame3Count = totalFrames - frame1Count - frame2Count;
+
+        console.log(`🎬 Frame distribution: Frame1=${frame1Count}, Frame2=${frame2Count}, Frame3=${frame3Count} frames`);
+
+        // Generate Frame 1: Introduction & Setup
+        if (frameStruct.frame1) {
+            const frame1Frames = await this.createFrame1Slides(ctx, frameStruct.frame1, microVideo.title, frame1Count, width, height);
+            frames.push(...frame1Frames);
+            console.log(`✅ Generated ${frame1Frames.length} frames for Frame 1 (Introduction & Setup)`);
+        }
+
+        // Generate Frame 2: Core Implementation
+        if (frameStruct.frame2) {
+            const frame2Frames = await this.createFrame2Slides(ctx, frameStruct.frame2, frame2Count, width, height);
+            frames.push(...frame2Frames);
+            console.log(`✅ Generated ${frame2Frames.length} frames for Frame 2 (Core Implementation)`);
+        }
+
+        // Generate Frame 3: Examples & Summary
+        if (frameStruct.frame3) {
+            const frame3Frames = await this.createFrame3Slides(ctx, frameStruct.frame3, frame3Count, width, height);
+            frames.push(...frame3Frames);
+            console.log(`✅ Generated ${frame3Frames.length} frames for Frame 3 (Examples & Summary)`);
+        }
+
+        console.log(`🎬 Generated ${frames.length} total frames using frame-based structure`);
+        return frames;
+    }
+
+    /**
+     * Legacy CLT-bLM based video generation
+     */
+    async createCLTbLMBasedVideo(ctx, microVideo, settings, totalFrames) {
         const { width, height } = settings;
 
         // Parse educational script for CLT-bLM phases
@@ -181,6 +257,192 @@ class VideoGenerationService {
 
         console.log(`📝 Generated ${allPhaseFrames.length} CLT-bLM structured frames (${phaseFrameDistribution.prepare}+${phaseFrameDistribution.initiate}+${phaseFrameDistribution.deliver}+${phaseFrameDistribution.end})`);
         return allPhaseFrames;
+    }
+
+    /**
+     * Create Frame 1: Introduction & Setup slides
+     */
+    async createFrame1Slides(ctx, frame1Data, title, frameCount, width, height) {
+        const frames = [];
+        const keypoints = frame1Data.keypoints || [];
+
+        for (let i = 0; i < frameCount; i++) {
+            // Clear canvas with introduction gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#2c3e50');  // Dark blue-gray
+            gradient.addColorStop(1, '#34495e');  // Lighter blue-gray
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Title
+            ctx.fillStyle = '#f39c12';  // Orange
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(title, width / 2, height * 0.15);
+
+            // Phase indicator
+            ctx.fillStyle = '#e74c3c';  // Red
+            ctx.font = 'bold 32px Arial';
+            ctx.fillText('Introduction & Setup', width / 2, height * 0.25);
+
+            // Display keypoints
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '28px Arial';
+            let yPos = height * 0.4;
+            keypoints.slice(0, 3).forEach((point, index) => {
+                ctx.textAlign = 'left';
+                const bulletPoint = `• ${point}`;
+                this.wrapText(ctx, bulletPoint, width * 0.1, yPos, width * 0.8, 36);
+                yPos += 60;
+            });
+
+            // Progress indicator for Frame 1
+            const progress = (i + 1) / frameCount;
+            ctx.fillStyle = '#3498db';  // Blue
+            ctx.fillRect(50, height - 60, (width - 100) * progress, 12);
+
+            // Frame indicator
+            ctx.fillStyle = '#95a5a6';  // Light gray
+            ctx.font = '18px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('Frame 1/3', width - 50, height - 20);
+
+            frames.push(createCanvas(width, height).getContext('2d').canvas);
+            frames[frames.length - 1].getContext('2d').drawImage(ctx.canvas, 0, 0);
+        }
+
+        return frames;
+    }
+
+    /**
+     * Create Frame 2: Core Implementation slides
+     */
+    async createFrame2Slides(ctx, frame2Data, frameCount, width, height) {
+        const frames = [];
+        const keypoints = frame2Data.keypoints || [];
+        const pointsPerSection = Math.ceil(frameCount / Math.max(keypoints.length, 1));
+
+        for (let i = 0; i < frameCount; i++) {
+            // Clear canvas with core content gradient
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, '#1a252f');  // Dark blue
+            gradient.addColorStop(1, '#2c3e50');  // Medium blue-gray
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Phase indicator
+            ctx.fillStyle = '#16a085';  // Teal
+            ctx.font = 'bold 42px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Core Implementation', width / 2, height * 0.12);
+
+            // Current keypoint index
+            const currentPointIndex = Math.floor(i / pointsPerSection);
+            const currentPoint = keypoints[currentPointIndex] || keypoints[0] || "Core concept";
+
+            // Keypoint number indicator
+            ctx.fillStyle = '#e67e22';  // Orange
+            ctx.font = 'bold 32px Arial';
+            ctx.fillText(`Key Point ${currentPointIndex + 1}`, width / 2, height * 0.22);
+
+            // Current keypoint content
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 30px Arial';
+            const maxWidth = width * 0.85;
+            this.wrapText(ctx, currentPoint, width / 2, height * 0.4, maxWidth, 40);
+
+            // Show other keypoints as bullets (faded)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';  // Faded white
+            ctx.font = '20px Arial';
+            let yPos = height * 0.65;
+            keypoints.forEach((point, index) => {
+                if (index !== currentPointIndex) {
+                    ctx.textAlign = 'left';
+                    const shortPoint = point.length > 50 ? point.substring(0, 47) + '...' : point;
+                    ctx.fillText(`• ${shortPoint}`, width * 0.1, yPos);
+                    yPos += 30;
+                    if (yPos > height * 0.85) return; // Don't overflow
+                }
+            });
+
+            // Progress indicator for Frame 2
+            const progress = (i + 1) / frameCount;
+            ctx.fillStyle = '#16a085';  // Teal
+            ctx.fillRect(50, height - 60, (width - 100) * progress, 12);
+
+            // Frame indicator
+            ctx.fillStyle = '#95a5a6';  // Light gray
+            ctx.font = '18px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('Frame 2/3', width - 50, height - 20);
+
+            frames.push(createCanvas(width, height).getContext('2d').canvas);
+            frames[frames.length - 1].getContext('2d').drawImage(ctx.canvas, 0, 0);
+        }
+
+        return frames;
+    }
+
+    /**
+     * Create Frame 3: Examples & Summary slides
+     */
+    async createFrame3Slides(ctx, frame3Data, frameCount, width, height) {
+        const frames = [];
+        const keypoints = frame3Data.keypoints || [];
+
+        for (let i = 0; i < frameCount; i++) {
+            // Clear canvas with summary gradient
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            gradient.addColorStop(0, '#8e44ad');  // Purple
+            gradient.addColorStop(1, '#9b59b6');  // Light purple
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Phase indicator
+            ctx.fillStyle = '#f1c40f';  // Yellow
+            ctx.font = 'bold 42px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Examples & Summary', width / 2, height * 0.12);
+
+            // Summary content
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '28px Arial';
+            let yPos = height * 0.3;
+            keypoints.forEach((point, index) => {
+                ctx.textAlign = 'left';
+                const bulletPoint = `✓ ${point}`;
+                this.wrapText(ctx, bulletPoint, width * 0.1, yPos, width * 0.8, 36);
+                yPos += 60;
+            });
+
+            // Completion message
+            const progress = (i + 1) / frameCount;
+            if (progress > 0.7) {  // Show completion message in last 30% of frames
+                ctx.fillStyle = '#f39c12';  // Orange
+                ctx.font = 'bold 32px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Great Work! 🎉', width / 2, height * 0.8);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '24px Arial';
+                ctx.fillText('You\'ve mastered these concepts!', width / 2, height * 0.87);
+            }
+
+            // Progress indicator for Frame 3
+            ctx.fillStyle = '#f1c40f';  // Yellow
+            ctx.fillRect(50, height - 60, (width - 100) * progress, 12);
+
+            // Frame indicator
+            ctx.fillStyle = '#ecf0f1';  // Very light gray
+            ctx.font = '18px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('Frame 3/3', width - 50, height - 20);
+
+            frames.push(createCanvas(width, height).getContext('2d').canvas);
+            frames[frames.length - 1].getContext('2d').drawImage(ctx.canvas, 0, 0);
+        }
+
+        return frames;
     }
 
     /**
@@ -404,29 +666,87 @@ class VideoGenerationService {
     }
 
     /**
-     * Combine frames with audio using FFmpeg
+     * Combine frames with audio using FFmpeg with frame-based timing support
      */
     async combineWithAudio(frameData, microVideo, settings, videoId) {
         try {
             console.log(`🎵 Combining frames with audio for: ${microVideo.title}`);
 
             const outputFilename = `${videoId}_complete.mp4`;
-            const outputPath = path.join(this.outputDir, outputFilename);
+            const outputPath = path.resolve(this.outputDir, outputFilename);
 
-            // Audio file path
-            const audioPath = microVideo.audioFilename ?
-                path.join('./generated-audio', microVideo.audioFilename) : null;
+            // Audio file path - use absolute path resolution
+            let audioPath = null;
+            if (microVideo.audioFilename) {
+                // Try both relative and absolute paths
+                const relativePath = path.resolve('./generated-audio', microVideo.audioFilename);
+                const urlPath = microVideo.audioUrl ? path.resolve(microVideo.audioUrl) : null;
 
-            if (!audioPath || !(await this.fileExists(audioPath))) {
+                if (await this.fileExists(relativePath)) {
+                    audioPath = relativePath;
+                } else if (urlPath && await this.fileExists(urlPath)) {
+                    audioPath = urlPath;
+                } else {
+                    console.warn(`⚠️ Audio file not found at: ${relativePath}`);
+                    if (urlPath) console.warn(`⚠️ Also checked: ${urlPath}`);
+                }
+            }
+
+            if (!audioPath) {
                 console.warn('⚠️ No audio file found, creating silent video');
                 return await this.createSilentVideo(frameData, outputPath, settings);
             }
 
-            // FFmpeg command to combine frames with audio
-            const framePattern = path.join(frameData.frameDir, 'frame_%06d.png');
-            const command = `ffmpeg -y -r ${frameData.fps} -i "${framePattern}" -i "${audioPath}" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -shortest "${outputPath}"`;
+            console.log(`🎵 Using audio file: ${audioPath}`);
 
-            console.log('🔧 Running FFmpeg command:', command);
+            // Get actual audio duration to sync with video
+            const audioDuration = await this.getAudioDuration(audioPath);
+            console.log(`🎵 Audio duration: ${audioDuration} seconds`);
+
+            // Update frame data with correct duration
+            const syncedFrameData = {
+                ...frameData,
+                duration: audioDuration || frameData.duration
+            };
+
+            // Check if we have frame-based structure for advanced audio syncing
+            if (microVideo.cltBlmScript?.frameStructure) {
+                console.log('🎬 Using frame-based audio synchronization');
+                return await this.combineFrameBasedAudioVideo(syncedFrameData, microVideo, settings, outputPath, audioPath);
+            } else {
+                console.log('📚 Using legacy audio-video combination');
+                return await this.combineLegacyAudioVideo(syncedFrameData, microVideo, settings, outputPath, audioPath);
+            }
+
+        } catch (error) {
+            console.error('❌ Audio-video combination failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Frame-based audio-video combination with timing synchronization
+     */
+    async combineFrameBasedAudioVideo(frameData, microVideo, settings, outputPath, audioPath) {
+        try {
+            const frameStruct = microVideo.cltBlmScript.frameStructure;
+
+            // Use actual audio duration instead of estimated frame durations
+            const actualAudioDuration = frameData.duration;
+            console.log(`🎬 Using actual audio duration: ${actualAudioDuration}s for frame-based sync`);
+
+            // Generate video segments for each frame with precise timing
+            const framePattern = path.join(frameData.frameDir, 'frame_%06d.png');
+
+            // Enhanced FFmpeg command with proper audio-video synchronization
+            const normalizedAudioPath = audioPath.replace(/\\/g, '/');
+            const normalizedFramePattern = framePattern.replace(/\\/g, '/');
+            const normalizedOutputPath = outputPath.replace(/\\/g, '/');
+
+            // Simplified and more compatible FFmpeg command
+            const command = `ffmpeg -y -r ${frameData.fps} -i "${normalizedFramePattern}" -i "${normalizedAudioPath}" -c:v libx264 -c:a aac -strict experimental -b:a 128k -ac 2 -ar 48000 -r ${frameData.fps} -s ${settings.width}x${settings.height} -pix_fmt yuv420p -shortest "${normalizedOutputPath}"`;
+
+            console.log('🔧 Running frame-based FFmpeg command:', command);
             await execAsync(command);
 
             // Get file stats
@@ -434,20 +754,72 @@ class VideoGenerationService {
 
             return {
                 success: true,
-                filename: outputFilename,
+                filename: path.basename(outputPath),
+                filepath: outputPath,
                 path: outputPath,
                 fileSize: stats.size,
-                duration: frameData.duration,
+                duration: actualAudioDuration,
                 hasAudio: true,
+                isFrameBased: true,
                 specs: {
                     resolution: `${settings.width}x${settings.height}`,
                     fps: settings.fps,
-                    format: 'mp4'
+                    format: 'mp4',
+                    audioQuality: '128k',
+                    pixelFormat: 'yuv420p',
+                    audioChannels: 2
                 }
             };
 
         } catch (error) {
-            console.error('❌ Audio-video combination failed:', error);
+            console.error('❌ Frame-based audio-video combination failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Legacy audio-video combination
+     */
+    async combineLegacyAudioVideo(frameData, microVideo, settings, outputPath, audioPath) {
+        try {
+            // FFmpeg command to combine frames with audio (legacy method with improved sync)
+            const framePattern = path.join(frameData.frameDir, 'frame_%06d.png');
+
+            // Normalize paths for cross-platform compatibility
+            const normalizedAudioPath = audioPath.replace(/\\/g, '/');
+            const normalizedFramePattern = framePattern.replace(/\\/g, '/');
+            const normalizedOutputPath = outputPath.replace(/\\/g, '/');
+
+            // Simplified and more compatible FFmpeg command for legacy mode
+            const command = `ffmpeg -y -r ${frameData.fps} -i "${normalizedFramePattern}" -i "${normalizedAudioPath}" -c:v libx264 -c:a aac -strict experimental -b:a 128k -ac 2 -ar 48000 -r ${frameData.fps} -s ${settings.width}x${settings.height} -pix_fmt yuv420p -shortest "${normalizedOutputPath}"`;
+
+            console.log('🔧 Running legacy FFmpeg command:', command);
+            await execAsync(command);
+
+            // Get file stats
+            const stats = await fs.stat(outputPath);
+
+            return {
+                success: true,
+                filename: path.basename(outputPath),
+                filepath: outputPath,
+                path: outputPath,
+                fileSize: stats.size,
+                duration: frameData.duration,
+                hasAudio: true,
+                isFrameBased: false,
+                specs: {
+                    resolution: `${settings.width}x${settings.height}`,
+                    fps: settings.fps,
+                    format: 'mp4',
+                    audioQuality: '128k',
+                    pixelFormat: 'yuv420p',
+                    audioChannels: 2
+                }
+            };
+
+        } catch (error) {
+            console.error('❌ Legacy audio-video combination failed:', error);
             throw error;
         }
     }
@@ -458,8 +830,14 @@ class VideoGenerationService {
     async createSilentVideo(frameData, outputPath, settings) {
         try {
             const framePattern = path.join(frameData.frameDir, 'frame_%06d.png');
-            const command = `ffmpeg -y -r ${frameData.fps} -i "${framePattern}" -c:v libx264 -preset fast -crf 23 -t ${frameData.duration} "${outputPath}"`;
 
+            // Normalize paths for cross-platform compatibility
+            const normalizedFramePattern = framePattern.replace(/\\/g, '/');
+            const normalizedOutputPath = outputPath.replace(/\\/g, '/');
+
+            const command = `ffmpeg -y -r ${frameData.fps} -i "${normalizedFramePattern}" -filter_complex "[0:v]fps=${frameData.fps},scale=${settings.width}:${settings.height}" -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -movflags +faststart -t ${frameData.duration} "${normalizedOutputPath}"`;
+
+            console.log('🔧 Running silent video FFmpeg command:', command);
             await execAsync(command);
 
             const stats = await fs.stat(outputPath);
@@ -467,6 +845,7 @@ class VideoGenerationService {
             return {
                 success: true,
                 filename: path.basename(outputPath),
+                filepath: outputPath,
                 path: outputPath,
                 fileSize: stats.size,
                 duration: frameData.duration,
@@ -590,6 +969,22 @@ class VideoGenerationService {
     }
 
     /**
+     * Get audio duration using FFprobe
+     */
+    async getAudioDuration(audioPath) {
+        try {
+            const normalizedPath = audioPath.replace(/\\/g, '/');
+            const command = `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${normalizedPath}"`;
+            const { stdout } = await execAsync(command);
+            const duration = parseFloat(stdout.trim());
+            return isNaN(duration) ? null : duration;
+        } catch (error) {
+            console.warn(`⚠️ Could not get audio duration: ${error.message}`);
+            return null;
+        }
+    }
+
+    /**
      * Clean up temporary files
      */
     async cleanupTempFiles(frameDir) {
@@ -598,6 +993,48 @@ class VideoGenerationService {
             console.log('🧹 Cleaned up temporary frames');
         } catch (error) {
             console.warn('⚠️ Could not clean up temporary files:', error.message);
+        }
+    }
+
+    /**
+     * Health check for video generation service
+     */
+    async healthCheck() {
+        try {
+            // Check FFmpeg availability
+            const ffmpegStatus = await this.checkFFmpegAvailability();
+
+            // Check directories
+            const outputDirExists = await this.fileExists(this.outputDir);
+            const tempDirExists = await this.fileExists(this.tempDir);
+
+            return {
+                status: 'healthy',
+                ffmpeg: ffmpegStatus,
+                directories: {
+                    output: outputDirExists,
+                    temp: tempDirExists,
+                    outputPath: this.outputDir,
+                    tempPath: this.tempDir
+                },
+                settings: this.defaultSettings,
+                capabilities: {
+                    frameBasedGeneration: true,
+                    legacyCLTbLMGeneration: true,
+                    audioVideoSynchronization: true,
+                    customVideoSettings: true
+                }
+            };
+
+        } catch (error) {
+            return {
+                status: 'unhealthy',
+                error: error.message,
+                capabilities: {
+                    frameBasedGeneration: false,
+                    legacyCLTbLMGeneration: false
+                }
+            };
         }
     }
 }

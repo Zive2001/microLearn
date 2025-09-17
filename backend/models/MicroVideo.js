@@ -90,7 +90,56 @@ const microVideoSchema = new mongoose.Schema({
             type: String,
             trim: true,
             maxlength: [100, 'Visual cue cannot exceed 100 characters']
-        }]
+        }],
+
+        // Frame-based structure for micro-video generation
+        frameStructure: {
+            frame1: {
+                keypoints: [{
+                    type: String,
+                    trim: true,
+                    maxlength: [150, 'Frame keypoint cannot exceed 150 characters']
+                }],
+                audioScript: {
+                    type: String,
+                    maxlength: [2000, 'Frame audio script cannot exceed 2000 characters']
+                },
+                estimatedDuration: {
+                    type: Number, // in seconds
+                    min: [0, 'Duration cannot be negative']
+                }
+            },
+            frame2: {
+                keypoints: [{
+                    type: String,
+                    trim: true,
+                    maxlength: [150, 'Frame keypoint cannot exceed 150 characters']
+                }],
+                audioScript: {
+                    type: String,
+                    maxlength: [3000, 'Frame audio script cannot exceed 3000 characters']
+                },
+                estimatedDuration: {
+                    type: Number, // in seconds
+                    min: [0, 'Duration cannot be negative']
+                }
+            },
+            frame3: {
+                keypoints: [{
+                    type: String,
+                    trim: true,
+                    maxlength: [150, 'Frame keypoint cannot exceed 150 characters']
+                }],
+                audioScript: {
+                    type: String,
+                    maxlength: [2000, 'Frame audio script cannot exceed 2000 characters']
+                },
+                estimatedDuration: {
+                    type: Number, // in seconds
+                    min: [0, 'Duration cannot be negative']
+                }
+            }
+        }
     },
 
     // Processing status for this segment
