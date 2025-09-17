@@ -1,4 +1,3 @@
-// services/openaiService.js
 require('dotenv').config(); // Load environment variables
 const OpenAI = require('openai');
 
@@ -16,7 +15,7 @@ const DIFFICULTY_LEVELS = {
         weight: 1
     },
     intermediate: {
-        level: 'intermediate', 
+        level: 'intermediate',
         description: 'practical applications and problem-solving',
         complexity: 'moderate',
         weight: 2
@@ -82,7 +81,7 @@ class OpenAIService {
             };
 
             // Create context about previous questions to avoid repetition
-            const previousQuestionsContext = previousQuestions.length > 0 
+            const previousQuestionsContext = previousQuestions.length > 0
                 ? `\n\nAvoid asking questions similar to these previously asked questions:\n${previousQuestions.map(q => `- ${q.question}`).join('\n')}`
                 : '';
 
@@ -109,7 +108,7 @@ Respond with a JSON object in this exact format:
   "question": "Your question here",
   "options": {
     "A": "First option",
-    "B": "Second option", 
+    "B": "Second option",
     "C": "Third option",
     "D": "Fourth option"
   },
@@ -130,7 +129,7 @@ Ensure the JSON is valid and complete.`;
                         content: 'You are an expert technical educator who creates high-quality assessment questions. Always respond with valid JSON only.'
                     },
                     {
-                        role: 'user', 
+                        role: 'user',
                         content: prompt
                     }
                 ],
@@ -139,7 +138,7 @@ Ensure the JSON is valid and complete.`;
             });
 
             const content = response.choices[0].message.content.trim();
-            
+
             // Parse the JSON response
             let questionData;
             try {
@@ -181,7 +180,7 @@ Ensure the JSON is valid and complete.`;
     async evaluateAnswer(question, userAnswer, userExplanation = null) {
         try {
             const isCorrect = userAnswer.toUpperCase() === question.correctAnswer.toUpperCase();
-            
+
             // Basic evaluation
             const basicResult = {
                 isCorrect,
@@ -234,7 +233,7 @@ Respond with JSON:
             });
 
             const enhancedEvaluation = JSON.parse(response.choices[0].message.content.trim());
-            
+
             return {
                 ...basicResult,
                 enhanced: enhancedEvaluation,
@@ -248,8 +247,8 @@ Respond with JSON:
                 isCorrect: userAnswer.toUpperCase() === question.correctAnswer.toUpperCase(),
                 correctAnswer: question.correctAnswer,
                 userAnswer: userAnswer.toUpperCase(),
-                points: userAnswer.toUpperCase() === question.correctAnswer.toUpperCase() ? 
-                       (question.difficultyWeight || 1) : 0,
+                points: userAnswer.toUpperCase() === question.correctAnswer.toUpperCase() ?
+                    (question.difficultyWeight || 1) : 0,
                 explanation: question.explanation,
                 error: 'Enhanced evaluation failed, using basic evaluation'
             };
@@ -279,7 +278,7 @@ Provide specific, actionable learning recommendations in JSON format:
   "recommendedTopics": ["related topic 1", "related topic 2"],
   "studyPlan": {
     "week1": "Focus area for week 1",
-    "week2": "Focus area for week 2", 
+    "week2": "Focus area for week 2",
     "week3": "Focus area for week 3"
   },
   "resources": {
@@ -315,6 +314,45 @@ Provide specific, actionable learning recommendations in JSON format:
     }
 
     /**
+     * Chunk transcript into manageable pieces for OpenAI processing
+     * @param {string} transcript - Full transcript
+     * @param {number} maxChunkSize - Maximum characters per chunk
+     * @returns {Array} Array of transcript chunks
+     */
+    chunkTranscript(transcript, maxChunkSize = 2000) {
+        if (transcript.length <= maxChunkSize) {
+            return [transcript];
+        }
+
+        const chunks = [];
+        const sentences = transcript.split(/[.!?]+/);
+        let currentChunk = '';
+
+        for (const sentence of sentences) {
+            const trimmedSentence = sentence.trim();
+            if (!trimmedSentence) continue;
+
+            // If adding this sentence would exceed limit, save current chunk
+            if (currentChunk.length + trimmedSentence.length + 1 > maxChunkSize) {
+                if (currentChunk) {
+                    chunks.push(currentChunk.trim());
+                    currentChunk = '';
+                }
+            }
+
+            currentChunk += (currentChunk ? '. ' : '') + trimmedSentence;
+        }
+
+        // Add the last chunk
+        if (currentChunk) {
+            chunks.push(currentChunk.trim());
+        }
+
+        console.log(`📝 Chunked transcript: ${transcript.length} chars → ${chunks.length} chunks`);
+        return chunks;
+    }
+
+    /**
      * Generate CLT-bLM analysis for educational content creation
      * @param {string} transcript - Video transcript
      * @param {string} topic - Content topic
@@ -323,14 +361,35 @@ Provide specific, actionable learning recommendations in JSON format:
      */
     async generateCLTAnalysis(transcript, topic, duration) {
         try {
-            const prompt = `You are an expert educational content creator. Create comprehensive educational shorts for this topic using CLT-bLM principles.
+            // Handle long transcripts by chunking
+            const transcriptChunks = this.chunkTranscript(transcript, 1500);
+
+            if (transcriptChunks.length === 1) {
+                // Short transcript - process normally
+                return await this.generateSingleCLTAnalysis(transcript, topic, duration);
+            } else {
+                // Long transcript - process in chunks
+                return await this.generateChunkedCLTAnalysis(transcriptChunks, topic, duration);
+            }
+
+        } catch (error) {
+            console.error('❌ Error in CLT analysis:', error);
+            throw new Error(`Failed to generate CLT analysis: ${error.message}`);
+        }
+    }
+
+    /**
+     * Generate CLT analysis for single short transcript
+     */
+    async generateSingleCLTAnalysis(transcript, topic, duration) {
+        const prompt = `You are an expert educational content creator. Create comprehensive educational shorts for this topic using CLT-bLM principles.
 
 TOPIC: ${topic}
 VIDEO CONTEXT: Educational content about ${topic}
-TARGET DURATION: ${Math.floor(duration/60)} minutes worth of content
+TARGET DURATION: ${Math.floor(duration / 60)} minutes worth of content
 
-REFERENCE CONTENT (if available):
-${transcript.substring(0, 2000)}${transcript.length > 2000 ? '...' : ''}
+REFERENCE CONTENT:
+${transcript}
 
 TASK: Create 3-5 educational micro-learning segments (5-8 minutes each) that cover essential ${topic} concepts:
 
@@ -373,46 +432,175 @@ Generate JSON response:
 
 Create educational shorts that are better than the original - more focused, clearer, and optimized for learning!`;
 
+        const response = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: [
+                {
+                    role: 'system',
+                    content: 'You are an expert educational content designer specializing in Cognitive Load Theory and micro-learning. Always respond with valid JSON only.'
+                },
+                {
+                    role: 'user',
+                    content: prompt
+                }
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
+        });
+
+        const content = response.choices[0].message.content.trim();
+
+        // Parse the JSON response
+        let analysisData;
+        try {
+            analysisData = JSON.parse(content);
+        } catch (parseError) {
+            console.error('❌ JSON parsing error:', parseError);
+            console.error('Raw content:', content);
+            throw new Error('Invalid JSON response from OpenAI CLT analysis');
+        }
+
+        // Validate response structure
+        if (!analysisData.segments || !Array.isArray(analysisData.segments)) {
+            throw new Error('Invalid CLT analysis structure: missing segments array');
+        }
+
+        console.log(`✅ OpenAI CLT-bLM Response received: ${analysisData.segments.length} segments generated`);
+
+        return analysisData;
+
+    }
+
+    /**
+     * Generate CLT analysis for chunked long transcript
+     */
+    async generateChunkedCLTAnalysis(transcriptChunks, topic, duration) {
+        console.log(`🔄 Processing ${transcriptChunks.length} transcript chunks for ${topic}`);
+
+        // Step 1: Analyze each chunk to extract key concepts
+        const chunkAnalyses = [];
+        for (let i = 0; i < transcriptChunks.length; i++) {
+            console.log(`📝 Analyzing chunk ${i + 1}/${transcriptChunks.length}`);
+
+            const chunkPrompt = `Extract key ${topic} concepts from this transcript chunk:
+
+TRANSCRIPT CHUNK ${i + 1}:
+${transcriptChunks[i]}
+
+Extract only the most important ${topic} concepts, techniques, and examples. Respond in JSON:
+{
+  "keyConcepts": ["concept1", "concept2", "concept3"],
+  "techniques": ["technique1", "technique2"],
+  "examples": ["example1", "example2"],
+  "difficulty": "Beginner/Intermediate/Advanced"
+}`;
+
+            try {
+                const response = await openai.chat.completions.create({
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        { role: 'system', content: 'You are an expert content analyzer. Extract key concepts only. Respond with valid JSON.' },
+                        { role: 'user', content: chunkPrompt }
+                    ],
+                    max_tokens: 500,
+                    temperature: 0.3,
+                });
+
+                const chunkAnalysis = JSON.parse(response.choices[0].message.content.trim());
+                chunkAnalyses.push(chunkAnalysis);
+            } catch (error) {
+                console.log(`⚠️ Chunk ${i + 1} analysis failed, skipping`);
+            }
+        }
+
+        // Step 2: Combine all concepts and create unified segments
+        const allConcepts = chunkAnalyses.flatMap(chunk => chunk.keyConcepts || []);
+        const allTechniques = chunkAnalyses.flatMap(chunk => chunk.techniques || []);
+        const allExamples = chunkAnalyses.flatMap(chunk => chunk.examples || []);
+
+        // Remove duplicates
+        const uniqueConcepts = [...new Set(allConcepts)].slice(0, 10);
+        const uniqueTechniques = [...new Set(allTechniques)].slice(0, 8);
+        const uniqueExamples = [...new Set(allExamples)].slice(0, 8);
+
+        // Step 3: Generate final educational segments based on extracted concepts
+        const finalPrompt = `Create educational micro-learning segments for ${topic} using these extracted concepts:
+
+KEY CONCEPTS: ${uniqueConcepts.join(', ')}
+TECHNIQUES: ${uniqueTechniques.join(', ')}
+EXAMPLES: ${uniqueExamples.join(', ')}
+
+Create 3-5 educational segments (5-8 minutes each) that cover these concepts systematically.
+
+Respond with JSON:
+{
+  "overallObjective": "What learners will master after all segments",
+  "totalSegments": 4,
+  "estimatedTotalDuration": 28,
+  "segments": [
+    {
+      "segmentNumber": 1,
+      "title": "Catchy educational title",
+      "duration": 420,
+      "learningObjective": "Specific skill/knowledge gained",
+      "keyPoints": ["3-4 main concepts to cover"],
+      "practicalExample": "Real-world use case",
+      "cognitiveLoad": 4,
+      "difficulty": "Beginner",
+      "educationalScript": "Complete script for this segment (200-300 words)",
+      "visualCues": ["What visuals/examples to show"]
+    }
+  ],
+  "learningPath": "How segments connect for complete understanding"
+}`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: [
+                { role: 'system', content: 'You are an expert educational content designer. Create structured learning segments. Respond with valid JSON only.' },
+                { role: 'user', content: finalPrompt }
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
+        });
+
+        const finalAnalysis = JSON.parse(response.choices[0].message.content.trim());
+
+        console.log(`✅ Chunked analysis complete: ${finalAnalysis.segments?.length || 0} segments created from ${transcriptChunks.length} chunks`);
+
+        return finalAnalysis;
+    }
+
+    /**
+     * Generate response using OpenAI with custom prompt and options
+     * @param {string} prompt - The prompt to send to OpenAI
+     * @param {Object} options - OpenAI API options
+     * @returns {Promise<string>} Generated response
+     */
+    async generateResponse(prompt, options = {}) {
+        try {
+            const {
+                model = 'gpt-3.5-turbo',
+                maxTokens = 1000,
+                temperature = 0.7,
+                systemMessage = 'You are a helpful assistant that provides detailed, structured responses.'
+            } = options;
+
             const response = await openai.chat.completions.create({
-                model: 'gpt-3.5-turbo',
+                model: model,
                 messages: [
-                    {
-                        role: 'system',
-                        content: 'You are an expert educational content designer specializing in Cognitive Load Theory and micro-learning. Always respond with valid JSON only.'
-                    },
-                    {
-                        role: 'user',
-                        content: prompt
-                    }
+                    { role: 'system', content: systemMessage },
+                    { role: 'user', content: prompt }
                 ],
-                max_tokens: 2000,
-                temperature: 0.7,
+                max_tokens: maxTokens,
+                temperature: temperature
             });
 
-            const content = response.choices[0].message.content.trim();
-
-            // Parse the JSON response
-            let analysisData;
-            try {
-                analysisData = JSON.parse(content);
-            } catch (parseError) {
-                console.error('❌ JSON parsing error:', parseError);
-                console.error('Raw content:', content);
-                throw new Error('Invalid JSON response from OpenAI CLT analysis');
-            }
-
-            // Validate response structure
-            if (!analysisData.segments || !Array.isArray(analysisData.segments)) {
-                throw new Error('Invalid CLT analysis structure: missing segments array');
-            }
-
-            console.log(`✅ OpenAI CLT-bLM Response received: ${analysisData.segments.length} segments generated`);
-
-            return analysisData;
+            return response.choices[0].message.content.trim();
 
         } catch (error) {
-            console.error('❌ Error in CLT analysis:', error);
-            throw new Error(`Failed to generate CLT analysis: ${error.message}`);
+            console.error('OpenAI generateResponse error:', error);
+            throw new Error(`OpenAI API error: ${error.message}`);
         }
     }
 

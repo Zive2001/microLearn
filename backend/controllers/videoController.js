@@ -3,6 +3,7 @@ const Video = require('../models/Video');
 const MicroVideo = require('../models/MicroVideo');
 const transcriptService = require('../services/transcriptService');
 const openaiService = require('../services/openaiService');
+const microContentService = require('../services/microContentService');
 
 class VideoController {
 
@@ -181,7 +182,7 @@ class VideoController {
                     estimatedWatchTime: Math.ceil((segment.educationalScript?.length || 0) / 200) // ~200 chars per minute reading
                 },
 
-                processingStatus: 'ready_for_generation',
+                processingStatus: 'pending',
                 createdAt: new Date()
             });
 
@@ -263,6 +264,188 @@ class VideoController {
             res.status(500).json({
                 success: false,
                 message: 'Failed to get micro-videos',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Generate enhanced micro-content for video segments
+     * @route POST /api/test-videos/:videoId/generate-content
+     */
+    async generateMicroContent(req, res) {
+        try {
+            const { videoId } = req.params;
+            console.log('🎬 Starting micro-content generation for video:', videoId);
+
+            // Get video data
+            const video = await Video.findById(videoId);
+            if (!video) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Video not found'
+                });
+            }
+
+            // Check if video processing is complete
+            if (video.processingStatus !== 'completed') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Video processing must be completed before generating micro-content',
+                    currentStatus: video.processingStatus
+                });
+            }
+
+            // Start micro-content generation
+            res.json({
+                success: true,
+                message: 'Micro-content generation started',
+                videoId: videoId,
+                estimatedTime: '2-3 minutes'
+            });
+
+            // Run content generation in background
+            this.generateContentInBackground(videoId, video);
+
+        } catch (error) {
+            console.error('Error starting micro-content generation:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to start micro-content generation',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Background process for generating micro-content
+     */
+    async generateContentInBackground(videoId, video) {
+        try {
+            console.log('🔄 Background micro-content generation started for:', videoId);
+
+            // Update micro-videos status to processing
+            await MicroVideo.updateMany(
+                { originalVideoId: videoId },
+                { processingStatus: 'processing' }
+            );
+
+            const videoData = {
+                title: video.title,
+                topic: video.topic,
+                description: video.description
+            };
+
+            const fullTranscript = video.transcript || '';
+
+            // Generate micro-content using the service
+            const result = await microContentService.generateMicroContent(
+                videoId,
+                videoData,
+                fullTranscript
+            );
+
+            console.log('✅ Micro-content generation completed successfully for:', videoId);
+
+        } catch (error) {
+            console.error('❌ Background micro-content generation failed:', error);
+
+            // Mark micro-videos as failed
+            await MicroVideo.updateMany(
+                { originalVideoId: videoId },
+                { processingStatus: 'failed' }
+            );
+        }
+    }
+
+    /**
+     * Get enhanced micro-videos with full content
+     * @route GET /api/test-videos/:videoId/enhanced-micro-videos
+     */
+    async getEnhancedMicroVideos(req, res) {
+        try {
+            const { videoId } = req.params;
+
+            const enhancedMicroVideos = await microContentService.getEnhancedMicroVideos(videoId);
+
+            res.json({
+                success: true,
+                data: enhancedMicroVideos,
+                totalSegments: enhancedMicroVideos.length,
+                completedSegments: enhancedMicroVideos.filter(v => v.isComplete).length
+            });
+
+        } catch (error) {
+            console.error('Error getting enhanced micro-videos:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to get enhanced micro-videos',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Get a single enhanced micro-video with full content
+     * @route GET /api/test-videos/:videoId/micro-videos/:segmentId/content
+     */
+    async getMicroVideoContent(req, res) {
+        try {
+            const { videoId, segmentId } = req.params;
+
+            const microVideo = await MicroVideo.findOne({
+                _id: segmentId,
+                originalVideoId: videoId
+            });
+
+            if (!microVideo) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Micro-video segment not found'
+                });
+            }
+
+            // Format response with all content details
+            const formattedContent = {
+                id: microVideo._id,
+                title: microVideo.title,
+                sequence: microVideo.sequence,
+                timeRange: microVideo.timeRange,
+                processingStatus: microVideo.processingStatus,
+                learningObjective: microVideo.cltBlmScript.learningObjective,
+                keypoints: microVideo.cltBlmScript.keypoints,
+                difficulty: microVideo.cltBlmScript.difficulty,
+                cognitiveLoad: microVideo.cltBlmScript.cognitiveLoad,
+
+                // Original transcript for this time segment
+                segmentTranscript: microVideo.segmentTranscript || null,
+
+                // Enhanced content
+                educationalScript: microVideo.cltBlmScript.educationalScript || null,
+                practicalExample: microVideo.cltBlmScript.practicalExample || null,
+                visualCues: microVideo.cltBlmScript.visualCues || [],
+
+                // Content metrics
+                hasEnhancedContent: !!(microVideo.cltBlmScript.educationalScript),
+                contentLength: microVideo.cltBlmScript.educationalScript?.length || 0,
+                estimatedReadingTime: Math.ceil((microVideo.cltBlmScript.educationalScript?.length || 0) / 200),
+                transcriptLength: microVideo.segmentTranscript?.length || 0,
+
+                // Timestamps
+                createdAt: microVideo.createdAt,
+                updatedAt: microVideo.updatedAt
+            };
+
+            res.json({
+                success: true,
+                data: formattedContent
+            });
+
+        } catch (error) {
+            console.error('Error getting micro-video content:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to get micro-video content',
                 error: error.message
             });
         }

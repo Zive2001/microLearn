@@ -106,6 +106,25 @@ const microVideoSchema = new mongoose.Schema({
         default: null
     },
 
+    // Audio file information (for TTS)
+    audioUrl: {
+        type: String,
+        default: null
+    },
+    audioFilename: {
+        type: String,
+        default: null
+    },
+    audioDuration: {
+        type: Number, // in seconds
+        default: null
+    },
+    audioProvider: {
+        type: String,
+        enum: ['google', 'azure', 'openai', 'web', 'system', 'silent-fallback'],
+        default: null
+    },
+
     // File paths (will be used later for actual video files)
     videoUrl: {
         type: String,
