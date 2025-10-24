@@ -26,10 +26,10 @@ const AuthLayout = () => {
         <div className="relative z-10 max-w-md">
           {/* Logo */}
           <Link to="/" className="inline-flex items-center space-x-3 mb-8 group">
-            <div className="w-10 h-10 bg-gray-900 rounded-md flex items-center justify-center group-hover:bg-blue-600 transition-colors duration-200">
+            <div className="w-10 h-10 bg-gray-900 rounded-md flex items-center justify-center group-hover:bg-[#212529] transition-colors duration-200">
               <BookOpen className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+            <span className="text-2xl font-semibold text-gray-900 group-hover:text-[#212529] transition-colors">
               MicroLearn
             </span>
           </Link>
@@ -37,7 +37,7 @@ const AuthLayout = () => {
           {/* Main heading */}
           <h1 className="text-3xl font-bold text-gray-900 mb-4 leading-tight">
             Master Programming 
-            <span className="block text-blue-600">5 Minutes at a Time</span>
+            <span className="block text-[#495057]">5 Minutes at a Time</span>
           </h1>
 
           <p className="text-gray-600 mb-8 leading-relaxed">
@@ -86,10 +86,10 @@ const AuthLayout = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <Link to="/" className="inline-flex items-center space-x-3 mb-4 group">
-              <div className="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center group-hover:bg-blue-600 transition-colors duration-200">
+              <div className="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center group-hover:bg-[#212529] transition-colors duration-200">
                 <BookOpen className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+              <span className="text-xl font-semibold text-gray-900 group-hover:text-[#212529] transition-colors">
                 MicroLearn
               </span>
             </Link>

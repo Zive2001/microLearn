@@ -85,9 +85,9 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-600 transition-colors text-sm"
+                className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:border-[#212529] transition-colors text-sm"
               />
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200 flex items-center justify-center text-sm">
+              <button className="px-4 py-2 bg-[#212529] hover:bg-[#495057] text-white font-medium rounded-md transition-colors duration-200 flex items-center justify-center text-sm">
                 Subscribe
                 <ArrowRight className="ml-2 h-3 w-3" />
               </button>
@@ -107,10 +107,10 @@ const Footer = () => {
           {/* Brand Section - Notion style */}
           <div className="lg:col-span-2">
             <Link to="/" className="flex items-center space-x-3 mb-4 group">
-              <div className="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center group-hover:bg-blue-600 transition-colors duration-200">
+              <div className="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center group-hover:bg-[#212529] transition-colors duration-200">
                 <BookOpen className="h-4 w-4 text-white" />
               </div>
-              <span className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+              <span className="text-xl font-semibold text-gray-900 group-hover:text-[#212529] transition-colors">
                 MicroLearn
               </span>
             </Link>

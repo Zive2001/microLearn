@@ -23,7 +23,7 @@ const Layout = () => {
     { name: 'Dashboard', href: '/app/dashboard', icon: HomeIcon },
     { name: 'Topics', href: '/app/topics', icon: BookOpenIcon },
     { name: 'Assessment', href: '/app/assessment', icon: AcademicCapIcon },
-    { name: 'Videos', href: '/app/recommendations', icon: VideoCameraIcon },
+    // { name: 'Videos', href: '/app/recommendations', icon: VideoCameraIcon },
   ];
 
   const handleLogout = () => {
@@ -44,7 +44,7 @@ const Layout = () => {
               <Link to="/app/dashboard" className="flex items-center">
                 <AcademicCapIcon className="h-8 w-8 text-gray-900" />
                 <span className="ml-2 text-xl font-semibold text-gray-900">
-                  AdaptiveLearn
+                  MicroLearn
                 </span>
               </Link>
             </div>
@@ -120,7 +120,7 @@ const Layout = () => {
               <div className="flex-shrink-0 flex items-center px-4 mb-8">
                 <AcademicCapIcon className="h-8 w-8 text-gray-900" />
                 <span className="ml-2 text-xl font-semibold text-gray-900">
-                  AdaptiveLearn
+                  MicroLearn
                 </span>
               </div>
               <nav className="px-3 space-y-1">
@@ -189,7 +189,7 @@ const Layout = () => {
             <div className="flex items-center">
               <AcademicCapIcon className="h-8 w-8 text-gray-900" />
               <span className="ml-2 text-lg font-semibold text-gray-900">
-                AdaptiveLearn
+                MicroLearn
               </span>
             </div>
           </div>

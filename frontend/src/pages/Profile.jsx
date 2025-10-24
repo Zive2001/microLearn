@@ -72,8 +72,8 @@ const Profile = () => {
       label: 'Assessments Taken',
       value: '0',
       icon: BookOpen,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      color: 'text-[#495057]',
+      bgColor: 'bg-gray-50'
     },
     {
       label: 'Videos Watched',
@@ -313,10 +313,10 @@ const Profile = () => {
           <div className="px-8 py-8">
             <div className="space-y-6">
               {/* Change Password */}
-              <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="p-6 bg-gray-50 rounded-xl border border-gray-200">
                 <div className="flex items-start">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-4 mt-1">
-                    <Shield className="h-4 w-4 text-blue-600" />
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-4 mt-1">
+                    <Shield className="h-4 w-4 text-[#495057]" />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-medium text-[#37352F] mb-2">
@@ -325,7 +325,7 @@ const Profile = () => {
                     <p className="text-[#6B6B6B] mb-4 leading-relaxed">
                       Keep your account secure by updating your password regularly. We recommend using a strong, unique password.
                     </p>
-                    <button className="inline-flex items-center px-5 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                    <button className="inline-flex items-center px-5 py-3 bg-[#212529] text-white font-medium rounded-lg hover:bg-[#495057] transition-colors duration-200">
                       <Shield className="h-4 w-4 mr-2" />
                       Update Password
                     </button>

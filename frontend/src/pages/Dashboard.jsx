@@ -27,6 +27,23 @@ const Dashboard = () => {
   } = useApp();
   const [greeting, setGreeting] = useState('');
 
+  // Debug logging function
+  const debugLog = (message, data) => {
+    if (import.meta.env.DEV && window.location.search.includes('debug=true')) {
+      console.log(message, data);
+    }
+  };
+
+  // Compute derived state (must be before any early returns)
+  const assessedTopics = selectedTopics?.filter(topic =>
+    topic.knowledgeLevel || topic.assessmentScore
+  ) || [];
+  const unassessedTopics = selectedTopics?.filter(topic =>
+    !topic.knowledgeLevel && !topic.assessmentScore
+  ) || [];
+  const stats = dashboardData?.stats || {};
+  const quickRecommendations = dashboardData?.quickRecommendations?.recommendations || [];
+
   useEffect(() => {
     // Set greeting based on time of day
     const hour = new Date().getHours();
@@ -39,14 +56,21 @@ const Dashboard = () => {
     fetchSelectedTopics();
   }, []);
 
+  // Debug logging to understand selectedTopics data structure
+  if (selectedTopics && selectedTopics.length > 0) {
+    debugLog('🔍 Dashboard Debug - selectedTopics:', selectedTopics);
+    debugLog('🔍 Dashboard Debug - first topic structure:', selectedTopics[0]);
+    debugLog('🔍 Dashboard Debug - assessed topics:', assessedTopics);
+    debugLog('🔍 Dashboard Debug - unassessed topics:', unassessedTopics);
+  } else {
+    debugLog('🔍 Dashboard Debug - No selectedTopics yet');
+  }
+
+  // Note: Quick recommendations are handled by AppContext initialization
+
   if (isLoading) {
     return <Loading fullScreen text="Loading your dashboard..." />;
   }
-
-  const assessedTopics = selectedTopics?.filter(topic => topic.knowledgeLevel) || [];
-  const unassessedTopics = selectedTopics?.filter(topic => !topic.knowledgeLevel) || [];
-  const stats = dashboardData?.stats || {};
-  const quickRecommendations = dashboardData?.quickRecommendations?.recommendations || [];
 
   return (
     <div className="space-y-8">
@@ -103,7 +127,10 @@ const Dashboard = () => {
                 <div>
                   <p className="text-sm text-[#6B6B6B]">Avg Score</p>
                   <p className="text-xl font-semibold text-[#37352F]">
-                    {stats.averageScore || 0}%
+                    {assessedTopics.length > 0
+                      ? Math.round(assessedTopics.reduce((sum, topic) => sum + (topic.assessmentScore || 0), 0) / assessedTopics.length)
+                      : 0
+                    }%
                   </p>
                 </div>
               </div>
@@ -114,7 +141,7 @@ const Dashboard = () => {
           <div className="mt-8 lg:mt-0 lg:ml-8">
             <div className="w-48 h-48 bg-[#F7F6F3] rounded-xl flex items-center justify-center">
               <img 
-                src="/illustrations/dashboard-hero.svg" 
+                src="/dashboard.png" 
                 alt="Dashboard illustration" 
                 className="w-full h-full object-contain p-4"
                 onError={(e) => {
@@ -141,7 +168,7 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold text-[#37352F]">Your Progress</h2>
               <Link 
                 to="/app/topics"
-                className="text-sm text-[#2383E2] hover:text-[#0F62FE] font-medium"
+                className="text-sm text-[#212529] hover:text-[#212529] font-medium"
               >
                 Manage Topics →
               </Link>
@@ -171,26 +198,27 @@ const Dashboard = () => {
               /* Topics Progress */
               <div className="space-y-4">
                 {/* Assessed Topics */}
-                {assessedTopics.map((topic) => {
-                  const meta = getTopicMeta(topic.topic);
+                {assessedTopics.map((topicData) => {
+                  const topicSlug = topicData.topic || topicData.slug || topicData;
+                  const meta = getTopicMeta(topicSlug);
                   return (
-                    <div key={topic.topic} className="flex items-center justify-between p-4 bg-[#F7F6F3] rounded-lg">
+                    <div key={topicSlug} className="flex items-center justify-between p-4 bg-[#F7F6F3] rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="text-2xl">{meta.icon}</div>
                         <div>
                           <h3 className="font-medium text-[#37352F]">{meta.name}</h3>
                           <div className="flex items-center space-x-2">
-                            <span className={getLevelBadgeClasses(topic.knowledgeLevel)}>
-                              {topic.knowledgeLevel}
+                            <span className={getLevelBadgeClasses(topicData.knowledgeLevel)}>
+                              {topicData.knowledgeLevel}
                             </span>
                             <span className="text-sm text-[#6B6B6B]">
-                              Score: {topic.assessmentScore}%
+                              Score: {topicData.assessmentScore}%
                             </span>
                           </div>
                         </div>
                       </div>
                       <Link
-                        to={`/app/recommendations/${topic.topic}`}
+                        to={`/app/recommendations/${topicSlug}`}
                         className="inline-flex items-center px-3 py-2 text-sm bg-white border border-[#E9E9E7] rounded-lg hover:bg-[#F7F6F3] transition-colors"
                       >
                         View Videos
@@ -200,10 +228,11 @@ const Dashboard = () => {
                 })}
 
                 {/* Unassessed Topics */}
-                {unassessedTopics.map((topic) => {
-                  const meta = getTopicMeta(topic.topic);
+                {unassessedTopics.map((topicData) => {
+                  const topicSlug = topicData.topic || topicData.slug || topicData;
+                  const meta = getTopicMeta(topicSlug);
                   return (
-                    <div key={topic.topic} className="flex items-center justify-between p-4 border border-[#E9E9E7] rounded-lg">
+                    <div key={topicSlug} className="flex items-center justify-between p-4 border border-[#E9E9E7] rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className="text-2xl opacity-50">{meta.icon}</div>
                         <div>
@@ -212,8 +241,8 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <Link
-                        to={`/app/assessment/${topic.topic}`}
-                        className="inline-flex items-center px-3 py-2 text-sm bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
+                        to={`/app/assessment/${topicSlug}`}
+                        className="inline-flex items-center px-3 py-2 text-sm bg-[#212529] text-white rounded-lg hover:bg-[#212427] transition-colors"
                       >
                         Take Assessment
                       </Link>
@@ -241,13 +270,38 @@ const Dashboard = () => {
                 {quickRecommendations.slice(0, 3).map((rec, index) => {
                   const meta = getTopicMeta(rec.topic);
                   const video = rec.recommendation;
-                  
+
                   return (
-                    <div key={`${rec.topic}-${index}`} className="flex items-center space-x-4 p-4 border border-[#E9E9E7] rounded-lg hover:bg-[#F7F6F3] transition-colors">
+                    <div
+                      key={`${rec.topic}-${video.videoId || index}`}
+                      className="flex items-center space-x-4 p-4 border border-[#E9E9E7] rounded-lg hover:bg-[#F7F6F3] transition-colors cursor-pointer"
+                      onClick={() => {
+                        if (video.url) {
+                          window.open(video.url, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
+                    >
                       <div className="flex-shrink-0">
-                        <div className="w-16 h-12 bg-black rounded flex items-center justify-center">
-                          <PlayIcon className="h-6 w-6 text-white" />
-                        </div>
+                        {video.thumbnail ? (
+                          <>
+                            <img
+                              src={video.thumbnail}
+                              alt={video.title}
+                              className="w-16 h-12 rounded object-cover"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                            <div className="hidden w-16 h-12 bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded flex items-center justify-center">
+                              <PlayIcon className="h-6 w-6 text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-16 h-12 bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded flex items-center justify-center">
+                            <PlayIcon className="h-6 w-6 text-white" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
@@ -259,22 +313,36 @@ const Dashboard = () => {
                         </div>
                         <h3 className="font-medium text-[#37352F] truncate">{video.title}</h3>
                         <p className="text-sm text-[#6B6B6B]">
-                          {video.channelTitle} • {video.durationText}
+                          {video.channelTitle} • {video.durationText || video.duration}
                         </p>
                       </div>
                       <div className="flex-shrink-0">
-                        <a
-                          href={video.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-2 text-sm bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
-                        >
+                        <div className="inline-flex items-center px-3 py-2 text-sm bg-[#2383E2] text-white rounded-lg group-hover:bg-[#0F62FE] transition-colors">
                           Watch
-                        </a>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
+
+                {quickRecommendations.length === 0 && assessedTopics.length > 0 && (
+                  <div className="text-center py-6 text-[#6B6B6B]">
+                    <p className="mb-2">Loading personalized recommendations...</p>
+                    <p className="text-xs">Based on your assessment results</p>
+                  </div>
+                )}
+
+                {assessedTopics.length === 0 && (
+                  <div className="text-center py-6 text-[#6B6B6B]">
+                    <p className="mb-2">Complete assessments to see recommendations</p>
+                    <Link
+                      to="/app/assessment"
+                      className="text-[#2383E2] hover:text-[#0F62FE] text-sm font-medium"
+                    >
+                      Take an Assessment →
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -326,7 +394,7 @@ const Dashboard = () => {
           </div>
 
           {/* Learning Tip */}
-          <div className="bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded-xl p-6 text-white">
+          <div className="bg-gradient-to-br from-[#0d1b2a] to-[#1b263b] rounded-xl p-6 text-white">
             <div className="flex items-start space-x-3 mb-4">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -335,7 +403,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h3 className="font-semibold mb-2">💡 Learning Tip</h3>
-                <p className="text-blue-100 text-sm leading-relaxed">
+                <p className="text-gray-300 text-sm leading-relaxed">
                   Regular assessment helps track your progress. Consider retaking assessments every few weeks to see your improvement!
                 </p>
               </div>
@@ -348,21 +416,25 @@ const Dashboard = () => {
               <h2 className="text-lg font-semibold text-[#37352F] mb-4">Recent Activity</h2>
               
               <div className="space-y-3">
-                {dashboardData.recentHistory.slice(0, 3).map((activity, index) => (
-                  <div key={`activity-${activity.topic || activity.id || index}`} className="flex items-center space-x-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-2 h-2 bg-[#2383E2] rounded-full"></div>
+                {dashboardData.recentHistory.slice(0, 3).map((activity, index) => {
+                  // Create unique key using multiple identifiers to avoid duplicates
+                  const uniqueKey = `activity-${activity.topic}-${activity.id || activity._id || activity.createdAt || Date.now()}-${index}`;
+                  return (
+                    <div key={uniqueKey} className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-2 h-2 bg-[#2383E2] rounded-full"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-[#37352F]">
+                          Completed {getTopicMeta(activity.topic).name} assessment
+                        </p>
+                        <p className="text-xs text-[#6B6B6B]">
+                          {formatTimeAgo(activity.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-[#37352F]">
-                        Completed {getTopicMeta(activity.topic).name} assessment
-                      </p>
-                      <p className="text-xs text-[#6B6B6B]">
-                        {formatTimeAgo(activity.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

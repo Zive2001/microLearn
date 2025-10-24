@@ -40,7 +40,7 @@ const ProfileSetupStep = ({ formData, setFormData, errors }) => {
 
       <div className="space-y-6">
         {/* Profile Picture */}
-        <div className="text-center">
+        {/* <div className="text-center">
           <div className="inline-block relative">
             <div className="w-24 h-24 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center hover:border-gray-300 transition-colors duration-200">
               {formData.profilePicture ? (
@@ -64,7 +64,7 @@ const ProfileSetupStep = ({ formData, setFormData, errors }) => {
             </button>
           </div>
           <p className="text-sm text-gray-500 mt-2">Optional: Add a profile picture</p>
-        </div>
+        </div> */}
 
         {/* Date of Birth */}
         <div>

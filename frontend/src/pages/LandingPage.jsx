@@ -17,7 +17,7 @@ const LandingPage = () => {
         <HeroSection />
         
         {/* Programming Language Features */}
-        <FeatureCards />
+      
         
         {/* Social Proof & Testimonials */}
         <SocialProof />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
 import { getTopicMeta, formatNumber, formatDuration } from '../utils/helpers';
@@ -18,10 +18,13 @@ import {
 } from 'lucide-react';
 import Loading from '../components/Loading';
 import toast from 'react-hot-toast';
+// import TestQuizAPI from '../components/TestQuizAPI'; // Removed for production
+// Removed quiz-related imports as they're now handled in MicrolearningPage
 
 const VideoRecommendations = () => {
   const { topic } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedTopics, fetchRecommendations } = useApp();
   
@@ -30,6 +33,8 @@ const VideoRecommendations = () => {
   const [levelFilter, setLevelFilter] = useState(searchParams.get('level') || 'all');
   const [isLoading, setIsLoading] = useState(true);
   const [userLevel, setUserLevel] = useState(null);
+  const [recommendationData, setRecommendationData] = useState(null);
+  // Removed microlearning state as it's now handled in dedicated page
 
   // Get topic metadata
   const topicMeta = topic ? getTopicMeta(topic) : null;
@@ -44,23 +49,87 @@ const VideoRecommendations = () => {
   }, [userTopicData]);
 
   useEffect(() => {
-    const loadRecommendations = async () => {
+    const loadRecommendations = async (retryCount = 0) => {
       if (!topic) return;
-      
+
       try {
         setIsLoading(true);
-        
+
         // Use backend service to get recommendations
+        // Note: Backend limits maxVideos to 1-10, so we'll request 10
         const recommendations = await microlearningAPI.getRecommendations(topic, {
-          maxVideos: 20,
+          maxVideos: 10,
           includeAlternative: true
         });
-        
-        setVideos(recommendations.videos || []);
+
+        console.log('✅ Received recommendations:', recommendations);
+        console.log('✅ Recommendations structure:', {
+          userLevel: recommendations.userLevel,
+          userScore: recommendations.userScore,
+          totalVideos: recommendations.totalVideos,
+          recommendationsArray: recommendations.recommendations,
+          recommendationsLength: recommendations.recommendations?.length
+        });
+
+        // Set recommendation metadata
+        setRecommendationData({
+          userLevel: recommendations.userLevel,
+          userScore: recommendations.userScore,
+          totalVideos: recommendations.totalVideos,
+          metadata: recommendations.metadata
+        });
+
+        // Set user level from recommendations
+        setUserLevel(recommendations.userLevel);
+
+        // Set videos from recommendations - FIXED: using 'recommendations' not 'videos'
+        const recommendationVideos = recommendations.recommendations || [];
+        console.log('✅ Setting videos:', recommendationVideos.length, 'videos');
+        if (recommendationVideos.length > 0) {
+          console.log('✅ First video structure:', recommendationVideos[0]);
+        }
+        setVideos(recommendationVideos);
       } catch (error) {
-        console.error('Error loading recommendations:', error);
-        toast.error('Failed to load video recommendations');
-        
+        console.error('❌ Error loading recommendations:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+          url: error.config?.url
+        });
+
+        // Handle specific error types
+        if (error.response?.status === 400 && error.response?.data?.action === 'complete_assessment') {
+          toast.error('Please complete the assessment first to get personalized recommendations');
+          // Redirect to assessment after a delay
+          setTimeout(() => {
+            window.location.href = `/app/assessment/${topic}`;
+          }, 3000);
+          return;
+        }
+
+        if (error.response?.status === 400 && error.response?.data?.action === 'select_topic') {
+          toast.error('Please select this topic first in your learning path');
+          setTimeout(() => {
+            window.location.href = '/app/topics';
+          }, 3000);
+          return;
+        }
+
+        // For 500 errors, attempt retry once
+        if (error.response?.status === 500 && retryCount === 0) {
+          console.log('🔄 Retrying recommendation request...');
+          setTimeout(() => loadRecommendations(1), 2000); // Retry after 2 seconds
+          return;
+        }
+
+        // For 500 errors, show more specific message after retry
+        if (error.response?.status === 500) {
+          toast.error('YouTube service temporarily unavailable. Showing sample videos.');
+        } else {
+          toast.error('Failed to load video recommendations');
+        }
+
         // Fallback to mock data
         setVideos([
           {
@@ -139,18 +208,25 @@ const VideoRecommendations = () => {
 
   const getScoreColor = (score) => {
     if (score >= 8.5) return 'text-green-600';
-    if (score >= 7.5) return 'text-blue-600';
+    if (score >= 7.5) return 'text-[#495057]';
     if (score >= 6.5) return 'text-yellow-600';
     return 'text-gray-600';
   };
 
   const handleVideoClick = (video) => {
-    if (video.url && video.url !== '#') {
-      window.open(video.url, '_blank', 'noopener,noreferrer');
-    } else {
-      toast.info('Video will open when available');
-    }
+    // Navigate to microlearning page instead of opening external video
+    console.log('🎬 Navigating to microlearning page for video:', video.id, video.title);
+    toast.success(`Loading microlearning content for "${video.title}"! 🎯`);
+    navigate(`/app/microlearning/${video.id}`, {
+      state: {
+        videoTitle: video.title,
+        videoData: video,
+        topic: topic
+      }
+    });
   };
+
+  // Removed quiz-related handlers as they're now handled in MicrolearningPage
 
   if (isLoading) {
     return <Loading fullScreen text="Loading personalized recommendations..." />;
@@ -164,7 +240,7 @@ const VideoRecommendations = () => {
           <div className="flex items-center space-x-4">
             <Link
               to="/app/topics"
-              className="flex items-center text-[#6B6B6B] hover:text-[#2383E2] transition-colors"
+              className="flex items-center text-[#6B6B6B] hover:text-[#212529] transition-colors"
             >
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
               Back to Topics
@@ -217,7 +293,7 @@ const VideoRecommendations = () => {
               placeholder="Search videos, channels, or topics..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E9E9E7] rounded-lg focus:outline-none focus:ring-0 focus:border-[#2383E2] text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-[#E9E9E7] rounded-lg focus:outline-none focus:ring-0 focus:border-[#212529] text-sm"
             />
           </div>
           
@@ -227,7 +303,7 @@ const VideoRecommendations = () => {
               <select
                 value={levelFilter}
                 onChange={(e) => setLevelFilter(e.target.value)}
-                className="border border-[#E9E9E7] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-[#2383E2] bg-white"
+                className="border border-[#E9E9E7] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-[#212529] bg-white"
               >
                 <option value="all">All Levels</option>
                 <option value="Beginner">Beginner</option>
@@ -255,7 +331,7 @@ const VideoRecommendations = () => {
               setSearchQuery('');
               setLevelFilter('all');
             }}
-            className="inline-flex items-center px-4 py-2 bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#495057] transition-colors"
           >
             Clear Filters
           </button>
@@ -270,20 +346,26 @@ const VideoRecommendations = () => {
             >
               {/* Thumbnail */}
               <div className="relative aspect-video bg-gray-100">
-                {video.thumbnail ? (
-                  <img
-                    src={video.thumbnail}
-                    alt={video.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2383E2] to-[#0F62FE]">
-                  <PlayIcon className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
-                </div>
+                {video.thumbnails?.medium || video.thumbnails?.default || video.thumbnail ? (
+                  <>
+                    <img
+                      src={video.thumbnails?.medium || video.thumbnails?.default || video.thumbnail}
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-[#212529] to-[#495057]">
+                      <PlayIcon className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#212529] to-[#495057]">
+                    <PlayIcon className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
+                  </div>
+                )}
                 
                 {/* Duration & Score Overlay */}
                 <div className="absolute top-2 right-2 flex space-x-2">
@@ -303,11 +385,11 @@ const VideoRecommendations = () => {
               {/* Content */}
               <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-[#37352F] line-clamp-2 flex-1 group-hover:text-[#2383E2] transition-colors">
+                  <h3 className="text-sm font-semibold text-[#37352F] line-clamp-2 flex-1 group-hover:text-[#212529] transition-colors">
                     {video.title}
                   </h3>
                   <div className="ml-2 flex-shrink-0">
-                    <ExternalLinkIcon className="h-4 w-4 text-[#6B6B6B] group-hover:text-[#2383E2] transition-colors" />
+                    <ExternalLinkIcon className="h-4 w-4 text-[#6B6B6B] group-hover:text-[#212529] transition-colors" />
                   </div>
                 </div>
                 
@@ -320,9 +402,9 @@ const VideoRecommendations = () => {
                   <p className="text-xs text-[#6B6B6B] font-medium">
                     {video.channelTitle}
                   </p>
-                  {video.level && (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getLevelColor(video.level)}`}>
-                      {video.level}
+                  {(video.level || video.originalLevel || video.difficulty) && (
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getLevelColor(video.level || video.originalLevel || video.difficulty)}`}>
+                      {video.level || video.originalLevel || video.difficulty}
                     </span>
                   )}
                 </div>
@@ -344,19 +426,33 @@ const VideoRecommendations = () => {
                   </div>
                 </div>
 
-                {/* Tags */}
-                {video.tags && video.tags.length > 0 && (
+                {/* Tags - from keyTopics or tags */}
+                {(video.keyTopics || video.tags) && (video.keyTopics?.length > 0 || video.tags?.length > 0) && (
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {video.tags.slice(0, 3).map((tag, index) => (
+                    {(video.keyTopics || video.tags)?.slice(0, 3).map((tag, index) => (
                       <span
                         key={index}
                         className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F7F6F3] text-[#6B6B6B]"
                       >
-                        {tag}
+                        {typeof tag === 'string' ? tag : tag.name || 'Topic'}
                       </span>
                     ))}
                   </div>
                 )}
+
+                {/* Action Button */}
+                <div className="mt-3 pt-3 border-t border-[#E9E9E7]">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVideoClick(video);
+                    }}
+                    className="w-full px-4 py-2 bg-gradient-to-r from-[#212529] to-[#495057] text-white rounded-lg hover:from-[#495057] hover:to-[#212529] transition-all duration-200 font-medium text-sm flex items-center justify-center space-x-2"
+                  >
+                    <BookOpenIcon className="h-4 w-4" />
+                    <span>Start Microlearning</span>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -365,7 +461,7 @@ const VideoRecommendations = () => {
 
       {/* Recommendations Section */}
       {userLevel && (
-        <div className="bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded-xl p-8 text-white">
+        <div className="bg-gradient-to-br from-[#212529] to-[#495057] rounded-xl p-8 text-white">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -376,14 +472,14 @@ const VideoRecommendations = () => {
               <h3 className="text-xl font-semibold mb-2">
                 Personalized for Your {userLevel} Level
               </h3>
-              <p className="text-blue-100 mb-4 leading-relaxed">
+              <p className="text-gray-300 mb-4 leading-relaxed">
                 These videos are specifically curated based on your assessment results. 
                 Focus on content that matches your current skill level and learning objectives.
               </p>
               <div className="flex items-center space-x-4">
                 <Link
                   to={`/app/assessment/${topic}`}
-                  className="inline-flex items-center px-4 py-2 bg-white text-[#2383E2] rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
+                  className="inline-flex items-center px-4 py-2 bg-white text-[#212529] rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
                 >
                   Retake Assessment
                 </Link>

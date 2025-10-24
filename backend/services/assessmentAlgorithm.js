@@ -50,7 +50,16 @@ class AssessmentAlgorithm {
             // Check if user has an active session for this topic
             const existingSession = await AssessmentSession.findActiveSession(userId, topic);
             if (existingSession) {
-                throw new Error('User already has an active assessment session for this topic');
+                // If session is very old (>2 hours), abandon it and start fresh
+                const sessionAge = Date.now() - existingSession.startedAt.getTime();
+                if (sessionAge > 2 * 60 * 60 * 1000) { // 2 hours
+                    console.log('🔄 Abandoning old session:', existingSession.sessionId);
+                    existingSession.status = 'abandoned';
+                    existingSession.completedAt = new Date();
+                    await existingSession.save();
+                } else {
+                    throw new Error('User already has an active assessment session for this topic');
+                }
             }
 
             // Create new assessment session
@@ -549,14 +558,41 @@ class AssessmentAlgorithm {
 
     async updateUserKnowledgeLevel(userId, topic, levelDetermination, score) {
         try {
-            const updateData = {};
-            updateData[`knowledgeLevels.${topic}.level`] = levelDetermination.level;
-            updateData[`knowledgeLevels.${topic}.score`] = score;
-            updateData[`knowledgeLevels.${topic}.assessedAt`] = new Date();
+            console.log(`📊 Updating knowledge level for user ${userId}, topic: ${topic}, level: ${levelDetermination.level}, score: ${score}`);
 
-            await User.findByIdAndUpdate(userId, updateData);
+            // Find the user first
+            const user = await User.findById(userId);
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            // Initialize knowledgeLevels as an object if it doesn't exist
+            if (!user.knowledgeLevels || typeof user.knowledgeLevels !== 'object') {
+                user.knowledgeLevels = {};
+            }
+
+            // Set the topic data in the object
+            user.knowledgeLevels[topic] = {
+                level: levelDetermination.level,
+                score: score,
+                assessedAt: new Date()
+            };
+
+            // Mark the field as modified for Mongoose
+            user.markModified('knowledgeLevels');
+
+            // Save the user
+            await user.save();
+
+            console.log(`✅ Successfully updated knowledge level for ${topic}: ${levelDetermination.level} (${score}%)`);
+
+            // Verify the update worked
+            const updatedUser = await User.findById(userId);
+            const topicData = updatedUser.knowledgeLevels[topic];
+            console.log(`🔍 Verification - ${topic} data:`, topicData);
+
         } catch (error) {
-            console.error('Error updating user knowledge level:', error);
+            console.error('❌ Error updating user knowledge level:', error);
             throw error;
         }
     }

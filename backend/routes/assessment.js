@@ -605,7 +605,7 @@ router.get('/active-sessions', protect, async (req, res) => {
             status: { $in: ['active', 'paused'] }
         }).lean();
 
-        const formattedSessions = activeSessions.map(session => 
+        const formattedSessions = activeSessions.map(session =>
             assessmentUtils.formatSessionSummary(session)
         );
 
@@ -620,6 +620,157 @@ router.get('/active-sessions', protect, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to get active sessions',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// @desc    Resume or continue incomplete assessment
+// @route   POST /api/assessment/resume/:sessionId
+// @access  Private
+router.post('/resume/:sessionId', protect, [
+    param('sessionId').notEmpty().withMessage('Session ID is required')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
+
+        const { sessionId } = req.params;
+
+        // Find the session and verify it belongs to the user
+        const session = await AssessmentSession.findOne({
+            sessionId,
+            userId: req.user._id,
+            status: { $in: ['active', 'paused'] }
+        });
+
+        if (!session) {
+            return res.status(404).json({
+                success: false,
+                message: 'Assessment session not found or not resumable'
+            });
+        }
+
+        // If session was paused, activate it
+        if (session.status === 'paused') {
+            session.status = 'active';
+            await session.save();
+        }
+
+        // Generate next question if needed
+        let nextQuestion = null;
+        if (session.currentState.questionIndex < session.config.maxQuestions) {
+            try {
+                nextQuestion = await assessmentAlgorithm.generateNextQuestion(sessionId);
+            } catch (error) {
+                console.error('Error generating next question during resume:', error);
+                // If question generation fails, return session state without next question
+            }
+        }
+
+        const progress = await assessmentAlgorithm.getSessionProgress(sessionId);
+
+        res.json({
+            success: true,
+            message: 'Assessment session resumed successfully',
+            data: {
+                sessionId: session.sessionId,
+                topic: session.topic,
+                status: session.status,
+                progress,
+                nextQuestion,
+                resumedAt: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Error resuming assessment:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to resume assessment',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// @desc    Start a retake assessment (force restart)
+// @route   POST /api/assessment/retake
+// @access  Private
+router.post('/retake', protect, [
+    body('topic')
+        .isIn(['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind'])
+        .withMessage('Invalid topic'),
+    body('config.maxQuestions')
+        .optional()
+        .isInt({ min: 5, max: 20 })
+        .withMessage('Max questions must be between 5 and 20'),
+    body('config.initialDifficulty')
+        .optional()
+        .isIn(['beginner', 'intermediate', 'advanced'])
+        .withMessage('Initial difficulty must be beginner, intermediate, or advanced')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
+
+        const { topic, config = {} } = req.body;
+        const userId = req.user._id;
+
+        // Get previous assessment result for comparison
+        const previousResult = await AssessmentResult.findOne({
+            userId,
+            topic
+        }).sort({ createdAt: -1 });
+
+        // Abandon any existing active sessions for this topic
+        await AssessmentSession.updateMany(
+            { userId, topic, status: { $in: ['active', 'paused'] } },
+            {
+                status: 'abandoned',
+                completedAt: new Date()
+            }
+        );
+
+        // Start new assessment
+        const startTime = Date.now();
+        const assessmentData = await assessmentAlgorithm.startAssessment(userId, topic, config);
+        const responseTime = Date.now() - startTime;
+
+        res.status(201).json({
+            success: true,
+            message: 'Retake assessment started successfully',
+            data: {
+                ...assessmentData,
+                isRetake: true,
+                previousResult: previousResult ? {
+                    score: previousResult.score,
+                    level: previousResult.level,
+                    completedAt: previousResult.createdAt
+                } : null
+            },
+            metadata: {
+                responseTime: `${responseTime}ms`,
+                startedAt: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Error starting retake assessment:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to start retake assessment',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
     }

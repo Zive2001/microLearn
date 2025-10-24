@@ -48,7 +48,7 @@ const Home = () => {
             <div className="flex items-center">
               <AcademicCapIcon className="h-8 w-8 text-[#2383E2]" />
               <span className="ml-2 text-xl font-semibold text-[#37352F]">
-                AdaptiveLearn
+                MicroLearn
               </span>
             </div>
             
@@ -158,7 +158,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl lg:text-4xl font-bold text-[#37352F]">
-              How AdaptiveLearn Works
+              How MicroLearn Works
             </h2>
             <p className="mt-4 text-xl text-[#6B6B6B]">
               AI-powered personalization for your learning journey
@@ -194,7 +194,7 @@ const Home = () => {
           <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
             <div>
               <h2 className="text-3xl lg:text-4xl font-bold text-[#37352F]">
-                Why Choose AdaptiveLearn?
+                Why Choose MicroLearn?
               </h2>
               
               <ul className="mt-8 space-y-4">
@@ -250,7 +250,7 @@ const Home = () => {
             <h2 className="text-3xl lg:text-4xl font-bold text-white">
               Ready to discover your programming level?
             </h2>
-            <p className="mt-4 text-xl text-blue-100">
+            <p className="mt-4 text-xl text-gray-300">
               Join thousands of learners who've found their perfect learning path
             </p>
             <div className="mt-8">
@@ -273,11 +273,11 @@ const Home = () => {
             <div className="flex justify-center items-center mb-4">
               <AcademicCapIcon className="h-6 w-6 text-[#2383E2]" />
               <span className="ml-2 text-lg font-semibold text-[#37352F]">
-                AdaptiveLearn
+                MicroLearn
               </span>
             </div>
             <p className="text-sm text-[#6B6B6B]">
-              &copy; 2025 AdaptiveLearn. Built with AI-powered personalization.
+              &copy; 2025 MicroLearn. Built with AI-powered personalization.
             </p>
           </div>
         </div>

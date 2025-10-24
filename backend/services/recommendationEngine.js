@@ -140,7 +140,7 @@ class RecommendationEngine {
      * @param {string} currentLevel - User's current level
      * @param {number} maxVideos - Max videos per level
      */
-    async getAlternativeLevelVideos(topic, currentLevel, maxVideos = 2) {
+    async getAlternativeLevelVideos(topic, currentLevel, maxVideos = 1) {
         const levelHierarchy = {
             'Beginner': ['Intermediate'],
             'Intermediate': ['Beginner', 'Professional'],

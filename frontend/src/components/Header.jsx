@@ -69,10 +69,10 @@ const Header = () => {
           
           {/* Logo - Notion style */}
           <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center group-hover:bg-blue-600 transition-colors duration-200">
+            <div className="w-8 h-8 bg-gray-900 rounded-md flex items-center justify-center group-hover:bg-[#212529] transition-colors duration-200">
               <BookOpen className="h-4 w-4 text-white" />
             </div>
-            <span className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+            <span className="text-xl font-semibold text-gray-900 group-hover:text-[#212529] transition-colors">
               MicroLearn
             </span>
           </Link>
@@ -125,7 +125,7 @@ const Header = () => {
             </Link>
             <Link
               to="/auth/register"
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200 text-sm"
+              className="px-3 py-2 bg-[#212529] hover:bg-[#495057] text-white font-medium rounded-md transition-colors duration-200 text-sm"
             >
               Start Learning
             </Link>
@@ -187,7 +187,7 @@ const Header = () => {
               </Link>
               <Link
                 to="/auth/register"
-                className="block w-full px-3 py-2 text-center bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200 text-sm"
+                className="block w-full px-3 py-2 text-center bg-[#212529] hover:bg-[#495057] text-white font-medium rounded-md transition-colors duration-200 text-sm"
               >
                 Start Learning
               </Link>

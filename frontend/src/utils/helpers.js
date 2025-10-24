@@ -79,6 +79,17 @@ export const formatPercentage = (value, decimals = 0) => {
 
 // Topic utilities
 export const getTopicMeta = (topicSlug) => {
+  // Handle null, undefined, or "undefined" string
+  if (!topicSlug || topicSlug === 'undefined' || topicSlug === 'null') {
+    console.warn('⚠️ getTopicMeta called with invalid topicSlug:', topicSlug);
+    return {
+      name: 'Unknown Topic',
+      icon: '❓',
+      color: '#6B7280',
+      category: 'Unknown'
+    };
+  }
+
   return TOPIC_META[topicSlug] || {
     name: topicSlug,
     icon: '📚',
@@ -296,7 +307,7 @@ export const getAssessmentStatusColor = (status) => {
     case 'completed':
       return 'text-green-600';
     case 'active':
-      return 'text-blue-600';
+      return 'text-[#495057]';
     case 'paused':
       return 'text-yellow-600';
     case 'abandoned':
@@ -309,7 +320,7 @@ export const getAssessmentStatusColor = (status) => {
 // Recommendation utilities
 export const getRecommendationPriority = (score) => {
   if (score >= 8) return { label: 'Highly Recommended', color: 'text-green-600' };
-  if (score >= 6) return { label: 'Recommended', color: 'text-blue-600' };
+  if (score >= 6) return { label: 'Recommended', color: 'text-[#495057]' };
   if (score >= 4) return { label: 'Consider', color: 'text-yellow-600' };
   return { label: 'Optional', color: 'text-gray-600' };
 };

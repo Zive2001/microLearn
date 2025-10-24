@@ -31,6 +31,10 @@ import Profile from './pages/Profile';
 // Keypoint-Based Learning
 import KeypointLearning from './pages/KeypointLearning';
 import KeypointPlayer from './pages/KeypointPlayer';
+// Quiz Pages
+import TutorialQuiz from './pages/TutorialQuiz';
+import MicrolearningPage from './pages/MicrolearningPage';
+// import QuizResults from './pages/QuizResults';
 
 function App() {
   return (
@@ -59,12 +63,20 @@ function App() {
                 <Route path="topics" element={<TopicSelection />} />
                 <Route path="assessment" element={<AssessmentSelection />} />
                 <Route path="assessment/:topic" element={<AssessmentQuiz />} />
-                <Route path="assessment-results/:resultId" element={<AssessmentResults />} />
+                <Route path="assessment-results/:topic/:sessionId" element={<AssessmentResults />} />
+                <Route path="assessment-results/session/:sessionId" element={<AssessmentResults />} />
                 <Route path="recommendations/:topic" element={<VideoRecommendations />} />
                 <Route path="learning-path/:topic" element={<LearningPath />} />
                 <Route path="keypoint-learning" element={<KeypointLearning />} />
                 <Route path="keypoint-player/:videoId" element={<KeypointPlayer />} />
                 <Route path="profile" element={<Profile />} />
+
+                {/* Microlearning & Quiz Routes */}
+                <Route path="microlearning/:videoId" element={<MicrolearningPage />} />
+                <Route path="microlearning/:videoId/:topic" element={<MicrolearningPage />} />
+                <Route path="quiz/start/:videoId" element={<TutorialQuiz />} />
+                <Route path="quiz/session/:sessionId" element={<TutorialQuiz />} />
+                {/* <Route path="quiz/results/:sessionId" element={<QuizResults />} /> */}
               </Route>
 
               {/* Backward compatibility routes */}
