@@ -18,7 +18,7 @@ import Register from './pages/Register';
 import LandingPage from './pages/LandingPage';
 import Home from './pages/Home';
 
-// Protected Pages  
+// Protected Pages
 import Dashboard from './pages/Dashboard';
 import TopicSelection from './pages/TopicSelection';
 import AssessmentSelection from './pages/AssessmentSelection';
@@ -27,6 +27,10 @@ import AssessmentResults from './pages/AssessmentResults';
 import VideoRecommendations from './pages/VideoRecommendations';
 import LearningPath from './pages/LearningPath';
 import Profile from './pages/Profile';
+
+// Keypoint-Based Learning
+import KeypointLearning from './pages/KeypointLearning';
+import KeypointPlayer from './pages/KeypointPlayer';
 
 function App() {
   return (
@@ -38,7 +42,7 @@ function App() {
               {/* Public Routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/home" element={<Home />} />
-              
+
               {/* Authentication Routes (self-contained layouts) */}
               <Route path="/auth/login" element={<Login />} />
               <Route path="/auth/register" element={<Register />} />
@@ -58,12 +62,18 @@ function App() {
                 <Route path="assessment-results/:resultId" element={<AssessmentResults />} />
                 <Route path="recommendations/:topic" element={<VideoRecommendations />} />
                 <Route path="learning-path/:topic" element={<LearningPath />} />
+                <Route path="keypoint-learning" element={<KeypointLearning />} />
+                <Route path="keypoint-player/:videoId" element={<KeypointPlayer />} />
                 <Route path="profile" element={<Profile />} />
               </Route>
 
               {/* Backward compatibility routes */}
               <Route path="/dashboard" element={<Navigate to="/app/dashboard" replace />} />
               <Route path="/topics" element={<Navigate to="/app/topics" replace />} />
+
+              {/* Development: Public access to video creation */}
+              <Route path="/keypoint-learning" element={<KeypointLearning />} />
+              <Route path="/keypoint-player/:videoId" element={<KeypointPlayer />} />
 
               {/* Fallback Route */}
               <Route path="*" element={<Navigate to="/" replace />} />
