@@ -607,14 +607,15 @@ router.post('/process-recommendation', protect, [
         const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
         // Import video controller function
-        const { processYouTubeURL } = require('../controllers/videoController');
+        const videoController = require('../controllers/videoController');
 
         // Create a mock request object with the required data
         const mockReq = {
             body: {
                 url: youtubeUrl,
                 title: title || `Microlearning: ${topic}`,
-                description: description || `Generated microlearning content for ${topic}`
+                description: description || `Generated microlearning content for ${topic}`,
+                topic: topic
             },
             user: { _id: userId }
         };
@@ -639,7 +640,7 @@ router.post('/process-recommendation', protect, [
         };
 
         // Call the YouTube processing function
-        await processYouTubeURL(mockReq, mockRes);
+        await videoController.processYouTubeURL(mockReq, mockRes);
 
         if (processError) {
             return res.status(processError.code).json(processError.data);

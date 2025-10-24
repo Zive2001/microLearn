@@ -5,6 +5,11 @@
       "Bash(node:*)",
       "Bash(pkill:*)",
       "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(tskill:*)"
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(nslookup:*)",

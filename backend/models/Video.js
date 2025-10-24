@@ -19,7 +19,18 @@ const videoSchema = new mongoose.Schema({
     sourceUrl: {
         type: String,
         required: [true, 'Source URL is required'],
-        match: [/^https:\/\/(www\.)?youtube\.com\/watch\?v=.+/, 'Must be a valid YouTube URL']
+        validate: {
+            validator: function(url) {
+                const patterns = [
+                    /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[a-zA-Z0-9_-]{11}/,
+                    /^https?:\/\/youtu\.be\/[a-zA-Z0-9_-]{11}/,
+                    /^https?:\/\/(www\.)?youtube\.com\/embed\/[a-zA-Z0-9_-]{11}/,
+                    /^https?:\/\/m\.youtube\.com\/watch\?v=[a-zA-Z0-9_-]{11}/
+                ];
+                return patterns.some(pattern => pattern.test(url));
+            },
+            message: 'Must be a valid YouTube URL'
+        }
     },
     youtubeVideoId: {
         type: String,
@@ -63,7 +74,7 @@ const videoSchema = new mongoose.Schema({
     // Topic classification (from recommendation context)
     topic: {
         type: String,
-        enum: ['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind'],
+        enum: ['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind', 'custom'],
         required: [true, 'Topic is required']
     },
     difficulty: {
@@ -101,8 +112,22 @@ videoSchema.virtual('watchUrl').get(function() {
 
 // Static method to extract YouTube video ID from URL
 videoSchema.statics.extractVideoId = function(url) {
-    const match = url.match(/[?&]v=([^&]+)/);
-    return match ? match[1] : null;
+    if (!url) return null;
+
+    // Handle various YouTube URL formats
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|m\.youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+        /^([a-zA-Z0-9_-]{11})$/ // Direct video ID
+    ];
+
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+
+    return null;
 };
 
 // Instance method to update processing status

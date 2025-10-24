@@ -243,9 +243,8 @@ const assessmentResultSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Indexes for better performance
+// Indexes for better performance (sessionId already has unique index)
 assessmentSessionSchema.index({ userId: 1, status: 1 });
-assessmentSessionSchema.index({ sessionId: 1 });
 assessmentSessionSchema.index({ topic: 1, status: 1 });
 
 assessmentResultSchema.index({ userId: 1, topic: 1 });

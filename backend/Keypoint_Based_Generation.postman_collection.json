@@ -1,0 +1,282 @@
+{
+  "info": {
+    "name": "Keypoint-Based Educational Script & Avatar Generation",
+    "description": "Generate 1000+ word educational scripts based on user-specified keypoints with avatar videos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.token) {",
+                  "        pm.environment.set('auth_token', response.token);",
+                  "        console.log('✅ Auth token saved');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"avatartest@microlearn.com\",\n  \"password\": \"Test123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Generate from Keypoints",
+      "item": [
+        {
+          "name": "Generate Educational Scripts (JavaScript Tutorial)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.database) {",
+                  "        pm.environment.set('video_id', response.data.database.videoId);",
+                  "        console.log('✅ Video ID:', response.data.database.videoId);",
+                  "    }",
+                  "    if (response.data && response.data.scripts) {",
+                  "        console.log('📝 Scripts generated:', response.data.scripts.length);",
+                  "        response.data.scripts.forEach((script, i) => {",
+                  "            console.log(`   ${i+1}. ${script.keypoint}: ${script.wordCount} words`);",
+                  "        });",
+                  "    }",
+                  "    if (response.data && response.data.avatarVideos) {",
+                  "        const successful = response.data.avatarVideos.filter(v => !v.failed).length;",
+                  "        console.log('🎭 Avatar videos:', successful);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"youtubeUrl\": \"https://youtu.be/W6NZfCO5SIk\",\n  \"keypoints\": [\n    \"JavaScript variable declaration with let, const, and var - differences and when to use each\",\n    \"Understanding JavaScript data types including primitives and objects\",\n    \"Variable scope concepts - global scope, function scope, and block scope explained\",\n    \"Hoisting behavior in JavaScript and how it affects variable declarations\",\n    \"Best practices for naming variables and choosing between let, const, and var\"\n  ],\n  \"options\": {\n    \"teacher\": \"Ava\",\n    \"generateAvatarVideos\": true,\n    \"saveToDatabase\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/keypoint-generation/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "keypoint-generation", "generate"]
+            },
+            "description": "Generate 1000+ word educational scripts for each keypoint with avatar videos"
+          }
+        },
+        {
+          "name": "Generate - React Hooks Tutorial",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"youtubeUrl\": \"https://youtu.be/O6P86uwfdR0\",\n  \"keypoints\": [\n    \"Understanding useState hook for state management in functional components\",\n    \"useEffect hook for handling side effects and lifecycle methods\",\n    \"useContext hook for consuming context API efficiently\",\n    \"Custom hooks - creating reusable stateful logic\"\n  ],\n  \"options\": {\n    \"teacher\": \"Andrew\",\n    \"generateAvatarVideos\": true,\n    \"saveToDatabase\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/keypoint-generation/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "keypoint-generation", "generate"]
+            }
+          }
+        },
+        {
+          "name": "Generate - Minimum 3 Keypoints",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"youtubeUrl\": \"https://youtu.be/SqcY0GlETPk\",\n  \"keypoints\": [\n    \"What is React and why use it for building user interfaces\",\n    \"JSX syntax and how to write React components\",\n    \"Props and state management basics in React applications\"\n  ],\n  \"options\": {\n    \"teacher\": \"Ava\",\n    \"generateAvatarVideos\": true,\n    \"saveToDatabase\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/keypoint-generation/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "keypoint-generation", "generate"]
+            }
+          }
+        },
+        {
+          "name": "Generate - Maximum 12 Keypoints",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"youtubeUrl\": \"https://youtu.be/hdI2bqOjy3c\",\n  \"keypoints\": [\n    \"JavaScript introduction and setting up development environment\",\n    \"Variables and data types in JavaScript\",\n    \"Operators and expressions\",\n    \"Conditional statements - if, else, switch\",\n    \"Loops - for, while, do-while\",\n    \"Functions - declaration, expression, arrow functions\",\n    \"Arrays and array methods\",\n    \"Objects and object manipulation\",\n    \"DOM manipulation basics\",\n    \"Events and event handling\",\n    \"Error handling with try-catch\",\n    \"Introduction to ES6+ features\"\n  ],\n  \"options\": {\n    \"teacher\": \"Andrew\",\n    \"generateAvatarVideos\": true,\n    \"saveToDatabase\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/keypoint-generation/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "keypoint-generation", "generate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Retrieve Generated Content",
+      "item": [
+        {
+          "name": "Get Video with All Segments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/keypoint-generation/video/{{video_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "keypoint-generation", "video", "{{video_id}}"]
+            },
+            "description": "Retrieve all generated segments with educational scripts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Regenerate Avatar",
+      "item": [
+        {
+          "name": "Regenerate Avatar with Different Voice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teacher\": \"Andrew\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/keypoint-generation/regenerate-avatar/{{micro_video_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "keypoint-generation", "regenerate-avatar", "{{micro_video_id}}"]
+            },
+            "description": "Regenerate avatar video with different teacher voice"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Frontend Integration",
+      "item": [
+        {
+          "name": "Get Avatar Data for Frontend Playback",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/keypoint-generation/video/{{video_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "keypoint-generation", "video", "{{video_id}}"]
+            },
+            "description": "Get all avatar data including audioBase64 and visemes for frontend rendering"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "video_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "micro_video_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

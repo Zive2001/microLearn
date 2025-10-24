@@ -120,8 +120,7 @@ const topicSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Indexes for better query performance
-topicSchema.index({ slug: 1 });
+// Indexes for better query performance (slug already has unique index)
 topicSchema.index({ category: 1, isActive: 1 });
 topicSchema.index({ featured: 1, popularity: -1 });
 
