@@ -74,7 +74,7 @@ const videoSchema = new mongoose.Schema({
     // Topic classification (from recommendation context)
     topic: {
         type: String,
-        enum: ['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind'],
+        enum: ['javascript', 'react', 'typescript', 'nodejs', 'python', 'nextjs', 'mongodb', 'css-tailwind', 'custom'],
         required: [true, 'Topic is required']
     },
     difficulty: {

@@ -4,6 +4,7 @@ const MicroVideo = require('../models/MicroVideo');
 const transcriptService = require('../services/transcriptService');
 const openaiService = require('../services/openaiService');
 const microContentService = require('../services/microContentService');
+const azureTtsService = require('../services/azureTtsService');
 
 class VideoController {
 
@@ -124,7 +125,12 @@ class VideoController {
 
             console.log(`✅ Created ${microVideos.length} micro-video segments`);
 
-            // Step 4: Mark as completed
+            // Step 4: Generate avatar videos with lip sync for each segment
+            // TODO: Re-enable when avatar video generation service is fully implemented
+            // console.log(`🎭 Step 4: Generating avatar videos with lip sync...`);
+            // await this.generateAvatarVideosForSegments(microVideos);
+
+            // Step 5: Mark as completed
             await video.updateProcessingStatus('completed');
             console.log(`🎉 Video processing completed for: ${video.title}`);
 
@@ -191,6 +197,73 @@ class VideoController {
         }
 
         return microVideos;
+    }
+
+    /**
+     * Generate avatar videos for all micro-video segments
+     * @param {Array} microVideos - Array of MicroVideo documents
+     */
+    async generateAvatarVideosForSegments(microVideos) {
+        const defaultTeacher = 'Ava'; // Default avatar teacher
+        let successCount = 0;
+        let failureCount = 0;
+
+        for (const microVideo of microVideos) {
+            try {
+                const educationalScript = microVideo.cltBlmScript?.educationalScript;
+
+                if (!educationalScript) {
+                    console.log(`⚠️ Skipping avatar generation for micro-video ${microVideo._id} - no educational script`);
+                    continue;
+                }
+
+                console.log(`🎭 Generating avatar video for: ${microVideo.title}`);
+
+                // Generate TTS with visemes using the educational script
+                const ttsResult = await azureTtsService.generateTTSWithVisemes(
+                    educationalScript,
+                    defaultTeacher
+                );
+
+                console.log(`🎤 TTS generated with ${ttsResult.visemes.length} visemes`);
+
+                // TODO: Implement avatar video file generation
+                // For now, we'll just store the TTS data
+                const avatarVideoPath = ttsResult.audioPath;
+
+                console.log(`📹 Avatar audio file created: ${avatarVideoPath}`);
+
+                // Update micro-video with avatar data
+                microVideo.avatarData = {
+                    generated: true,
+                    teacher: defaultTeacher,
+                    videoPath: avatarVideoPath,
+                    audioPath: ttsResult.audioPath,
+                    visemes: ttsResult.visemes,
+                    visemeCount: ttsResult.visemes.length,
+                    generatedAt: new Date()
+                };
+
+                await microVideo.save();
+                successCount++;
+
+                console.log(`✅ Avatar video generated for: ${microVideo.title} (${ttsResult.visemes.length} visemes, video: ${avatarVideoPath})`);
+
+            } catch (error) {
+                console.error(`❌ Avatar generation failed for micro-video ${microVideo._id}:`, error);
+                failureCount++;
+
+                // Save error info to micro-video
+                microVideo.avatarData = {
+                    generated: false,
+                    error: error.message,
+                    generatedAt: new Date()
+                };
+                await microVideo.save();
+            }
+        }
+
+        console.log(`🎭 Avatar generation summary: ${successCount} successful, ${failureCount} failed`);
     }
 
     /**

@@ -83,7 +83,7 @@ const microVideoSchema = new mongoose.Schema({
 
         educationalScript: {
             type: String,
-            maxlength: [2000, 'Educational script cannot exceed 2000 characters']
+            maxlength: [10000, 'Educational script cannot exceed 10000 characters']
         },
 
         visualCues: [{
@@ -98,11 +98,11 @@ const microVideoSchema = new mongoose.Schema({
                 keypoints: [{
                     type: String,
                     trim: true,
-                    maxlength: [150, 'Frame keypoint cannot exceed 150 characters']
+                    maxlength: [200, 'Frame keypoint cannot exceed 200 characters']
                 }],
                 audioScript: {
                     type: String,
-                    maxlength: [2000, 'Frame audio script cannot exceed 2000 characters']
+                    maxlength: [5000, 'Frame audio script cannot exceed 5000 characters']
                 },
                 estimatedDuration: {
                     type: Number, // in seconds
@@ -113,11 +113,11 @@ const microVideoSchema = new mongoose.Schema({
                 keypoints: [{
                     type: String,
                     trim: true,
-                    maxlength: [150, 'Frame keypoint cannot exceed 150 characters']
+                    maxlength: [200, 'Frame keypoint cannot exceed 200 characters']
                 }],
                 audioScript: {
                     type: String,
-                    maxlength: [3000, 'Frame audio script cannot exceed 3000 characters']
+                    maxlength: [5000, 'Frame audio script cannot exceed 5000 characters']
                 },
                 estimatedDuration: {
                     type: Number, // in seconds
@@ -128,11 +128,11 @@ const microVideoSchema = new mongoose.Schema({
                 keypoints: [{
                     type: String,
                     trim: true,
-                    maxlength: [150, 'Frame keypoint cannot exceed 150 characters']
+                    maxlength: [200, 'Frame keypoint cannot exceed 200 characters']
                 }],
                 audioScript: {
                     type: String,
-                    maxlength: [2000, 'Frame audio script cannot exceed 2000 characters']
+                    maxlength: [5000, 'Frame audio script cannot exceed 5000 characters']
                 },
                 estimatedDuration: {
                     type: Number, // in seconds
@@ -181,6 +181,29 @@ const microVideoSchema = new mongoose.Schema({
     },
     thumbnailUrl: {
         type: String,
+        default: null
+    },
+
+    // TalkingHead Avatar Video Generation
+    avatarVideoPath: {
+        type: String,
+        default: null
+    },
+    avatarVideoDuration: {
+        type: Number, // in seconds
+        default: null
+    },
+    avatarTeacher: {
+        type: String,
+        enum: ['Ava', 'Andrew'],
+        default: null
+    },
+    avatarVisemesCount: {
+        type: Number,
+        default: null
+    },
+    avatarGeneratedAt: {
+        type: Date,
         default: null
     }
 }, {

@@ -9,6 +9,7 @@ pnpm-debug.log*
 
 # Environment variables
 .env
+.env.working
 
 # Build outputs
 dist/
@@ -21,3 +22,5 @@ Thumbs.db
 # IDE files
 .vscode/
 .idea/
+
+generated-audio/
