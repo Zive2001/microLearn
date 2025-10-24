@@ -286,7 +286,7 @@ const MicrolearningPage = () => {
       className="bg-white rounded-lg shadow-sm border border-[#E9E9E7] overflow-hidden hover:shadow-md transition-all"
     >
       {/* Video Thumbnail */}
-      <div className="relative aspect-video bg-gradient-to-br from-[#2383E2] to-[#0F62FE]">
+      <div className="relative aspect-video bg-gradient-to-br from-[#212529] to-[#495057]">
         <div className="w-full h-full flex items-center justify-center">
           <PlayIcon className="h-12 w-12 text-white/80" />
         </div>
@@ -365,7 +365,7 @@ const MicrolearningPage = () => {
           isCompleted
             ? 'bg-green-50 border-green-200'
             : isAvailable
-              ? 'bg-white border-[#2383E2] hover:shadow-md'
+              ? 'bg-white border-[#212529] hover:shadow-md'
               : 'bg-gray-50 border-gray-200'
         }`}
       >
@@ -373,9 +373,9 @@ const MicrolearningPage = () => {
           <div className="flex-1">
             <div className="flex items-center space-x-2 mb-2">
               {isFinal ? (
-                <AwardIcon className={`h-5 w-5 ${isCompleted ? 'text-green-600' : isAvailable ? 'text-[#2383E2]' : 'text-gray-400'}`} />
+                <AwardIcon className={`h-5 w-5 ${isCompleted ? 'text-green-600' : isAvailable ? 'text-[#212529]' : 'text-gray-400'}`} />
               ) : (
-                <TargetIcon className={`h-5 w-5 ${isCompleted ? 'text-green-600' : isAvailable ? 'text-[#2383E2]' : 'text-gray-400'}`} />
+                <TargetIcon className={`h-5 w-5 ${isCompleted ? 'text-green-600' : isAvailable ? 'text-[#212529]' : 'text-gray-400'}`} />
               )}
 
               <h3 className={`text-lg font-semibold ${
@@ -405,8 +405,8 @@ const MicrolearningPage = () => {
                     ? 'bg-green-600 text-white hover:bg-green-700'
                     : isAvailable
                       ? isFinal
-                        ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
-                        : 'bg-[#2383E2] text-white hover:bg-[#0F62FE]'
+                        ? 'bg-gradient-to-r from-purple-600 to-[#212529] text-white hover:from-purple-700 hover:to-[#495057]'
+                        : 'bg-[#212529] text-white hover:bg-[#495057]'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
@@ -437,7 +437,7 @@ const MicrolearningPage = () => {
           </p>
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center px-4 py-2 bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#495057] transition-colors"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
             Go Back
@@ -453,7 +453,7 @@ const MicrolearningPage = () => {
       <style>{`
         .highlight-new-segment {
           animation: pulse-blue 2s ease-in-out;
-          border: 2px solid #2383E2;
+          border: 2px solid #212529;
           border-radius: 12px;
         }
 
@@ -480,7 +480,7 @@ const MicrolearningPage = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center text-[#6B6B6B] hover:text-[#2383E2] transition-colors"
+                className="flex items-center text-[#6B6B6B] hover:text-[#212529] transition-colors"
               >
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />
                 Back to Recommendations
@@ -504,7 +504,7 @@ const MicrolearningPage = () => {
         <div className="bg-white rounded-xl shadow-sm border border-[#E9E9E7] p-8 mb-8">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded-xl flex items-center justify-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-[#212529] to-[#495057] rounded-xl flex items-center justify-center">
                 <BookOpenIcon className="h-8 w-8 text-white" />
               </div>
             </div>
@@ -569,7 +569,7 @@ const MicrolearningPage = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-medium text-[#37352F] flex items-center space-x-2">
                     <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold ${
-                      correspondingQuiz?.completed ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                      correspondingQuiz?.completed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                     }`}>
                       {segmentNumber}
                     </span>
@@ -598,7 +598,7 @@ const MicrolearningPage = () => {
                       correspondingQuiz.completed
                         ? 'bg-green-50 border-green-200'
                         : correspondingQuiz.available
-                          ? 'bg-white border-[#2383E2]'
+                          ? 'bg-white border-[#212529]'
                           : 'bg-gray-50 border-gray-200'
                     }`}>
                       <div className="text-center">
@@ -625,7 +625,7 @@ const MicrolearningPage = () => {
                             correspondingQuiz.completed
                               ? 'bg-green-600 text-white hover:bg-green-700'
                               : correspondingQuiz.available
-                                ? 'bg-[#2383E2] text-white hover:bg-[#0F62FE]'
+                                ? 'bg-[#212529] text-white hover:bg-[#495057]'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           }`}
                         >
@@ -653,24 +653,24 @@ const MicrolearningPage = () => {
               .map(quiz => renderQuizButton(quiz))}
 
             {/* Progress Summary */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-lg font-semibold text-blue-900">Learning Progress</span>
-                <span className="text-sm text-blue-700">
+                <span className="text-lg font-semibold text-[#212529]">Learning Progress</span>
+                <span className="text-sm text-[#212529]">
                   {quizProgression.completedQuizzes.filter(id => id.startsWith('intermediate')).length} / {Math.ceil((microlearningContent.microVideos?.length || 0) / 3)} quizzes completed
                 </span>
               </div>
 
-              <div className="w-full bg-blue-200 rounded-full h-3 mb-3">
+              <div className="w-full bg-gray-200 rounded-full h-3 mb-3">
                 <div
-                  className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                  className="bg-[#212529] h-3 rounded-full transition-all duration-300"
                   style={{
                     width: `${(quizProgression.completedQuizzes.filter(id => id.startsWith('intermediate')).length / Math.max(1, Math.ceil((microlearningContent.microVideos?.length || 0) / 3))) * 100}%`
                   }}
                 ></div>
               </div>
 
-              <div className="text-sm text-blue-700">
+              <div className="text-sm text-[#212529]">
                 Track your progress through the {Math.ceil((microlearningContent.microVideos?.length || 0) / 3)} intermediate quizzes and final comprehensive assessment
               </div>
             </div>

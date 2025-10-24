@@ -174,10 +174,10 @@ const TutorialQuizButton = ({
           text: quizText,
           bgColor: availableQuiz?.sessionType === 'final'
             ? 'bg-green-600 text-white'
-            : 'bg-[#2383E2] text-white',
+            : 'bg-[#212529] text-white',
           hoverColor: availableQuiz?.sessionType === 'final'
             ? 'hover:bg-green-700'
-            : 'hover:bg-[#0F62FE]',
+            : 'hover:bg-[#495057]',
           disabled: false
         };
     }

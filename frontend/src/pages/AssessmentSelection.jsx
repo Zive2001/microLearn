@@ -172,7 +172,7 @@ const AssessmentSelection = () => {
           {displayTopics?.length === 0 && (
             <Link
               to="/app/topics"
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-[#495057] hover:text-[#212529] font-medium"
             >
               Select Topics First →
             </Link>
@@ -189,7 +189,7 @@ const AssessmentSelection = () => {
             </p>
             <Link
               to="/app/topics"
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-[#212529] text-white rounded text-sm font-medium hover:bg-[#495057] transition-colors"
             >
               Browse Topics
               <ArrowRightIcon className="ml-1 h-4 w-4" />
@@ -281,7 +281,7 @@ const AssessmentSelection = () => {
                     <div className="ml-4 flex flex-col gap-2">
                       <button
                         onClick={() => handleStartAssessment(topicSlug)}
-                        className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center px-3 py-1.5 bg-[#212529] text-white rounded text-sm font-medium hover:bg-[#495057] transition-colors"
                       >
                         <PlayIcon className="h-3 w-3 mr-1" />
                         {hasAssessed ? 'Retake' : 'Start'}

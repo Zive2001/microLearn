@@ -90,7 +90,7 @@ const FeatureCards = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
             Choose Your
-            <span className="block text-blue-600">
+            <span className="block text-[#495057]">
               Learning Path
             </span>
           </h2>
@@ -117,7 +117,7 @@ const FeatureCards = () => {
                   </div>
 
                   {/* Language Name */}
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-[#212529] transition-colors">
                     {lang.name}
                   </h3>
 
@@ -171,7 +171,7 @@ const FeatureCards = () => {
                   </div>
 
                   {/* CTA Button - Notion style */}
-                  <button className="w-full flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-md transition-colors duration-200 text-sm group-hover:bg-blue-600 group-hover:text-white">
+                  <button className="w-full flex items-center justify-center px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium rounded-md transition-colors duration-200 text-sm group-hover:bg-[#212529] group-hover:text-white">
                     Start Learning
                     <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
                   </button>
@@ -190,7 +190,7 @@ const FeatureCards = () => {
             <p className="text-gray-600 mb-6 leading-relaxed">
               Take our 2-minute skills assessment and let our AI recommend the perfect learning path for your goals and experience level.
             </p>
-            <button className="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors duration-200 text-sm">
+            <button className="inline-flex items-center px-4 py-2.5 bg-[#212529] hover:bg-[#495057] text-white font-medium rounded-md transition-colors duration-200 text-sm">
               Take Skills Assessment
               <ArrowRight className="ml-2 h-4 w-4" />
             </button>

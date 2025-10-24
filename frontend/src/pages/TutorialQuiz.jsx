@@ -426,7 +426,7 @@ const TutorialQuiz = () => {
           </p>
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center px-4 py-2 bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#495057] transition-colors"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2" />
             Back to Videos
@@ -448,7 +448,7 @@ const TutorialQuiz = () => {
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center text-[#6B6B6B] hover:text-[#2383E2] transition-colors"
+                className="flex items-center text-[#6B6B6B] hover:text-[#212529] transition-colors"
               >
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />
                 Back to Videos
@@ -463,7 +463,7 @@ const TutorialQuiz = () => {
               <div className="w-32 bg-gray-200 rounded-full h-2">
                 <div
                   className={`h-2 rounded-full transition-all duration-300 ${
-                    currentQuizType === 'final' ? 'bg-green-500' : 'bg-[#2383E2]'
+                    currentQuizType === 'final' ? 'bg-green-500' : 'bg-[#212529]'
                   }`}
                   style={{ width: `${progress}%` }}
                 />
@@ -551,7 +551,7 @@ const TutorialQuiz = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-3">
-                        <BrainIcon className="h-5 w-5 text-[#2383E2]" />
+                        <BrainIcon className="h-5 w-5 text-[#212529]" />
                         <span className="text-sm font-medium text-[#6B6B6B]">
                           {currentQuestion.questionType} • {currentQuestion.difficulty}
                         </span>
@@ -593,8 +593,8 @@ const TutorialQuiz = () => {
                         className={`
                           w-full text-left p-4 rounded-lg border-2 transition-all
                           ${selectedAnswer === key
-                            ? 'border-[#2383E2] bg-[#2383E2]/5'
-                            : 'border-[#E9E9E7] hover:border-[#2383E2]/50'
+                            ? 'border-[#212529] bg-[#212529]/5'
+                            : 'border-[#E9E9E7] hover:border-[#212529]/50'
                           }
                           ${showResult && key === currentQuestion.correctAnswer
                             ? 'border-green-500 bg-green-50'
@@ -608,7 +608,7 @@ const TutorialQuiz = () => {
                         <div className="flex items-center space-x-3">
                           <div className={`
                             w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-medium
-                            ${selectedAnswer === key ? 'border-[#2383E2] bg-[#2383E2] text-white' : 'border-[#E9E9E7]'}
+                            ${selectedAnswer === key ? 'border-[#212529] bg-[#212529] text-white' : 'border-[#E9E9E7]'}
                           `}>
                             {key}
                           </div>
@@ -649,8 +649,8 @@ const TutorialQuiz = () => {
 
                       {/* Hint for wrong answers */}
                       {selectedAnswer !== currentQuestion.correctAnswer && (
-                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <p className="text-sm text-blue-800">
+                        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                          <p className="text-sm text-[#212529]">
                             <span className="font-medium">💡 Hint: </span>
                             {currentQuestion.hint}
                           </p>
@@ -669,7 +669,7 @@ const TutorialQuiz = () => {
                             setSelectedAnswer('');
                             setShowResult(false);
                           }}
-                          className="px-4 py-2 text-[#6B6B6B] hover:text-[#2383E2] transition-colors"
+                          className="px-4 py-2 text-[#6B6B6B] hover:text-[#212529] transition-colors"
                         >
                           Previous
                         </button>
@@ -681,7 +681,7 @@ const TutorialQuiz = () => {
                         <button
                           onClick={handleAnswerSubmit}
                           disabled={!selectedAnswer || submitting}
-                          className="px-6 py-2 bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="px-6 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#495057] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           {submitting ? (
                             <>

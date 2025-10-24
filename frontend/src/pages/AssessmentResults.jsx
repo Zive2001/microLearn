@@ -156,9 +156,9 @@ const AssessmentResults = () => {
         };
       case 'intermediate':
         return {
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-100',
-          borderColor: 'border-blue-200',
+          color: 'text-[#495057]',
+          bgColor: 'bg-gray-100',
+          borderColor: 'border-gray-200',
           description: 'Great foundation! You have a solid intermediate understanding.'
         };
       case 'beginner':
@@ -207,7 +207,7 @@ const AssessmentResults = () => {
                 <div className="text-lg font-semibold text-[#37352F] mb-1">
                   {labels[key]}
                 </div>
-                <div className="text-2xl font-bold text-[#2383E2] mb-2">
+                <div className="text-2xl font-bold text-[#495057] mb-2">
                   {diff.percentage}%
                 </div>
                 <div className="text-sm text-[#6B6B6B]">
@@ -261,7 +261,7 @@ const AssessmentResults = () => {
             </h4>
             <div className="flex flex-wrap gap-2">
               {parsedRecommendations.practiceAreas.map((area, index) => (
-                <span key={index} className="px-3 py-1 bg-[#2383E2]/10 text-[#2383E2] rounded-full text-sm">
+                <span key={index} className="px-3 py-1 bg-[#495057]/10 text-[#495057] rounded-full text-sm">
                   {typeof area === 'string' ? area : 'Focus Area'}
                 </span>
               ))}
@@ -404,8 +404,8 @@ const AssessmentResults = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-[#E9E9E7] p-6">
           <div className="flex items-center">
-            <div className="w-12 h-12 bg-[#2383E2]/10 rounded-lg flex items-center justify-center mr-4">
-              <TrophyIcon className="w-6 h-6 text-[#2383E2]" />
+            <div className="w-12 h-12 bg-[#495057]/10 rounded-lg flex items-center justify-center mr-4">
+              <TrophyIcon className="w-6 h-6 text-[#495057]" />
             </div>
             <div>
               <p className="text-sm font-medium text-[#6B6B6B]">Final Score</p>
@@ -527,7 +527,7 @@ const AssessmentResults = () => {
       )}
 
       {/* Learning Path Recommendations */}
-      <div className="bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded-xl p-8 text-white">
+      <div className="bg-gradient-to-br from-[#212529] to-[#495057] rounded-xl p-8 text-white">
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0">
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -538,14 +538,14 @@ const AssessmentResults = () => {
             <h3 className="text-xl font-semibold mb-2">
               Ready for Personalized Learning?
             </h3>
-            <p className="text-blue-100 mb-6 leading-relaxed">
+            <p className="text-gray-300 mb-6 leading-relaxed">
               Based on your {result.level?.toLowerCase()} level assessment, we've curated the perfect video content to help you grow your {topicMeta.name} skills.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => navigate(`/app/recommendations/${topic}?level=${result.level?.toLowerCase()}`)}
-                className="inline-flex items-center px-6 py-3 bg-white text-[#2383E2] rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center px-6 py-3 bg-white text-[#212529] rounded-lg font-medium hover:bg-gray-50 transition-colors"
               >
                 <VideoCameraIcon className="h-4 w-4 mr-2" />
                 View Recommended Videos
@@ -575,7 +575,7 @@ const AssessmentResults = () => {
 
         <button
           onClick={() => navigate('/app/dashboard')}
-          className="flex items-center justify-center px-6 py-3 bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors font-medium"
+          className="flex items-center justify-center px-6 py-3 bg-[#212529] text-white rounded-lg hover:bg-[#495057] transition-colors font-medium"
         >
           Back to Dashboard
           <ArrowRightIcon className="w-5 h-5 ml-2" />

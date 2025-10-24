@@ -208,7 +208,7 @@ const VideoRecommendations = () => {
 
   const getScoreColor = (score) => {
     if (score >= 8.5) return 'text-green-600';
-    if (score >= 7.5) return 'text-blue-600';
+    if (score >= 7.5) return 'text-[#495057]';
     if (score >= 6.5) return 'text-yellow-600';
     return 'text-gray-600';
   };
@@ -240,7 +240,7 @@ const VideoRecommendations = () => {
           <div className="flex items-center space-x-4">
             <Link
               to="/app/topics"
-              className="flex items-center text-[#6B6B6B] hover:text-[#2383E2] transition-colors"
+              className="flex items-center text-[#6B6B6B] hover:text-[#212529] transition-colors"
             >
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
               Back to Topics
@@ -293,7 +293,7 @@ const VideoRecommendations = () => {
               placeholder="Search videos, channels, or topics..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[#E9E9E7] rounded-lg focus:outline-none focus:ring-0 focus:border-[#2383E2] text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-[#E9E9E7] rounded-lg focus:outline-none focus:ring-0 focus:border-[#212529] text-sm"
             />
           </div>
           
@@ -303,7 +303,7 @@ const VideoRecommendations = () => {
               <select
                 value={levelFilter}
                 onChange={(e) => setLevelFilter(e.target.value)}
-                className="border border-[#E9E9E7] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-[#2383E2] bg-white"
+                className="border border-[#E9E9E7] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-0 focus:border-[#212529] bg-white"
               >
                 <option value="all">All Levels</option>
                 <option value="Beginner">Beginner</option>
@@ -331,7 +331,7 @@ const VideoRecommendations = () => {
               setSearchQuery('');
               setLevelFilter('all');
             }}
-            className="inline-flex items-center px-4 py-2 bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[#212529] text-white rounded-lg hover:bg-[#495057] transition-colors"
           >
             Clear Filters
           </button>
@@ -357,12 +357,12 @@ const VideoRecommendations = () => {
                         e.target.nextSibling.style.display = 'flex';
                       }}
                     />
-                    <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2383E2] to-[#0F62FE]">
+                    <div className="hidden w-full h-full flex items-center justify-center bg-gradient-to-br from-[#212529] to-[#495057]">
                       <PlayIcon className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
                     </div>
                   </>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#2383E2] to-[#0F62FE]">
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#212529] to-[#495057]">
                     <PlayIcon className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
                   </div>
                 )}
@@ -385,11 +385,11 @@ const VideoRecommendations = () => {
               {/* Content */}
               <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-sm font-semibold text-[#37352F] line-clamp-2 flex-1 group-hover:text-[#2383E2] transition-colors">
+                  <h3 className="text-sm font-semibold text-[#37352F] line-clamp-2 flex-1 group-hover:text-[#212529] transition-colors">
                     {video.title}
                   </h3>
                   <div className="ml-2 flex-shrink-0">
-                    <ExternalLinkIcon className="h-4 w-4 text-[#6B6B6B] group-hover:text-[#2383E2] transition-colors" />
+                    <ExternalLinkIcon className="h-4 w-4 text-[#6B6B6B] group-hover:text-[#212529] transition-colors" />
                   </div>
                 </div>
                 
@@ -447,7 +447,7 @@ const VideoRecommendations = () => {
                       e.stopPropagation();
                       handleVideoClick(video);
                     }}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-[#2383E2] to-[#0F62FE] text-white rounded-lg hover:from-[#0F62FE] hover:to-[#2383E2] transition-all duration-200 font-medium text-sm flex items-center justify-center space-x-2"
+                    className="w-full px-4 py-2 bg-gradient-to-r from-[#212529] to-[#495057] text-white rounded-lg hover:from-[#495057] hover:to-[#212529] transition-all duration-200 font-medium text-sm flex items-center justify-center space-x-2"
                   >
                     <BookOpenIcon className="h-4 w-4" />
                     <span>Start Microlearning</span>
@@ -461,7 +461,7 @@ const VideoRecommendations = () => {
 
       {/* Recommendations Section */}
       {userLevel && (
-        <div className="bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded-xl p-8 text-white">
+        <div className="bg-gradient-to-br from-[#212529] to-[#495057] rounded-xl p-8 text-white">
           <div className="flex items-start space-x-4">
             <div className="flex-shrink-0">
               <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -472,14 +472,14 @@ const VideoRecommendations = () => {
               <h3 className="text-xl font-semibold mb-2">
                 Personalized for Your {userLevel} Level
               </h3>
-              <p className="text-blue-100 mb-4 leading-relaxed">
+              <p className="text-gray-300 mb-4 leading-relaxed">
                 These videos are specifically curated based on your assessment results. 
                 Focus on content that matches your current skill level and learning objectives.
               </p>
               <div className="flex items-center space-x-4">
                 <Link
                   to={`/app/assessment/${topic}`}
-                  className="inline-flex items-center px-4 py-2 bg-white text-[#2383E2] rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
+                  className="inline-flex items-center px-4 py-2 bg-white text-[#212529] rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm"
                 >
                   Retake Assessment
                 </Link>

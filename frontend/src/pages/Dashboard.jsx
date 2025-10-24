@@ -403,7 +403,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h3 className="font-semibold mb-2">💡 Learning Tip</h3>
-                <p className="text-blue-100 text-sm leading-relaxed">
+                <p className="text-gray-300 text-sm leading-relaxed">
                   Regular assessment helps track your progress. Consider retaking assessments every few weeks to see your improvement!
                 </p>
               </div>

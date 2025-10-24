@@ -140,7 +140,7 @@ const TopicSelection = () => {
                 placeholder="Search topics..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-[#E9E9E7] rounded-lg focus:outline-none focus:ring-0 focus:border-[#2383E2] text-sm"
+                className="w-full pl-10 pr-4 py-2 border border-[#E9E9E7] rounded-lg focus:outline-none focus:ring-0 focus:border-[#212529] text-sm"
               />
             </div>
             <div className="relative">
@@ -148,7 +148,7 @@ const TopicSelection = () => {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="pl-10 pr-8 py-2 border border-[#E9E9E7] rounded-lg focus:outline-none focus:ring-0 focus:border-[#2383E2] text-sm bg-white"
+                className="pl-10 pr-8 py-2 border border-[#E9E9E7] rounded-lg focus:outline-none focus:ring-0 focus:border-[#212529] text-sm bg-white"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>
@@ -163,7 +163,7 @@ const TopicSelection = () => {
 
       {/* Selection Summary */}
       {selectedForLearning.size > 0 && (
-        <div className="bg-[#2383E2]/10 rounded-xl border border-[#2383E2]/20 p-6">
+        <div className="bg-[#212529]/10 rounded-xl border border-[#212529]/20 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[#37352F] font-medium">
@@ -176,7 +176,7 @@ const TopicSelection = () => {
             <button
               onClick={handleSelectTopics}
               disabled={isSelecting}
-              className="inline-flex items-center px-6 py-3 bg-[#2383E2] text-white rounded-lg hover:bg-[#0F62FE] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center px-6 py-3 bg-[#212529] text-white rounded-lg hover:bg-[#495057] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSelecting ? 'Adding Topics...' : 'Add to Learning Path'}
               <ArrowRightIcon className="ml-2 h-4 w-4" />
@@ -209,7 +209,7 @@ const TopicSelection = () => {
                     key={topic.slug}
                     className={`bg-white rounded-xl shadow-sm border p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${
                       isSelectedForLearning 
-                        ? 'border-[#2383E2] bg-[#2383E2]/5' 
+                        ? 'border-[#212529] bg-[#212529]/5' 
                         : 'border-[#E9E9E7] hover:border-[#D3D3D1]'
                     }`}
                     onClick={() => !isSelected && toggleTopicSelection(topic.slug)}
@@ -263,9 +263,9 @@ const TopicSelection = () => {
                           className="flex-shrink-0 p-1 rounded-md hover:bg-[#F7F6F3] transition-colors"
                         >
                           {isSelectedForLearning ? (
-                            <CheckCircleIcon className="h-6 w-6 text-[#2383E2]" />
+                            <CheckCircleIcon className="h-6 w-6 text-[#212529]" />
                           ) : (
-                            <CircleIcon className="h-6 w-6 text-[#6B6B6B] hover:text-[#2383E2] transition-colors" />
+                            <CircleIcon className="h-6 w-6 text-[#6B6B6B] hover:text-[#212529] transition-colors" />
                           )}
                         </button>
                       )}
@@ -305,7 +305,7 @@ const TopicSelection = () => {
                         <>
                           <Link
                             to={`/app/assessment/${topic.slug}`}
-                            className="flex-1 bg-[#2383E2] text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#0F62FE] transition-colors"
+                            className="flex-1 bg-[#212529] text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-[#495057] transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >
                             Take Assessment
@@ -326,7 +326,7 @@ const TopicSelection = () => {
                           }}
                           className={`w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                             isSelectedForLearning
-                              ? 'bg-[#2383E2] text-white hover:bg-[#0F62FE] shadow-sm'
+                              ? 'bg-[#212529] text-white hover:bg-[#495057] shadow-sm'
                               : 'bg-white border border-[#E9E9E7] text-[#37352F] hover:bg-[#F7F6F3] hover:border-[#D3D3D1]'
                           }`}
                         >
@@ -350,7 +350,7 @@ const TopicSelection = () => {
       )}
 
       {/* Help Section */}
-      <div className="bg-gradient-to-br from-[#2383E2] to-[#0F62FE] rounded-xl p-8 text-white">
+      <div className="bg-gradient-to-br from-[#212529] to-[#495057] rounded-xl p-8 text-white">
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0">
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
@@ -361,12 +361,12 @@ const TopicSelection = () => {
             <h3 className="text-xl font-semibold mb-2">
               Get Personalized Recommendations
             </h3>
-            <p className="text-blue-100 mb-6 leading-relaxed">
+            <p className="text-gray-300 mb-6 leading-relaxed">
               Not sure which topics to choose? Our AI can analyze your interests and recommend the perfect learning path for your goals.
             </p>
             <Link
               to="/app/assessment"
-              className="inline-flex items-center px-6 py-3 bg-white text-[#2383E2] rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-white text-[#212529] rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               Get AI Recommendations
               <ArrowRightIcon className="ml-2 h-4 w-4" />

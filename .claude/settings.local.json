@@ -16,7 +16,9 @@
       "Bash(taskkill:*)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
-      "Bash(cmd //c:*)"
+      "Bash(cmd //c:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint)"
     ],
     "deny": [],
     "ask": []
