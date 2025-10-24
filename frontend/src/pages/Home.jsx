@@ -250,7 +250,7 @@ const Home = () => {
             <h2 className="text-3xl lg:text-4xl font-bold text-white">
               Ready to discover your programming level?
             </h2>
-            <p className="mt-4 text-xl text-blue-100">
+            <p className="mt-4 text-xl text-gray-300">
               Join thousands of learners who've found their perfect learning path
             </p>
             <div className="mt-8">

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
   timeout: 30000, // 30 seconds timeout
   headers: {
     'Content-Type': 'application/json',
@@ -955,95 +955,134 @@ export const quizAPI = {
 // ===== MOCK MICROLEARNING API SERVICES =====
 // Temporary mock implementation until real microlearning pipeline is ready
 export const mockMicrolearningAPI = {
-  // Generate mock microlearning content for a video
-  generateMicrolearningContent: async (videoId, videoTitle = 'Programming Tutorial') => {
+  // Generate mock microlearning content for a video with 9 segments (3x3 grid)
+  generateMicrolearningContent: async (videoId, videoTitle = 'Programming Tutorial', segmentCount = 9) => {
     try {
-      console.log('🎬 Generating mock microlearning content for:', videoId);
+      console.log('🎬 Generating mock microlearning content for:', videoId, `(${segmentCount} segments)`);
 
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Generate realistic mock data based on video
+      // Define segment templates for realistic content generation
+      const segmentTemplates = [
+        {
+          titleTemplate: 'Introduction & Setup',
+          keyPointsTemplates: ['Environment setup', 'Basic project structure', 'Initial configuration'],
+          summaryTemplate: 'introduction and basic setup',
+          difficulty: 'Beginner',
+          cognitiveLoad: 3
+        },
+        {
+          titleTemplate: 'Core Concepts & Syntax',
+          keyPointsTemplates: ['Basic syntax rules', 'Variable declarations', 'Data types'],
+          summaryTemplate: 'fundamental concepts and syntax',
+          difficulty: 'Beginner',
+          cognitiveLoad: 4
+        },
+        {
+          titleTemplate: 'Functions & Methods',
+          keyPointsTemplates: ['Function declarations', 'Parameter handling', 'Return values'],
+          summaryTemplate: 'functions and method creation',
+          difficulty: 'Intermediate',
+          cognitiveLoad: 5
+        },
+        {
+          titleTemplate: 'Control Flow & Logic',
+          keyPointsTemplates: ['Conditional statements', 'Loop structures', 'Boolean logic'],
+          summaryTemplate: 'control flow and logical operations',
+          difficulty: 'Intermediate',
+          cognitiveLoad: 5
+        },
+        {
+          titleTemplate: 'Data Structures',
+          keyPointsTemplates: ['Arrays and lists', 'Objects and dictionaries', 'Data manipulation'],
+          summaryTemplate: 'data structures and manipulation',
+          difficulty: 'Intermediate',
+          cognitiveLoad: 6
+        },
+        {
+          titleTemplate: 'Error Handling',
+          keyPointsTemplates: ['Exception handling', 'Debugging techniques', 'Error prevention'],
+          summaryTemplate: 'error handling and debugging',
+          difficulty: 'Intermediate',
+          cognitiveLoad: 6
+        },
+        {
+          titleTemplate: 'Advanced Patterns',
+          keyPointsTemplates: ['Design patterns', 'Code organization', 'Modular programming'],
+          summaryTemplate: 'advanced patterns and organization',
+          difficulty: 'Professional',
+          cognitiveLoad: 7
+        },
+        {
+          titleTemplate: 'Performance & Optimization',
+          keyPointsTemplates: ['Performance considerations', 'Memory management', 'Optimization techniques'],
+          summaryTemplate: 'performance optimization',
+          difficulty: 'Professional',
+          cognitiveLoad: 8
+        },
+        {
+          titleTemplate: 'Best Practices & Next Steps',
+          keyPointsTemplates: ['Industry standards', 'Code quality', 'Further learning paths'],
+          summaryTemplate: 'best practices and career development',
+          difficulty: 'Professional',
+          cognitiveLoad: 7
+        }
+      ];
+
+      // Generate micro-videos based on segment count
+      const microVideos = [];
+      let currentTime = 0;
+
+      for (let i = 0; i < segmentCount; i++) {
+        const template = segmentTemplates[i % segmentTemplates.length];
+        const duration = Math.floor(Math.random() * 180) + 120; // 2-5 minutes per segment
+        const durationMinutes = Math.floor(duration / 60);
+        const durationSeconds = duration % 60;
+        const durationStr = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+
+        const startTimeStr = `${Math.floor(currentTime / 60)}:${(currentTime % 60).toString().padStart(2, '0')}`;
+        currentTime += duration;
+        const endTimeStr = `${Math.floor(currentTime / 60)}:${(currentTime % 60).toString().padStart(2, '0')}`;
+
+        microVideos.push({
+          id: `micro_${videoId}_${i + 1}`,
+          sequence: i + 1,
+          title: `${i + 1}. ${template.titleTemplate}`,
+          duration: durationStr,
+          startTime: startTimeStr,
+          endTime: endTimeStr,
+          keyPoints: template.keyPointsTemplates.map(point =>
+            point.replace(/placeholder/g, videoTitle.toLowerCase())
+          ),
+          summary: `This microlearning segment covers ${template.summaryTemplate} in ${videoTitle.toLowerCase()}. Learn essential skills and techniques that will build your understanding progressively.`,
+          transcript: `In this segment of ${videoTitle.toLowerCase()}, we'll explore ${template.summaryTemplate}. This builds on previous concepts and prepares you for more advanced topics. Pay attention to the key patterns and techniques demonstrated.`,
+          difficulty: template.difficulty,
+          cognitiveLoad: template.cognitiveLoad,
+          learningObjectives: [
+            `Master ${template.titleTemplate.toLowerCase()}`,
+            `Apply concepts in practice`,
+            `Understand implementation details`
+          ]
+        });
+      }
+
+      const totalDurationMinutes = Math.floor(currentTime / 60);
+      const totalDurationStr = `${totalDurationMinutes}:${(currentTime % 60).toString().padStart(2, '0')}`;
+
       const mockContent = {
         videoId: videoId,
         originalTitle: videoTitle,
         status: 'completed',
         generatedAt: new Date().toISOString(),
-        processingTime: '2.3 seconds',
-        microVideos: [
-          {
-            id: `micro_${videoId}_1`,
-            sequence: 1,
-            title: 'Introduction & Key Concepts',
-            duration: '2:30',
-            startTime: '00:00',
-            endTime: '02:30',
-            keyPoints: [
-              'Basic syntax and structure',
-              'Variable declarations',
-              'First programming concepts'
-            ],
-            summary: `This microlearning segment introduces the fundamental concepts of ${videoTitle.toLowerCase()}. You'll learn about basic syntax, how to declare variables, and understand the core principles that form the foundation of programming.`,
-            transcript: `Welcome to this tutorial on ${videoTitle.toLowerCase()}. In this first section, we'll cover the basic syntax and structure. Variables are containers for storing data values. Let's start with the most common ways to declare variables and understand how they work in practice.`,
-            difficulty: 'Beginner',
-            cognitiveLoad: 3,
-            learningObjectives: [
-              'Understand basic syntax',
-              'Learn variable declaration',
-              'Grasp fundamental concepts'
-            ]
-          },
-          {
-            id: `micro_${videoId}_2`,
-            sequence: 2,
-            title: 'Practical Examples & Implementation',
-            duration: '3:15',
-            startTime: '02:30',
-            endTime: '05:45',
-            keyPoints: [
-              'Code examples and demonstrations',
-              'Best practices and common patterns',
-              'Error handling basics'
-            ],
-            summary: `This segment focuses on practical implementation with real code examples. You'll see how the concepts from the previous section work in practice and learn about best practices and common patterns used by professional developers.`,
-            transcript: `Now let's see these concepts in action with some practical examples. Here's how you would implement these ideas in real code. Notice how we handle different scenarios and follow best practices. Error handling is also crucial - let's see how to do it properly.`,
-            difficulty: 'Intermediate',
-            cognitiveLoad: 5,
-            learningObjectives: [
-              'Apply concepts in practice',
-              'Learn best practices',
-              'Understand error handling'
-            ]
-          },
-          {
-            id: `micro_${videoId}_3`,
-            sequence: 3,
-            title: 'Advanced Techniques & Next Steps',
-            duration: '2:45',
-            startTime: '05:45',
-            endTime: '08:30',
-            keyPoints: [
-              'Advanced patterns and techniques',
-              'Performance considerations',
-              'Further learning resources'
-            ],
-            summary: `The final segment covers advanced techniques and performance considerations. You'll learn about sophisticated patterns used in professional development and get guidance on next steps for your learning journey.`,
-            transcript: `Let's explore some advanced techniques that will take your skills to the next level. Performance is important, so here are some key considerations. For further learning, I recommend exploring these resources and practicing with real projects.`,
-            difficulty: 'Advanced',
-            cognitiveLoad: 7,
-            learningObjectives: [
-              'Master advanced techniques',
-              'Optimize for performance',
-              'Plan continued learning'
-            ]
-          }
-        ],
+        processingTime: '3.2 seconds',
+        microVideos: microVideos,
         analytics: {
-          totalDuration: '8:30',
-          averageCognitiveLoad: 5,
-          difficultyProgression: ['Beginner', 'Intermediate', 'Advanced'],
-          estimatedLearningTime: '12-15 minutes',
-          recommendedBreaks: 2
+          totalDuration: totalDurationStr,
+          averageCognitiveLoad: Math.round(microVideos.reduce((sum, mv) => sum + mv.cognitiveLoad, 0) / microVideos.length * 10) / 10,
+          difficultyProgression: [...new Set(microVideos.map(mv => mv.difficulty))],
+          estimatedLearningTime: `${Math.ceil(totalDurationMinutes * 1.5)}-${Math.ceil(totalDurationMinutes * 2)} minutes`,
+          recommendedBreaks: Math.floor(segmentCount / 3)
         },
         metadata: {
           topic: 'programming',

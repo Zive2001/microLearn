@@ -28,9 +28,9 @@ const LearningPreferencesStep = ({ formData, setFormData, errors }) => {
 
   const programmingTopics = [
     { value: 'javascript', label: 'JavaScript', icon: Code2, color: 'bg-yellow-100 text-yellow-800' },
-    { value: 'react', label: 'React', icon: Code2, color: 'bg-blue-100 text-blue-800' },
+    { value: 'react', label: 'React', icon: Code2, color: 'bg-gray-100 text-gray-800' },
     { value: 'python', label: 'Python', icon: Code2, color: 'bg-green-100 text-green-800' },
-    { value: 'typescript', label: 'TypeScript', icon: Code2, color: 'bg-blue-100 text-blue-800' },
+    { value: 'typescript', label: 'TypeScript', icon: Code2, color: 'bg-gray-100 text-gray-800' },
     { value: 'nodejs', label: 'Node.js', icon: Server, color: 'bg-green-100 text-green-800' },
     { value: 'css', label: 'CSS/Tailwind', icon: Palette, color: 'bg-pink-100 text-pink-800' },
     { value: 'database', label: 'Databases', icon: Database, color: 'bg-purple-100 text-purple-800' },
