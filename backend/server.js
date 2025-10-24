@@ -17,6 +17,8 @@ app.use(
     origin: [
       "http://localhost:5173", // Vite default port
       "http://localhost:5174", // Alternative Vite port
+      "http://localhost:5175", // Alternative Vite port
+      "http://localhost:5176", // Alternative Vite port
       "http://localhost:3000", // React default port
       process.env.FRONTEND_URL,
     ].filter(Boolean), // Remove undefined values
@@ -39,8 +41,12 @@ const connectDB = async () => {
     }
 
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // 5 second timeout
-      socketTimeoutMS: 45000, // 45 second socket timeout
+      serverSelectionTimeoutMS: 30000, // 30 second timeout
+      socketTimeoutMS: 0, // Disable socket timeout
+      maxPoolSize: 10, // Connection pool size
+      minPoolSize: 5, // Minimum connections
+      maxIdleTimeMS: 30000, // Close connections after 30s inactivity
+      retryWrites: true, // Enable retry writes
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
@@ -52,6 +58,11 @@ const connectDB = async () => {
 
     mongoose.connection.on("disconnected", () => {
       console.warn("⚠️ MongoDB disconnected. Attempting to reconnect...");
+      setTimeout(() => {
+        mongoose.connect(process.env.MONGODB_URI).catch(err => {
+          console.error("❌ Reconnection failed:", err.message);
+        });
+      }, 5000); // Retry after 5 seconds
     });
 
     mongoose.connection.on("reconnected", () => {
@@ -126,18 +137,22 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Import routes (uncomment as we create them)
+// Import routes
 const authRoutes = require("./routes/auth");
 const topicRoutes = require("./routes/topics");
 const testRoutes = require("./routes/test");
 const assessmentRoutes = require("./routes/assessment");
 const microlearningRoutes = require("./routes/microlearning");
 const videoRoutes = require("./routes/videos");
-const testVideoRoutes = require("./routes/test-videos");
 const testTranscriptRoutes = require("./routes/test-transcript");
-const ttsTestRoutes = require("./routes/tts-test");
-// const assessmentRoutes = require('./routes/assessment');
-// const contentRoutes = require('./routes/content');
+// TODO: Re-enable when ttsService is implemented
+// const ttsTestRoutes = require("./routes/tts-test");
+// TODO: Re-enable when avatarVideoController is implemented
+// const avatarVideoRoutes = require("./routes/avatar-videos");
+// TODO: Re-enable when ttsController is implemented
+// const ttsRoutes = require("./routes/tts");
+const avatarTtsRoutes = require("./routes/avatar-tts");
+const keypointGenerationRoutes = require("./routes/keypointGeneration");
 
 // Use routes
 app.use("/api/auth", authRoutes);
@@ -146,12 +161,15 @@ app.use("/api/test", testRoutes);
 app.use("/api/assessment", assessmentRoutes);
 app.use("/api/microlearning", microlearningRoutes);
 app.use("/api/videos", videoRoutes);
-app.use("/api/test-videos", testVideoRoutes);
 app.use("/api/test-transcript", testTranscriptRoutes);
-app.use("/api/tts-test", ttsTestRoutes);
-
-// app.use('/api/assessment', assessmentRoutes);
-// app.use('/api/content', contentRoutes);
+// TODO: Re-enable when ttsService is implemented
+// app.use("/api/tts-test", ttsTestRoutes);
+// TODO: Re-enable when avatarVideoController is implemented
+// app.use("/api/avatar-videos", avatarVideoRoutes);
+// TODO: Re-enable when ttsController is implemented
+// app.use("/api/tts", ttsRoutes);
+app.use("/api/avatar-tts", avatarTtsRoutes);
+app.use("/api/keypoint-generation", keypointGenerationRoutes);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
@@ -179,3 +197,6 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+
+ 
