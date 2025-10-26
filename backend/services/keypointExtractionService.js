@@ -36,7 +36,7 @@ async function extractKeyTopicsFromVideo(videoData) {
         console.log(`🔍 Extracting keypoints for: "${title}"`);
 
         // Prepare prompt for GPT
-        const prompt = `You are an expert educational content curator. Extract 5-7 key learning topics from this ${topic} video.
+        const prompt = `You are an expert educational content curator. Extract 3-4 key learning topics from this ${topic} video.
 
 Video Details:
 - Title: ${title}
@@ -45,15 +45,16 @@ Video Details:
 - Topic: ${topic}
 
 Requirements:
-1. MUST extract AT LEAST 3 and UP TO 7 specific, actionable learning topics
+1. MUST extract EXACTLY 3 or 4 specific, actionable learning topics
 2. Topics should be concrete and learnable (not too vague)
 3. Topics should reflect the video's likely content
 4. Order by importance/complexity (simpler first)
 5. Each topic should be 2-5 words
 6. Never return fewer than 3 topics
+7. Never return more than 4 topics
 
 Example format:
-["Variable Declaration", "Scope Concepts", "Hoisting Behavior", "Best Practices"]
+["Variable Declaration", "Scope Concepts", "Hoisting Behavior"]
 
 Return ONLY a valid JSON array of strings, no additional text.`;
 
@@ -75,8 +76,8 @@ Return ONLY a valid JSON array of strings, no additional text.`;
             throw new Error('Invalid keypoints format received');
         }
 
-        // Ensure we have at least 3 keypoints, max 7
-        let keypoints = parsed.slice(0, 7); // Max 7
+        // Ensure we have at least 3 keypoints, max 4
+        let keypoints = parsed.slice(0, 4); // Max 4
 
         if (keypoints.length < 3) {
             console.warn(`⚠️ Only ${keypoints.length} keypoints extracted (minimum: 3), augmenting with fallback topics...`);
@@ -87,11 +88,9 @@ Return ONLY a valid JSON array of strings, no additional text.`;
                 ...fallbackTopics.slice(0, 3 - keypoints.length)
             ];
             console.log(`✅ Augmented with fallback. Total: ${keypoints.length} keypoints`);
-        } else if (keypoints.length < 5) {
-            console.warn(`⚠️ ${keypoints.length} keypoints extracted (target: 5-7)`);
         }
 
-        console.log(`✅ Extracted ${keypoints.length} keypoints:`, keypoints);
+        console.log(`✅ Extracted ${keypoints.length} keypoints (3-4):`, keypoints);
 
         // Cache the result
         cache.set(cacheKey, keypoints);
@@ -109,77 +108,59 @@ Return ONLY a valid JSON array of strings, no additional text.`;
 
 /**
  * Generate fallback keypoints when API fails
- * Always returns at least 3 keypoints
+ * Always returns 3-4 keypoints
  * @param {string} topic - Learning topic
  * @param {string} title - Video title
- * @returns {Array} Fallback keypoints (minimum 3, maximum 7)
+ * @returns {Array} Fallback keypoints (exactly 3-4)
  */
 function generateFallbackKeypoints(topic, title) {
     const fallbackMap = {
         javascript: [
             'Variables & Data Types',
             'Functions & Scope',
-            'Async Programming',
-            'DOM Manipulation',
-            'ES6+ Features'
+            'Async Programming'
         ],
         react: [
             'Components & JSX',
             'State Management',
-            'Hooks (useState, useEffect)',
-            'Props & Component Communication',
-            'Context API'
+            'Hooks & Effects'
         ],
         nodejs: [
             'Node.js Fundamentals',
             'Express.js Framework',
-            'REST APIs',
-            'Middleware',
-            'Database Integration'
+            'REST APIs'
         ],
         typescript: [
             'Type Annotations',
             'Interfaces & Types',
-            'Generics',
-            'Union & Intersection Types',
-            'Type Guards'
+            'Generics'
         ],
         python: [
             'Python Basics',
             'Data Structures',
-            'Functions & Modules',
-            'Object-Oriented Programming',
-            'Error Handling'
+            'Functions & Modules'
         ],
         nextjs: [
             'Next.js Fundamentals',
             'File-based Routing',
-            'Server-Side Rendering',
-            'API Routes',
-            'Optimization Techniques'
+            'Server-Side Rendering'
         ],
         mongodb: [
             'Collections & Documents',
             'CRUD Operations',
-            'Aggregation Pipeline',
-            'Indexing',
-            'Data Modeling'
+            'Aggregation Pipeline'
         ],
         'css-tailwind': [
             'CSS Fundamentals',
             'Responsive Design',
-            'Tailwind Utilities',
-            'Flexbox & Grid',
-            'Animations & Transitions'
+            'Tailwind Utilities'
         ]
     };
 
     const topics = fallbackMap[topic] || [
         'Core Concepts',
         'Practical Applications',
-        'Best Practices',
-        'Common Patterns',
-        'Advanced Topics'
+        'Best Practices'
     ];
 
     // Ensure at least 3 keypoints
@@ -191,8 +172,8 @@ function generateFallbackKeypoints(topic, title) {
         );
     }
 
-    // Return up to 7 keypoints (ensure minimum 3)
-    return topics.slice(0, 7);
+    // Return exactly 3-4 keypoints
+    return topics.slice(0, 4);
 }
 
 /**

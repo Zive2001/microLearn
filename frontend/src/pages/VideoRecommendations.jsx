@@ -451,7 +451,7 @@ const VideoRecommendations = () => {
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {(video.keyTopics || video.tags)?.slice(0, 4).map((tag, index) => (
+                      {(video.keyTopics || video.tags)?.slice(0, 3).map((tag, index) => (
                         <span
                           key={index}
                           className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
@@ -459,9 +459,9 @@ const VideoRecommendations = () => {
                           {typeof tag === 'string' ? tag : tag.name || 'Topic'}
                         </span>
                       ))}
-                      {(video.keyTopics?.length || video.tags?.length) > 4 && (
+                      {(video.keyTopics?.length || video.tags?.length) > 3 && (
                         <span className="inline-flex items-center px-2 py-1 rounded text-xs text-[#6B6B6B] font-medium">
-                          +{(video.keyTopics?.length || video.tags?.length) - 4} more
+                          +{(video.keyTopics?.length || video.tags?.length) - 3} more
                         </span>
                       )}
                     </div>

@@ -32,10 +32,10 @@ export default function KeypointSelectionModal({
       setSelectedKeypoints(
         selectedKeypoints.filter(k => k !== keypoint)
       );
-    } else if (selectedKeypoints.length < 12) {
+    } else if (selectedKeypoints.length < 4) {
       setSelectedKeypoints([...selectedKeypoints, keypoint]);
     } else {
-      toast.error('Maximum 12 keypoints allowed');
+      toast.error('Maximum 4 keypoints allowed');
     }
   };
 
@@ -44,8 +44,8 @@ export default function KeypointSelectionModal({
       toast.error('Keypoint must be at least 5 characters');
       return;
     }
-    if (selectedKeypoints.length >= 12) {
-      toast.error('Maximum 12 keypoints allowed');
+    if (selectedKeypoints.length >= 4) {
+      toast.error('Maximum 4 keypoints allowed');
       return;
     }
     setSelectedKeypoints([...selectedKeypoints, customKeypoint]);
@@ -105,7 +105,7 @@ export default function KeypointSelectionModal({
           {/* Keypoints Selection */}
           <div>
             <h3 className="text-lg font-semibold text-[#37352F] mb-3">
-              Select Learning Topics (3-12)
+              Select Learning Topics (3-4)
             </h3>
             <p className="text-sm text-[#6B6B6B] mb-4">
               Each selected topic will generate a comprehensive 1000+ word educational script with avatar video.
@@ -168,7 +168,7 @@ export default function KeypointSelectionModal({
             {/* Selected Keypoints Summary */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm font-medium text-blue-900 mb-2">
-                Selected Topics ({selectedKeypoints.length}/12):
+                Selected Topics ({selectedKeypoints.length}/4):
               </p>
               <div className="flex flex-wrap gap-2">
                 {selectedKeypoints.map((keypoint, idx) => (
