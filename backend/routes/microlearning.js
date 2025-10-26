@@ -970,8 +970,16 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
 
             } catch (keyError) {
                 console.error(`❌ Failed to generate micro-video for "${keypoint}": ${keyError.message}`);
+                console.error(`Full error:`, keyError);
                 // Continue with next keypoint on error
             }
+        }
+
+        // Check if ANY micro-videos were created
+        if (generatedMicroVideos.length === 0) {
+            console.error(`\n❌ CRITICAL: No micro-videos were successfully created!`);
+            console.error(`Expected: ${keypoints.length}, Got: ${generatedMicroVideos.length}`);
+            throw new Error(`No micro-videos were created. Check error logs above for details.`);
         }
 
         // Step 4: Update video record as completed
