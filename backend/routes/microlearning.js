@@ -898,54 +898,75 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
                 const startTime = i * estimatedDuration; // Each segment starts after previous one
                 const endTime = startTime + estimatedDuration;
 
-                const microVideo = await MicroVideo.create({
-                    originalVideoId: videoId,
-                    title: keypoint,
-                    sequence: i + 1,
+                try {
+                    const microVideoData = {
+                        originalVideoId: videoId,
+                        title: keypoint,
+                        sequence: i + 1,
 
-                    // Time segment in the video
-                    timeRange: {
-                        startTime: startTime,
-                        endTime: endTime,
-                        duration: estimatedDuration
-                    },
+                        // Time segment in the video
+                        timeRange: {
+                            startTime: startTime,
+                            endTime: endTime,
+                            duration: estimatedDuration
+                        },
 
-                    // Educational content from script generation
-                    cltBlmScript: {
-                        learningObjective: scriptResult.objective || `Learn ${keypoint}`,
-                        keypoints: [keypoint],
-                        educationalScript: scriptResult.script || scriptResult.educationalScript,
-                        cognitiveLoad: scriptResult.cognitiveLoad || 5,
-                        prerequisites: scriptResult.prerequisites || [],
-                        practicalExample: scriptResult.example || scriptResult.practicalExample || '',
-                        visualCues: scriptResult.visualCues || []
-                    },
+                        // Educational content from script generation
+                        cltBlmScript: {
+                            learningObjective: scriptResult.objective || `Learn ${keypoint}`,
+                            keypoints: [keypoint],
+                            educationalScript: scriptResult.script || scriptResult.educationalScript,
+                            cognitiveLoad: scriptResult.cognitiveLoad || 5,
+                            prerequisites: scriptResult.prerequisites || [],
+                            practicalExample: scriptResult.example || scriptResult.practicalExample || '',
+                            visualCues: scriptResult.visualCues || []
+                        },
 
-                    // Audio data from TTS
-                    audioUrl: ttsResult.audioPath,
-                    audioProvider: 'azure',
-                    audioContent: scriptResult.script || scriptResult.educationalScript,
+                        // Audio data from TTS
+                        audioUrl: ttsResult.audioPath,
+                        audioProvider: 'azure',
+                        audioContent: scriptResult.script || scriptResult.educationalScript,
 
-                    // Avatar video data
-                    avatarVideoPath,
-                    avatarTeacher: teacher,
-                    avatarVisemesCount: ttsResult.visemes ? ttsResult.visemes.length : 0,
-                    avatarGeneratedAt: new Date(),
+                        // Avatar video data
+                        avatarVideoPath,
+                        avatarTeacher: teacher,
+                        avatarVisemesCount: ttsResult.visemes ? ttsResult.visemes.length : 0,
+                        avatarGeneratedAt: new Date(),
 
-                    // Status
-                    processingStatus: 'completed',
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                });
+                        // Status
+                        processingStatus: 'completed',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    };
 
-                generatedMicroVideos.push({
-                    id: microVideo._id,
-                    title: microVideo.title,
-                    sequence: microVideo.sequence,
-                    status: 'completed'
-                });
+                    // Validate before saving
+                    const tempMicroVideo = new MicroVideo(microVideoData);
+                    const validationError = tempMicroVideo.validateSync();
+                    if (validationError) {
+                        console.error(`⚠️ MicroVideo validation error for "${keypoint}":`, validationError.message);
+                        console.error(`Validation details:`, validationError.errors);
+                        throw validationError;
+                    }
 
-                console.log(`✅ Micro-video ${i + 1} completed: "${keypoint}"`);
+                    const microVideo = await MicroVideo.create(microVideoData);
+
+                    console.log(`✅ Micro-video ${i + 1} saved successfully:`, microVideo._id);
+
+                    generatedMicroVideos.push({
+                        id: microVideo._id,
+                        title: microVideo.title,
+                        sequence: microVideo.sequence,
+                        status: 'completed'
+                    });
+
+                    console.log(`✅ Micro-video ${i + 1} completed: "${keypoint}"`);
+                } catch (saveError) {
+                    console.error(`❌ Failed to save MicroVideo for "${keypoint}":`, saveError.message);
+                    if (saveError.errors) {
+                        console.error('Detailed errors:', saveError.errors);
+                    }
+                    throw saveError;
+                }
 
             } catch (keyError) {
                 console.error(`❌ Failed to generate micro-video for "${keypoint}": ${keyError.message}`);
