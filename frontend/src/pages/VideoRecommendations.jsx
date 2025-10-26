@@ -426,17 +426,30 @@ const VideoRecommendations = () => {
                   </div>
                 </div>
 
-                {/* Tags - from keyTopics or tags */}
+                {/* Keypoints - from keyTopics or tags */}
                 {(video.keyTopics || video.tags) && (video.keyTopics?.length > 0 || video.tags?.length > 0) && (
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {(video.keyTopics || video.tags)?.slice(0, 3).map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-[#F7F6F3] text-[#6B6B6B]"
-                      >
-                        {typeof tag === 'string' ? tag : tag.name || 'Topic'}
+                  <div className="mt-3">
+                    <div className="text-xs font-semibold text-[#37352F] mb-2 flex items-center space-x-1">
+                      <span>📚 Topics Covered:</span>
+                      <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                        {video.keyTopics?.length || video.tags?.length}
                       </span>
-                    ))}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(video.keyTopics || video.tags)?.slice(0, 4).map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                        >
+                          {typeof tag === 'string' ? tag : tag.name || 'Topic'}
+                        </span>
+                      ))}
+                      {(video.keyTopics?.length || video.tags?.length) > 4 && (
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs text-[#6B6B6B] font-medium">
+                          +{(video.keyTopics?.length || video.tags?.length) - 4} more
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
 

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function KeypointLearning() {
   const navigate = useNavigate();
@@ -91,7 +91,7 @@ export default function KeypointLearning() {
       const validKeypoints = keypoints.filter(kp => kp.trim().length >= 5);
 
       const response = await axios.post(
-        `${API_URL}/api/keypoint-generation/generate`,
+        `${API_URL}/keypoint-generation/generate`,
         {
           youtubeUrl,
           keypoints: validKeypoints,

@@ -37,7 +37,19 @@ const READY_PLAYER_ME_VISEME_MAPPING = {
 
 export function Teacher({ teacher: teacherProp, whiteboardChanged, ...props }) {
   const group = useRef();
-  const teacherFromHook = useAvatarTeacher((state) => state.teacher);
+
+  // FIXED: Use useState initializer + subscription instead of direct hook call
+  // This prevents hook errors inside React Three Fiber's Canvas context
+  const [teacherFromHook, setTeacherFromHook] = useState(() => useAvatarTeacher.getState().teacher);
+
+  useEffect(() => {
+    const unsubscribe = useAvatarTeacher.subscribe(
+      (state) => state.teacher,
+      (teacher) => setTeacherFromHook(teacher)
+    );
+    return () => unsubscribe();
+  }, []);
+
   const teacher = teacherProp || teacherFromHook;
   const { scene } = useGLTF(`/models/Teacher_${teacher}.glb`);
   const [morphMapper, setMorphMapper] = useState(null);
@@ -118,9 +130,37 @@ export function Teacher({ teacher: teacherProp, whiteboardChanged, ...props }) {
     });
   }, [scene]);
 
-  const currentMessage = useAvatarTeacher((state) => state.currentMessage);
-  const loading = useAvatarTeacher((state) => state.loading);
-  const avatarState = useAvatarTeacher((state) => state.avatarState);
+  // Fixed for Zustand 5.x + React 19 compatibility
+  // Use local state with Zustand subscription
+  const [currentMessage, setCurrentMessage] = useState(() => useAvatarTeacher.getState().currentMessage);
+  const [loading, setLoading] = useState(() => useAvatarTeacher.getState().loading);
+  const [avatarState, setAvatarState] = useState(() => useAvatarTeacher.getState().avatarState);
+
+  useEffect(() => {
+    // Subscribe to currentMessage changes
+    const unsubscribe1 = useAvatarTeacher.subscribe(
+      (state) => state.currentMessage,
+      (message) => setCurrentMessage(message)
+    );
+
+    // Subscribe to loading changes
+    const unsubscribe2 = useAvatarTeacher.subscribe(
+      (state) => state.loading,
+      (isLoading) => setLoading(isLoading)
+    );
+
+    // Subscribe to avatarState changes
+    const unsubscribe3 = useAvatarTeacher.subscribe(
+      (state) => state.avatarState,
+      (state) => setAvatarState(state)
+    );
+
+    return () => {
+      unsubscribe1();
+      unsubscribe2();
+      unsubscribe3();
+    };
+  }, []);
   const { animations } = useGLTF(`/models/animations_${teacher}.glb`);
   const { actions, mixer } = useAnimations(animations, group);
   const [animation, setAnimation] = useState("Idle");

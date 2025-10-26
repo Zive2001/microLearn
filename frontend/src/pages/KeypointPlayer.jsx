@@ -1,7 +1,7 @@
 // src/pages/KeypointPlayer.jsx
 // Player for Keypoint-Based Educational Content with Avatar
 
-import React, { useState, useEffect, Suspense, useRef } from "react";
+import React, { useState, useEffect, Suspense, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF } from "@react-three/drei";
@@ -11,7 +11,7 @@ import { toast } from "react-hot-toast";
 import { Teacher } from "../components/Teacher";
 import { useAvatarTeacher } from "../hooks/useAvatarTeacher";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // Marble Tile Floor Component
 function MarbleFloor({ position = [0, -1, 0], scale = 0.1 }) {
@@ -209,15 +209,49 @@ export default function KeypointPlayer() {
     "Welcome to MicroLearn"
   );
 
-  // Avatar teacher hook
-  const teacher = useAvatarTeacher((state) => state.teacher);
-  const setTeacher = useAvatarTeacher((state) => state.setTeacher);
-  const avatarState = useAvatarTeacher((state) => state.avatarState);
-  const currentMessage = useAvatarTeacher((state) => state.currentMessage);
-  const setCurrentMessage = (message) =>
+  // Avatar teacher state - Use local state with Zustand subscription
+  const [teacher, setTeacherLocal] = useState(() => useAvatarTeacher.getState().teacher);
+  const [avatarState, setAvatarStateLocal] = useState(() => useAvatarTeacher.getState().avatarState);
+  const [currentMessage, setCurrentMessageLocal] = useState(() => useAvatarTeacher.getState().currentMessage);
+
+  // Get setTeacher from Zustand
+  const setTeacher = useAvatarTeacher.getState().setTeacher;
+
+  // Helper functions to update Zustand state directly
+  const setCurrentMessage = useCallback((message) => {
     useAvatarTeacher.setState({ currentMessage: message });
-  const setAvatarState = (state) =>
+  }, []);
+
+  const setAvatarState = useCallback((state) => {
     useAvatarTeacher.setState({ avatarState: state });
+  }, []);
+
+  // Subscribe to store changes for re-renders
+  useEffect(() => {
+    // Subscribe to teacher changes
+    const unsubscribe1 = useAvatarTeacher.subscribe(
+      (state) => state.teacher,
+      (teacher) => setTeacherLocal(teacher)
+    );
+
+    // Subscribe to avatarState changes
+    const unsubscribe2 = useAvatarTeacher.subscribe(
+      (state) => state.avatarState,
+      (state) => setAvatarStateLocal(state)
+    );
+
+    // Subscribe to currentMessage changes
+    const unsubscribe3 = useAvatarTeacher.subscribe(
+      (state) => state.currentMessage,
+      (message) => setCurrentMessageLocal(message)
+    );
+
+    return () => {
+      unsubscribe1();
+      unsubscribe2();
+      unsubscribe3();
+    };
+  }, []);
 
   // Audio state
   const [audioPlayer, setAudioPlayer] = useState(null);
@@ -260,7 +294,7 @@ export default function KeypointPlayer() {
     try {
       const token = localStorage.getItem("authToken");
       const response = await axios.get(
-        `${API_URL}/api/keypoint-generation/video/${videoId}`,
+        `${API_URL}/keypoint-generation/video/${videoId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -297,7 +331,7 @@ export default function KeypointPlayer() {
 
       const token = localStorage.getItem("authToken");
       const response = await axios.post(
-        `${API_URL}/api/avatar-tts/generate`,
+        `${API_URL}/avatar-tts/generate`,
         {
           text: segment.educationalScript,
           teacher: segment.teacher || teacher,
