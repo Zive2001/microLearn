@@ -145,11 +145,12 @@ const MicrolearningPage = () => {
           const elapsed = Date.now() - startTime;
 
           // Check status endpoint
+          const authToken = localStorage.getItem('authToken');
           const statusResponse = await axios.get(
             `/api/videos/${videoIdParam}/status`,
             {
               headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`
+                Authorization: `Bearer ${authToken}`
               }
             }
           );
@@ -188,11 +189,12 @@ const MicrolearningPage = () => {
     try {
       console.log('📥 Fetching generated microvideos...');
 
+      const authToken = localStorage.getItem('authToken');
       const response = await axios.get(
         `/api/microlearning/${videoIdParam}/videos`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            Authorization: `Bearer ${authToken}`
           }
         }
       );
@@ -226,9 +228,10 @@ const MicrolearningPage = () => {
         console.log('Teacher:', location.state.teacher);
 
         try {
-          toast.info('🚀 Starting content generation...', { duration: 3000 });
+          toast.success('🚀 Starting content generation...', { duration: 2000 });
 
           // Call the new generation endpoint
+          const authToken = localStorage.getItem('authToken');
           const generationResponse = await axios.post(
             `/api/microlearning/${videoId}/generate-keypoint-based`,
             {
@@ -238,7 +241,7 @@ const MicrolearningPage = () => {
             },
             {
               headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`
+                Authorization: `Bearer ${authToken}`
               }
             }
           );
@@ -247,14 +250,14 @@ const MicrolearningPage = () => {
 
           if (generationResponse.data.success) {
             // Show waiting message and start polling
-            toast.loading('⏳ Generating your personalized learning videos...', { duration: 0 });
+            const loadingToastId = toast.loading('⏳ Generating your personalized learning videos...');
 
             try {
               // Poll for completion
               await pollForGenerationCompletion(videoId, 300); // 5 minutes max
 
-              // Dismiss loading toast
-              toast.dismiss();
+              // Dismiss loading toast and show success
+              toast.dismiss(loadingToastId);
               toast.success('✅ Content generated successfully! 🎉', { duration: 3000 });
 
               // Fetch the generated microvideos
@@ -293,7 +296,7 @@ const MicrolearningPage = () => {
 
             } catch (pollingError) {
               console.warn('⚠️ Generation polling failed:', pollingError.message);
-              toast.dismiss();
+              toast.dismiss(loadingToastId);
               throw pollingError;
             }
           } else {
@@ -306,7 +309,7 @@ const MicrolearningPage = () => {
 
           // Fallback: Use mock data if generation fails
           console.log('🔄 Falling back to mock data');
-          toast.info('Using example content while we prepare your personalized videos...', { duration: 4000 });
+          toast.error('Generation delayed - using example content', { duration: 4000 });
 
           const videoTitle = location.state?.videoTitle || `Tutorial Video ${videoId}`;
           content = await mockMicrolearningAPI.generateMicrolearningContent(
