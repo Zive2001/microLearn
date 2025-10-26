@@ -287,6 +287,19 @@ const MicrolearningPage = () => {
               await mockMicrolearningAPI.storeMicrolearningContent(videoId, content);
               console.log('✅ Content stored and ready for display');
 
+              // PHASE 3: Navigate to 3D KeypointPlayer environment
+              console.log('🚀 Navigating to KeypointPlayer (3D avatar environment)...');
+              navigate(`/keypoint-player/${videoId}`, {
+                state: {
+                  microVideos: content.microVideos,
+                  selectedKeypoints: location.state.keypoints,
+                  teacher: location.state.teacher,
+                  youtubeUrl: location.state.youtubeUrl,
+                  videoTitle: content.originalTitle
+                },
+                replace: false
+              });
+
             } catch (pollingError) {
               console.warn('⚠️ Generation polling failed:', pollingError.message);
               toast.dismiss(loadingToastId);
