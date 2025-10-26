@@ -867,6 +867,24 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
             const keypoint = keypoints[i];
             console.log(`\n📍 Generating video ${i + 1}/${keypoints.length}: "${keypoint}"`);
 
+            // Check if this micro-video already exists (caching to save API tokens)
+            const existingMicroVideo = await MicroVideo.findOne({
+                originalVideoId: videoId,
+                title: keypoint,
+                processingStatus: 'completed'
+            });
+
+            if (existingMicroVideo) {
+                console.log(`⚡ Using cached micro-video for "${keypoint}" (prevents token waste)`);
+                generatedMicroVideos.push({
+                    id: existingMicroVideo._id,
+                    title: existingMicroVideo.title,
+                    sequence: existingMicroVideo.sequence,
+                    status: 'completed'
+                });
+                continue; // Skip to next keypoint
+            }
+
             try {
                 // Step 3a: Generate educational script
                 console.log(`  ├─ Generating script...`);
@@ -979,7 +997,8 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
 
             } catch (keyError) {
                 console.error(`❌ Failed to generate micro-video for "${keypoint}": ${keyError.message}`);
-                console.error(`Full error:`, keyError);
+                console.error(`Error type:`, keyError.constructor.name);
+                console.error(`Error stack:`, keyError.stack);
                 // Continue with next keypoint on error
             }
         }

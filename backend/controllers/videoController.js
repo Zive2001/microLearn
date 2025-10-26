@@ -309,7 +309,7 @@ class VideoController {
                     formattedDuration: video.formattedDuration || 'Unknown',
                     createdAt: video.createdAt,
                     updatedAt: video.updatedAt,
-                    error: video.errorMessage || null
+                    error: video.processingError || null
                 }
             });
 
