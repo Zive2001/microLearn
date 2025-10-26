@@ -2,7 +2,7 @@
 // Player for Keypoint-Based Educational Content with Avatar
 
 import React, { useState, useEffect, Suspense, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -196,6 +196,7 @@ function Whiteboard({
 export default function KeypointPlayer() {
   const { videoId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // State
   const [videoData, setVideoData] = useState(null);
@@ -292,22 +293,38 @@ export default function KeypointPlayer() {
 
   const fetchVideoData = async () => {
     try {
-      const token = localStorage.getItem("authToken");
-      const response = await axios.get(
-        `${API_URL}/keypoint-generation/video/${videoId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      console.log('📥 KeypointPlayer: Loading video data from location.state...');
 
-      if (response.data.success) {
-        setVideoData(response.data.data);
-        if (response.data.data.microVideos[0]?.teacher) {
-          setTeacher(response.data.data.microVideos[0].teacher);
+      // Get data from location.state passed from MicrolearningPage
+      const stateData = location.state;
+
+      if (stateData && stateData.microVideos && stateData.microVideos.length > 0) {
+        console.log('✅ Found microVideos in location.state:', stateData.microVideos.length);
+
+        // Build video data from location.state
+        const videoData = {
+          microVideos: stateData.microVideos,
+          selectedKeypoints: stateData.selectedKeypoints || [],
+          teacher: stateData.teacher || 'Ava',
+          videoTitle: stateData.videoTitle || 'Tutorial Video',
+          youtubeUrl: stateData.youtubeUrl
+        };
+
+        setVideoData(videoData);
+
+        // Set teacher if available
+        if (stateData.teacher) {
+          setTeacher(stateData.teacher);
         }
+
+        console.log('✅ Video data loaded successfully');
+      } else {
+        console.error('❌ No microVideos found in location.state');
+        toast.error("No video data available. Please generate videos first.");
+        navigate("/app/keypoint-learning");
       }
     } catch (error) {
-      console.error("Error fetching video:", error);
+      console.error("Error loading video data:", error);
       toast.error("Failed to load video data");
       navigate("/app/keypoint-learning");
     } finally {
