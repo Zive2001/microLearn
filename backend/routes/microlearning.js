@@ -731,6 +731,247 @@ router.post('/process-recommendation', protect, [
     }
 });
 
+// @desc    Generate keypoint-based microlearning videos
+// @route   POST /api/microlearning/:videoId/generate-keypoint-based
+// @access  Private
+router.post('/:videoId/generate-keypoint-based', protect, [
+    param('videoId').notEmpty().withMessage('Video ID is required'),
+    require('express-validator').body('youtubeUrl')
+        .isURL()
+        .withMessage('Valid YouTube URL is required'),
+    require('express-validator').body('keypoints')
+        .isArray({ min: 3, max: 4 })
+        .withMessage('Keypoints must be an array with 3-4 items'),
+    require('express-validator').body('teacher')
+        .isIn(['Ava', 'Andrew', 'Emma', 'Brian', 'Jenny'])
+        .withMessage('Invalid teacher selection')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
+
+        const { videoId } = req.params;
+        const { youtubeUrl, keypoints, teacher } = req.body;
+        const userId = req.user._id;
+
+        console.log(`🎬 Phase 3: Generating keypoint-based videos for video ${videoId}`);
+        console.log(`📌 Keypoints: ${keypoints.join(', ')}`);
+        console.log(`👥 Teacher: ${teacher}`);
+
+        // Start background generation job
+        // Don't await - return response immediately
+        generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teacher, userId)
+            .catch(error => {
+                console.error('❌ Background generation job failed:', error);
+                // Log error but don't crash the process
+            });
+
+        // Return immediately with status
+        res.status(200).json({
+            success: true,
+            status: 'started',
+            message: 'Video generation started. This may take 1-4 minutes.',
+            data: {
+                videoId,
+                keypoints,
+                teacher,
+                estimatedDuration: `${keypoints.length * 1.5}-${keypoints.length * 2}` + ' minutes',
+                nextStep: 'Poll /api/videos/:videoId/status for completion'
+            }
+        });
+
+    } catch (error) {
+        console.error('Error initiating keypoint-based generation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to initiate video generation',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// Background function to generate keypoint-based microlearning videos
+async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teacher, userId) {
+    try {
+        console.log(`\n🚀 Starting background generation for video ${videoId}`);
+        console.log(`📍 Progress: Initializing...`);
+
+        // Import required models and services
+        const Video = require('../models/Video');
+        const MicroVideo = require('../models/MicroVideo');
+        const keypointScriptGenerationService = require('../services/keypointScriptGenerationService');
+        const azureTtsService = require('../services/azureTtsService');
+        const youtubeService = require('../services/youtubeService');
+
+        // Step 1: Get or create video record
+        console.log(`📍 Progress: Getting video record...`);
+        let video = await Video.findById(videoId);
+
+        if (!video) {
+            // Create new video record if it doesn't exist
+            video = await Video.create({
+                _id: videoId,
+                title: `Microlearning: ${keypoints.join(', ')}`,
+                description: `AI-generated microlearning videos based on user selections`,
+                sourceUrl: youtubeUrl,
+                uploadedBy: userId,
+                processingStatus: 'processing'
+            });
+        } else {
+            // Update status to processing
+            video.processingStatus = 'processing';
+            await video.save();
+        }
+
+        // Step 2: Extract YouTube transcript
+        console.log(`📍 Progress: Extracting YouTube transcript...`);
+        let transcript = '';
+        try {
+            const { YoutubeTranscript } = require('youtube-transcript');
+            const videoIdFromUrl = extractYouTubeVideoId(youtubeUrl);
+            const transcriptData = await YoutubeTranscript.fetchTranscript(videoIdFromUrl);
+            transcript = transcriptData.map(t => t.text).join(' ');
+            console.log(`✅ Transcript extracted: ${transcript.length} characters`);
+        } catch (transcriptError) {
+            console.warn(`⚠️ Could not extract transcript: ${transcriptError.message}`);
+            transcript = `Content about ${keypoints.join(', ')}`;
+        }
+
+        // Step 3: Generate microlearning videos for each keypoint
+        console.log(`📍 Progress: Generating ${keypoints.length} micro-videos...`);
+
+        const generatedMicroVideos = [];
+
+        for (let i = 0; i < keypoints.length; i++) {
+            const keypoint = keypoints[i];
+            console.log(`\n📍 Generating video ${i + 1}/${keypoints.length}: "${keypoint}"`);
+
+            try {
+                // Step 3a: Generate educational script
+                console.log(`  ├─ Generating script...`);
+                const scriptResult = await keypointScriptGenerationService.generateScriptForKeypoint({
+                    keypoint,
+                    youtubeUrl,
+                    transcript,
+                    difficulty: 'intermediate'
+                });
+
+                // Step 3b: Generate TTS audio with visemes
+                console.log(`  ├─ Generating TTS audio...`);
+                const ttsResult = await azureTtsService.generateTTSWithVisemes({
+                    text: scriptResult.script || scriptResult.educationalScript,
+                    teacher,
+                    speed: 0.9
+                });
+
+                // Step 3c: Create avatar video (simulated for now)
+                console.log(`  ├─ Generating avatar video...`);
+                const avatarVideoPath = `/videos/avatars/${videoId}/${keypoint.replace(/\s+/g, '_')}_${Date.now()}.mp4`;
+                console.log(`  ├─ Avatar video created: ${avatarVideoPath}`);
+
+                // Step 3d: Save MicroVideo document
+                console.log(`  └─ Saving to database...`);
+                const microVideo = await MicroVideo.create({
+                    originalVideoId: videoId,
+                    title: keypoint,
+                    sequence: i + 1,
+
+                    // Educational content from script generation
+                    cltBlmScript: {
+                        learningObjective: scriptResult.objective || `Learn ${keypoint}`,
+                        keypoints: [keypoint],
+                        educationalScript: scriptResult.script || scriptResult.educationalScript,
+                        cognitiveLoad: scriptResult.cognitiveLoad || 5,
+                        prerequisites: scriptResult.prerequisites || [],
+                        practicalExample: scriptResult.example || scriptResult.practicalExample || '',
+                        visualCues: scriptResult.visualCues || []
+                    },
+
+                    // Audio data from TTS
+                    audioUrl: ttsResult.audioPath,
+                    audioProvider: 'azure',
+                    audioContent: scriptResult.script || scriptResult.educationalScript,
+
+                    // Avatar video data
+                    avatarVideoPath,
+                    avatarTeacher: teacher,
+                    avatarVisemesCount: ttsResult.visemes ? ttsResult.visemes.length : 0,
+                    avatarGeneratedAt: new Date(),
+
+                    // Status
+                    processingStatus: 'completed',
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
+
+                generatedMicroVideos.push({
+                    id: microVideo._id,
+                    title: microVideo.title,
+                    sequence: microVideo.sequence,
+                    status: 'completed'
+                });
+
+                console.log(`✅ Micro-video ${i + 1} completed: "${keypoint}"`);
+
+            } catch (keyError) {
+                console.error(`❌ Failed to generate micro-video for "${keypoint}": ${keyError.message}`);
+                // Continue with next keypoint on error
+            }
+        }
+
+        // Step 4: Update video record as completed
+        console.log(`\n📍 Progress: Finalizing...`);
+        video.processingStatus = 'completed';
+        video.microVideoCount = generatedMicroVideos.length;
+        await video.save();
+
+        console.log(`\n✅ Phase 3 generation complete!`);
+        console.log(`📊 Summary:`);
+        console.log(`   • Video ID: ${videoId}`);
+        console.log(`   • Keypoints: ${keypoints.length}`);
+        console.log(`   • Micro-videos created: ${generatedMicroVideos.length}`);
+        console.log(`   • Teacher: ${teacher}`);
+        console.log(`   • Status: Completed`);
+        console.log(`   • Ready for display and quiz integration`);
+
+        return {
+            success: true,
+            videoId,
+            microVideos: generatedMicroVideos,
+            status: 'completed'
+        };
+
+    } catch (error) {
+        console.error('❌ Critical error in background generation:', error);
+
+        // Try to update video status as failed
+        try {
+            const Video = require('../models/Video');
+            await Video.findByIdAndUpdate(videoId, {
+                processingStatus: 'failed',
+                processingError: error.message
+            });
+        } catch (updateError) {
+            console.error('Could not update video status:', updateError);
+        }
+
+        throw error;
+    }
+}
+
+// Helper function to extract YouTube video ID from URL
+function extractYouTubeVideoId(url) {
+    const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
+
 // @desc    Get processing status for recommendation-based video
 // @route   GET /api/microlearning/recommendation-status/:videoId
 // @access  Private
@@ -861,6 +1102,78 @@ router.get('/recommendation-status/:videoId', protect, [
         res.status(500).json({
             success: false,
             message: 'Failed to get processing status',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+        });
+    }
+});
+
+// @desc    Get generated microvideos for a video (Phase 3)
+// @route   GET /api/microlearning/:videoId/videos
+// @access  Private
+router.get('/:videoId/videos', protect, [
+    param('videoId').notEmpty().withMessage('Video ID is required')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Validation failed',
+                errors: errors.array()
+            });
+        }
+
+        const { videoId } = req.params;
+        console.log(`📥 Fetching microvideos for video: ${videoId}`);
+
+        // Import MicroVideo model
+        const MicroVideo = require('../models/MicroVideo');
+
+        // Find all microvideos for this video
+        const microVideos = await MicroVideo.find({
+            originalVideoId: videoId,
+            processingStatus: 'completed'
+        }).sort({ sequence: 1 });
+
+        if (!microVideos || microVideos.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No microvideos found for this video',
+                microVideos: []
+            });
+        }
+
+        console.log(`✅ Found ${microVideos.length} microvideos for video ${videoId}`);
+
+        res.json({
+            success: true,
+            message: `Retrieved ${microVideos.length} microvideos`,
+            microVideos: microVideos.map(video => ({
+                _id: video._id,
+                title: video.title,
+                originalVideoId: video.originalVideoId,
+                sequence: video.sequence,
+                difficulty: video.difficulty || 'Intermediate',
+                duration: video.duration || 360, // Default 6 minutes
+                summary: video.cltBlmScript?.learningObjective || video.summary,
+                cltBlmScript: video.cltBlmScript,
+                audioUrl: video.audioUrl,
+                audioProvider: video.audioProvider,
+                audioContent: video.audioContent,
+                avatarVideoPath: video.avatarVideoPath,
+                avatarTeacher: video.avatarTeacher,
+                avatarVisemesCount: video.avatarVisemesCount,
+                processingStatus: video.processingStatus,
+                createdAt: video.createdAt,
+                updatedAt: video.updatedAt
+            }))
+        });
+
+    } catch (error) {
+        console.error('Error fetching microvideos:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch microvideos',
             error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
         });
     }

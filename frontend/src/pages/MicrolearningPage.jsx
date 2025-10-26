@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import axios from 'axios';
 import {
   ArrowLeft as ArrowLeftIcon,
   Play as PlayIcon,
@@ -15,7 +16,7 @@ import Loading from '../components/Loading';
 import toast from 'react-hot-toast';
 
 const MicrolearningPage = () => {
-  const { videoId, topic } = useParams();
+  const { videoId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -128,40 +129,199 @@ const MicrolearningPage = () => {
     }
   }, [location.state]);
 
+  /**
+   * Poll for generation completion status
+   * Checks every 5 seconds for up to 2 minutes
+   */
+  const pollForGenerationCompletion = async (videoIdParam, maxWaitSeconds = 120) => {
+    console.log('📊 Starting polling for generation completion...');
+
+    const startTime = Date.now();
+    const maxWaitMs = maxWaitSeconds * 1000;
+
+    return new Promise((resolve, reject) => {
+      const pollInterval = setInterval(async () => {
+        try {
+          const elapsed = Date.now() - startTime;
+
+          // Check status endpoint
+          const statusResponse = await axios.get(
+            `/api/videos/${videoIdParam}/status`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+              }
+            }
+          );
+
+          const { status, message } = statusResponse.data;
+          console.log(`📊 Poll status: ${status} (${Math.round(elapsed / 1000)}s elapsed)`);
+
+          if (status === 'completed' || status === 'success') {
+            clearInterval(pollInterval);
+            console.log('✅ Generation completed successfully');
+            resolve(true);
+          } else if (status === 'error' || status === 'failed') {
+            clearInterval(pollInterval);
+            console.error('❌ Generation failed:', message);
+            reject(new Error(message || 'Generation failed'));
+          }
+
+          // Timeout after maxWaitSeconds
+          if (elapsed > maxWaitMs) {
+            clearInterval(pollInterval);
+            console.warn('⏱️ Polling timeout - generation taking too long');
+            reject(new Error('Generation timeout - taking too long'));
+          }
+        } catch {
+          // Continue polling on network errors
+          console.log('📊 Poll check ongoing...');
+        }
+      }, 5000); // Check every 5 seconds
+    });
+  };
+
+  /**
+   * Fetch completed MicroVideos from backend
+   */
+  const fetchMicrovideos = async (videoIdParam) => {
+    try {
+      console.log('📥 Fetching generated microvideos...');
+
+      const response = await axios.get(
+        `/api/microlearning/${videoIdParam}/videos`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (response.data.success && response.data.microVideos) {
+        console.log(`✅ Fetched ${response.data.microVideos.length} microvideos`);
+        return response.data.microVideos;
+      }
+
+      throw new Error('No microvideos in response');
+    } catch (error) {
+      console.error('❌ Error fetching microvideos:', error);
+      throw error;
+    }
+  };
+
   const loadMicrolearningContent = async () => {
     try {
       setIsLoading(true);
       console.log('🎬 Loading microlearning content for video:', videoId);
 
-      // PHASE 2: Check if keypoints provided (from KeypointSelectionModal)
+      // PHASE 2-3: Check if keypoints provided (from KeypointSelectionModal)
       const hasKeypoints = location.state?.keypoints && location.state?.keypoints.length > 0;
 
       let content;
 
       if (hasKeypoints) {
-        // NEW: Prepare for Phase 3 generation with keypoints
-        console.log('🎯 Keypoint-based generation will happen in Phase 3');
+        // PHASE 3: Generate real personalized videos based on keypoints
+        console.log('🎯 PHASE 3: Generating personalized content');
         console.log('Keypoints:', location.state.keypoints);
         console.log('Teacher:', location.state.teacher);
 
-        // For now, show loading - Phase 3 will add actual generation
-        toast.info('Preparing to generate personalized content...');
+        try {
+          toast.info('🚀 Starting content generation...', { duration: 3000 });
 
-        // Fallback for now - will be replaced by Phase 3 generation
-        const videoTitle = location.state?.videoTitle || `Tutorial Video ${videoId}`;
-        content = await mockMicrolearningAPI.generateMicrolearningContent(
-          videoId,
-          videoTitle,
-          location.state.keypoints.length // Generate videos matching keypoint count
-        );
+          // Call the new generation endpoint
+          const generationResponse = await axios.post(
+            `/api/microlearning/${videoId}/generate-keypoint-based`,
+            {
+              youtubeUrl: location.state.youtubeUrl,
+              keypoints: location.state.keypoints,
+              teacher: location.state.teacher
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+              }
+            }
+          );
 
-        if (content) {
-          // Store keypoint info in content for quiz system
-          content.selectedKeypoints = location.state.keypoints;
-          content.teacher = location.state.teacher;
-          await mockMicrolearningAPI.storeMicrolearningContent(videoId, content);
-          toast.success('Learning content prepared! 🎯');
+          console.log('✅ Generation started:', generationResponse.data);
+
+          if (generationResponse.data.success) {
+            // Show waiting message and start polling
+            toast.loading('⏳ Generating your personalized learning videos...', { duration: 0 });
+
+            try {
+              // Poll for completion
+              await pollForGenerationCompletion(videoId, 300); // 5 minutes max
+
+              // Dismiss loading toast
+              toast.dismiss();
+              toast.success('✅ Content generated successfully! 🎉', { duration: 3000 });
+
+              // Fetch the generated microvideos
+              const microVideos = await fetchMicrovideos(videoId);
+
+              // Create content object from generated microvideos
+              content = {
+                originalTitle: location.state.videoTitle || `Tutorial Video ${videoId}`,
+                microVideos: microVideos.map((video, index) => ({
+                  id: video._id || `micro-${index}`,
+                  title: video.title,
+                  summary: video.cltBlmScript?.learningObjective || video.summary,
+                  difficulty: video.difficulty || 'Intermediate',
+                  cognitiveLoad: video.cltBlmScript?.cognitiveLoad || 5,
+                  keyPoints: video.cltBlmScript?.keypoints || [],
+                  duration: `${Math.ceil(video.duration / 60)}min`,
+                  videoUrl: video.avatarVideoPath,
+                  audioUrl: video.audioUrl,
+                  educationalScript: video.cltBlmScript?.educationalScript,
+                  teacher: location.state.teacher
+                })),
+                selectedKeypoints: location.state.keypoints,
+                teacher: location.state.teacher,
+                analytics: {
+                  totalDuration: `${microVideos.length * 6}-${microVideos.length * 8} minutes`,
+                  averageCognitiveLoad: Math.round(
+                    microVideos.reduce((sum, v) => sum + (v.cltBlmScript?.cognitiveLoad || 5), 0) / microVideos.length
+                  ),
+                  estimatedLearningTime: `${microVideos.length * 7}-${microVideos.length * 10} minutes`
+                }
+              };
+
+              // Store in session for future reference
+              await mockMicrolearningAPI.storeMicrolearningContent(videoId, content);
+              console.log('✅ Content stored and ready for display');
+
+            } catch (pollingError) {
+              console.warn('⚠️ Generation polling failed:', pollingError.message);
+              toast.dismiss();
+              throw pollingError;
+            }
+          } else {
+            throw new Error(generationResponse.data.message || 'Generation endpoint returned failure');
+          }
+
+        } catch (generationError) {
+          console.error('❌ Phase 3 generation failed:', generationError);
+          toast.dismiss();
+
+          // Fallback: Use mock data if generation fails
+          console.log('🔄 Falling back to mock data');
+          toast.info('Using example content while we prepare your personalized videos...', { duration: 4000 });
+
+          const videoTitle = location.state?.videoTitle || `Tutorial Video ${videoId}`;
+          content = await mockMicrolearningAPI.generateMicrolearningContent(
+            videoId,
+            videoTitle,
+            location.state.keypoints.length
+          );
+
+          if (content) {
+            content.selectedKeypoints = location.state.keypoints;
+            content.teacher = location.state.teacher;
+            await mockMicrolearningAPI.storeMicrolearningContent(videoId, content);
+          }
         }
+
       } else {
         // FALLBACK: Use mock data if no keypoints (existing behavior)
         console.log('🔄 Using standard microlearning content generation...');
@@ -280,6 +440,7 @@ const MicrolearningPage = () => {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const handleQuizCompletion = (quizId, results) => {
     setQuizProgression(prev => {
       const updatedQuizzes = prev.availableQuizzes.map(quiz =>
@@ -588,10 +749,9 @@ const MicrolearningPage = () => {
             const startIndex = (segmentNumber - 1) * 3;
             const endIndex = Math.min(startIndex + 3, microlearningContent.microVideos?.length || 0);
             const segmentVideos = microlearningContent.microVideos?.slice(startIndex, endIndex) || [];
-            const isUnlocked = true; // All segments are always unlocked
             const correspondingQuiz = quizProgression.availableQuizzes.find(q => q.segmentNumber === segmentNumber);
 
-            // Show all segments, but with locked videos for locked segments
+            // Show all segments - all content is unlocked from the start
 
             return (
               <div key={segmentNumber} id={`segment-${segmentNumber}`} className="mb-8">
