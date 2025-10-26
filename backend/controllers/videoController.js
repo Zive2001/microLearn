@@ -1,4 +1,5 @@
 // controllers/videoController.js
+const mongoose = require('mongoose');
 const Video = require('../models/Video');
 const MicroVideo = require('../models/MicroVideo');
 const transcriptService = require('../services/transcriptService');
@@ -274,7 +275,14 @@ class VideoController {
         try {
             const { videoId } = req.params;
 
-            const video = await Video.findById(videoId);
+            // Try to find by youtubeVideoId first (for Phase 3), then by _id (for other cases)
+            let video = await Video.findOne({ youtubeVideoId: videoId });
+
+            // If not found by youtubeVideoId, try by _id (for backward compatibility)
+            if (!video && mongoose.Types.ObjectId.isValid(videoId)) {
+                video = await Video.findById(videoId);
+            }
+
             if (!video) {
                 return res.status(404).json({
                     success: false,

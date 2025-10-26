@@ -818,12 +818,13 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
 
         // Step 1: Get or create video record
         console.log(`📍 Progress: Getting video record...`);
-        let video = await Video.findById(videoId);
+        // Query by youtubeVideoId, not _id (videoId is YouTube ID, not MongoDB ObjectId)
+        let video = await Video.findOne({ youtubeVideoId: videoId });
 
         if (!video) {
             // Create new video record if it doesn't exist
             video = await Video.create({
-                _id: videoId,
+                youtubeVideoId: videoId,
                 title: `Microlearning: ${keypoints.join(', ')}`,
                 description: `AI-generated microlearning videos based on user selections`,
                 sourceUrl: youtubeUrl,
@@ -960,10 +961,13 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
         // Try to update video status as failed
         try {
             const Video = require('../models/Video');
-            await Video.findByIdAndUpdate(videoId, {
-                processingStatus: 'failed',
-                processingError: error.message
-            });
+            await Video.findOneAndUpdate(
+                { youtubeVideoId: videoId },
+                {
+                    processingStatus: 'failed',
+                    processingError: error.message
+                }
+            );
         } catch (updateError) {
             console.error('Could not update video status:', updateError);
         }
