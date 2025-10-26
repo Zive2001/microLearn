@@ -953,6 +953,7 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
                         audioUrl: ttsResult.audioPath,
                         audioProvider: 'azure',
                         audioContent: scriptResult.script || scriptResult.educationalScript,
+                        audioDuration: ttsResult.duration || estimatedDuration, // Store actual TTS duration
 
                         // Avatar video data
                         avatarVideoPath,
@@ -1266,7 +1267,7 @@ router.get('/:videoId/videos', protect, [
                 originalVideoId: video.originalVideoId,
                 sequence: video.sequence,
                 difficulty: video.difficulty || 'Intermediate',
-                duration: video.duration || 360, // Default 6 minutes
+                duration: video.audioDuration || 360, // Use actual TTS audio duration, fallback to 6 minutes
                 summary: video.cltBlmScript?.learningObjective || video.summary,
                 cltBlmScript: video.cltBlmScript,
                 audioUrl: video.audioUrl,

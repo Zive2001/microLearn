@@ -301,13 +301,30 @@ export default function KeypointPlayer() {
       if (stateData && stateData.microVideos && stateData.microVideos.length > 0) {
         console.log('✅ Found microVideos in location.state:', stateData.microVideos.length);
 
-        // Build video data from location.state
+        // Calculate summary stats from microVideos
+        const totalWords = stateData.microVideos.reduce((sum, mv) => {
+          const script = mv.cltBlmScript?.educationalScript || '';
+          return sum + (script.split(/\s+/).length || 0);
+        }, 0);
+
+        const totalDuration = stateData.microVideos.reduce((sum, mv) => {
+          return sum + (mv.duration || 0);
+        }, 0);
+
+        // Build video data structure matching component expectations
         const videoData = {
+          video: {
+            title: stateData.videoTitle || 'Tutorial Video',
+            youtubeUrl: stateData.youtubeUrl
+          },
           microVideos: stateData.microVideos,
           selectedKeypoints: stateData.selectedKeypoints || [],
           teacher: stateData.teacher || 'Ava',
-          videoTitle: stateData.videoTitle || 'Tutorial Video',
-          youtubeUrl: stateData.youtubeUrl
+          summary: {
+            totalSegments: stateData.microVideos.length,
+            totalWords: totalWords,
+            totalDuration: totalDuration
+          }
         };
 
         setVideoData(videoData);
@@ -318,6 +335,7 @@ export default function KeypointPlayer() {
         }
 
         console.log('✅ Video data loaded successfully');
+        console.log('📊 Summary:', videoData.summary);
       } else {
         console.error('❌ No microVideos found in location.state');
         toast.error("No video data available. Please generate videos first.");
@@ -923,33 +941,38 @@ export default function KeypointPlayer() {
           <div className="bg-gray-800 rounded-lg p-4">
             <h2 className="text-xl font-bold mb-4">Learning Segments</h2>
             <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {videoData.microVideos.map((segment, index) => (
-                <button
-                  key={segment.id}
-                  onClick={() => playSegment(index)}
-                  disabled={isPlaying && index === currentSegmentIndex}
-                  className={`w-full text-left p-4 rounded-lg transition-all ${
-                    index === currentSegmentIndex
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                  } disabled:opacity-70`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <span className="font-semibold">
-                      {index + 1}. {segment.keypoint}
-                    </span>
-                    {index === currentSegmentIndex && isPlaying && (
-                      <span className="text-xs bg-red-500 px-2 py-1 rounded">
-                        LIVE
+              {videoData.microVideos.map((segment, index) => {
+                // Calculate word count from educational script
+                const script = segment.cltBlmScript?.educationalScript || '';
+                const wordCount = script.split(/\s+/).filter(w => w.length > 0).length;
+
+                return (
+                  <button
+                    key={segment._id || index}
+                    onClick={() => playSegment(index)}
+                    disabled={isPlaying && index === currentSegmentIndex}
+                    className={`w-full text-left p-4 rounded-lg transition-all ${
+                      index === currentSegmentIndex
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                    } disabled:opacity-70`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="font-semibold">
+                        {index + 1}. {segment.title || 'Segment'}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs opacity-75">
-                    <span>📝 {segment.wordCount} words</span>
-                    <span>⏱️ {Math.round(segment.duration / 60)} min</span>
-                  </div>
-                </button>
-              ))}
+                      {index === currentSegmentIndex && isPlaying && (
+                        <span className="text-xs bg-red-500 px-2 py-1 rounded">
+                          LIVE
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs opacity-75">
+                      <span>⏱️ {Math.round((Number(segment.duration) || 360) / 60)} min</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -959,20 +982,12 @@ export default function KeypointPlayer() {
               <h3 className="font-semibold mb-2">Segment Details</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Sequence:</span>
-                  <span>{currentSegment.sequence}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Word Count:</span>
-                  <span>{currentSegment.wordCount}</span>
+                  <span className="text-gray-400">Title:</span>
+                  <span className="truncate ml-2">{currentSegment.title || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Duration:</span>
-                  <span>{Math.round(currentSegment.duration / 60)} min</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Teacher:</span>
-                  <span>{currentSegment.teacher}</span>
+                  <span>{Math.round((Number(currentSegment.duration) || 360) / 60)} min</span>
                 </div>
               </div>
             </div>
