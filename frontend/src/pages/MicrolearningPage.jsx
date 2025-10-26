@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';  // Use configured axios instance with baseURL
 import {
   ArrowLeft as ArrowLeftIcon,
   Play as PlayIcon,
@@ -145,14 +145,8 @@ const MicrolearningPage = () => {
           const elapsed = Date.now() - startTime;
 
           // Check status endpoint
-          const authToken = localStorage.getItem('authToken');
-          const statusResponse = await axios.get(
-            `/api/videos/${videoIdParam}/status`,
-            {
-              headers: {
-                Authorization: `Bearer ${authToken}`
-              }
-            }
+          const statusResponse = await api.get(
+            `/videos/${videoIdParam}/status`
           );
 
           const { status, message } = statusResponse.data;
@@ -189,14 +183,8 @@ const MicrolearningPage = () => {
     try {
       console.log('📥 Fetching generated microvideos...');
 
-      const authToken = localStorage.getItem('authToken');
-      const response = await axios.get(
-        `/api/microlearning/${videoIdParam}/videos`,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`
-          }
-        }
+      const response = await api.get(
+        `/microlearning/${videoIdParam}/videos`
       );
 
       if (response.data.success && response.data.microVideos) {
@@ -231,18 +219,12 @@ const MicrolearningPage = () => {
           toast.success('🚀 Starting content generation...', { duration: 2000 });
 
           // Call the new generation endpoint
-          const authToken = localStorage.getItem('authToken');
-          const generationResponse = await axios.post(
-            `/api/microlearning/${videoId}/generate-keypoint-based`,
+          const generationResponse = await api.post(
+            `/microlearning/${videoId}/generate-keypoint-based`,
             {
               youtubeUrl: location.state.youtubeUrl,
               keypoints: location.state.keypoints,
               teacher: location.state.teacher
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${authToken}`
-              }
             }
           );
 
