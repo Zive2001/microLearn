@@ -835,6 +835,7 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
                 description: `AI-generated microlearning videos based on user selections`,
                 sourceUrl: youtubeUrl,
                 uploadedBy: userId,
+                topic: 'custom',  // Phase 3 videos are custom-generated, not from standard topics
                 processingStatus: 'processing'
             });
         } else {
