@@ -181,6 +181,64 @@ class KeypointScriptGenerationService {
     }
 
     /**
+     * Generate a single script for a keypoint (simplified interface for background jobs)
+     * @param {Object} params
+     * @param {string} params.keypoint - The keypoint to teach
+     * @param {string} params.youtubeUrl - YouTube URL for context
+     * @param {string} params.transcript - Video transcript for context
+     * @param {string} params.difficulty - Difficulty level (beginner, intermediate, advanced)
+     * @returns {Promise<Object>} Generated script with metadata
+     */
+    async generateScriptForKeypoint(params) {
+        const { keypoint, youtubeUrl, transcript, difficulty = 'intermediate' } = params;
+
+        console.log(`\n🎯 GENERATING SINGLE KEYPOINT SCRIPT`);
+        console.log(`Keypoint: "${keypoint}"`);
+
+        try {
+            // Build a simple video context from the provided transcript
+            const videoContext = {
+                youtubeUrl,
+                transcript: transcript || `Content about ${keypoint}`,
+                title: 'Educational Content',
+                wordCount: (transcript || '').split(/\s+/).length,
+                youtubeVideoId: 'custom'
+            };
+
+            // Generate the single script
+            const script = await this.generateSingleKeypointScript(
+                keypoint,
+                videoContext,
+                1,
+                1,
+                { difficulty }
+            );
+
+            console.log(`✅ Single keypoint script generated: ${script.wordCount} words`);
+
+            return {
+                success: true,
+                script: script.educationalScript,
+                educationalScript: script.educationalScript,
+                objective: script.title,
+                keypoint,
+                cognitiveLoad: 5,
+                prerequisites: [],
+                example: script.frameStructure?.frame2?.audioScript || '',
+                practicalExample: script.frameStructure?.frame2?.audioScript || '',
+                visualCues: [],
+                wordCount: script.wordCount,
+                estimatedDuration: script.estimatedDuration,
+                whiteboardTimeline: script.whiteboardTimeline || []
+            };
+
+        } catch (error) {
+            console.error(`❌ Failed to generate script for keypoint "${keypoint}":`, error.message);
+            throw error;
+        }
+    }
+
+    /**
      * Generate a single educational script for a keypoint
      */
     async generateSingleKeypointScript(keypoint, videoContext, segmentNumber, totalSegments, options) {

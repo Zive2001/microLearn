@@ -3,10 +3,11 @@ const mongoose = require('mongoose');
 
 const microVideoSchema = new mongoose.Schema({
     // Reference to the original processed video
+    // Can be either a MongoDB ObjectId (for uploaded videos) or a YouTube ID string (for Phase 3 custom videos)
     originalVideoId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Video',
-        required: [true, 'Original video ID is required']
+        type: String,
+        required: [true, 'Original video ID is required'],
+        index: true
     },
 
     // Segment information
