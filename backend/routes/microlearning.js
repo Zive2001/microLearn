@@ -747,8 +747,15 @@ router.post('/:videoId/generate-keypoint-based', protect, [
         .withMessage('Invalid teacher selection')
 ], async (req, res) => {
     try {
+        // Log incoming request
+        console.log('\n📥 POST /microlearning/:videoId/generate-keypoint-based');
+        console.log('Request params:', req.params);
+        console.log('Request body:', req.body);
+        console.log('User:', req.user?._id);
+
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
+            console.log('❌ Validation errors:', errors.array());
             return res.status(400).json({
                 success: false,
                 message: 'Validation failed',
