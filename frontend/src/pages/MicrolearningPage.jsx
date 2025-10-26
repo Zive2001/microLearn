@@ -192,11 +192,17 @@ const MicrolearningPage = () => {
         `/microlearning/${videoIdParam}/videos`
       );
 
-      if (response.data.success && response.data.microVideos) {
+      console.log('📦 Full response:', response.data);
+      console.log('📦 Response.data.success:', response.data.success);
+      console.log('📦 Response.data.microVideos:', response.data.microVideos);
+      console.log('📦 Response.data.microVideos?.length:', response.data.microVideos?.length);
+
+      if (response.data.success && response.data.microVideos && response.data.microVideos.length > 0) {
         console.log(`✅ Fetched ${response.data.microVideos.length} microvideos`);
         return response.data.microVideos;
       }
 
+      console.error('❌ Response structure invalid or no microvideos. Response:', response.data);
       throw new Error('No microvideos in response');
     } catch (error) {
       console.error('❌ Error fetching microvideos:', error);
@@ -292,11 +298,14 @@ const MicrolearningPage = () => {
 
         } catch (generationError) {
           console.error('❌ Phase 3 generation failed:', generationError);
+          console.error('❌ Error message:', generationError.message);
+          console.error('❌ Error stack:', generationError.stack);
+          console.error('❌ Error type:', generationError.constructor.name);
           toast.dismiss();
 
           // Fallback: Use mock data if generation fails
           console.log('🔄 Falling back to mock data');
-          toast.error('Generation delayed - using example content', { duration: 4000 });
+          toast.error(`Generation delayed - using example content: ${generationError.message}`, { duration: 4000 });
 
           const videoTitle = location.state?.videoTitle || `Tutorial Video ${videoId}`;
           content = await mockMicrolearningAPI.generateMicrolearningContent(
