@@ -64,7 +64,7 @@ export default function KeypointSelectionModal({
       await onConfirm({
         keypoints: selectedKeypoints,
         teacher: selectedTeacher,
-        videoId: video.id,
+        videoId: video.videoId || video.id,  // Support both videoId and id properties
         videoTitle: video.title
       });
     } finally {
