@@ -887,11 +887,11 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
                     throw new Error(`Invalid text for TTS generation: expected string, got ${typeof textForTTS}`);
                 }
 
-                const ttsResult = await azureTtsService.generateTTSWithVisemes({
-                    text: textForTTS,
+                const ttsResult = await azureTtsService.generateTTSWithVisemes(
+                    textForTTS,
                     teacher,
-                    speed: 0.9
-                });
+                    0.9  // speechRate
+                );
 
                 // Step 3c: Create avatar video (simulated for now)
                 console.log(`  ├─ Generating avatar video...`);
