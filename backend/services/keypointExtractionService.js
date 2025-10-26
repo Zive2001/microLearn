@@ -45,11 +45,12 @@ Video Details:
 - Topic: ${topic}
 
 Requirements:
-1. Extract 5-7 specific, actionable learning topics
+1. MUST extract AT LEAST 3 and UP TO 7 specific, actionable learning topics
 2. Topics should be concrete and learnable (not too vague)
 3. Topics should reflect the video's likely content
 4. Order by importance/complexity (simpler first)
 5. Each topic should be 2-5 words
+6. Never return fewer than 3 topics
 
 Example format:
 ["Variable Declaration", "Scope Concepts", "Hoisting Behavior", "Best Practices"]
@@ -74,10 +75,20 @@ Return ONLY a valid JSON array of strings, no additional text.`;
             throw new Error('Invalid keypoints format received');
         }
 
-        // Ensure we have 5-7 keypoints
-        const keypoints = parsed.slice(0, 7); // Max 7
-        if (keypoints.length < 5) {
-            console.warn(`⚠️ Only ${keypoints.length} keypoints extracted (target: 5-7)`);
+        // Ensure we have at least 3 keypoints, max 7
+        let keypoints = parsed.slice(0, 7); // Max 7
+
+        if (keypoints.length < 3) {
+            console.warn(`⚠️ Only ${keypoints.length} keypoints extracted (minimum: 3), augmenting with fallback topics...`);
+            // If we have less than 3, add fallback keypoints to reach minimum
+            const fallbackTopics = generateFallbackKeypoints(videoData.topic, videoData.title);
+            keypoints = [
+                ...keypoints,
+                ...fallbackTopics.slice(0, 3 - keypoints.length)
+            ];
+            console.log(`✅ Augmented with fallback. Total: ${keypoints.length} keypoints`);
+        } else if (keypoints.length < 5) {
+            console.warn(`⚠️ ${keypoints.length} keypoints extracted (target: 5-7)`);
         }
 
         console.log(`✅ Extracted ${keypoints.length} keypoints:`, keypoints);
@@ -98,9 +109,10 @@ Return ONLY a valid JSON array of strings, no additional text.`;
 
 /**
  * Generate fallback keypoints when API fails
+ * Always returns at least 3 keypoints
  * @param {string} topic - Learning topic
  * @param {string} title - Video title
- * @returns {Array} Fallback keypoints
+ * @returns {Array} Fallback keypoints (minimum 3, maximum 7)
  */
 function generateFallbackKeypoints(topic, title) {
     const fallbackMap = {
@@ -162,13 +174,25 @@ function generateFallbackKeypoints(topic, title) {
         ]
     };
 
-    return fallbackMap[topic] || [
+    const topics = fallbackMap[topic] || [
         'Core Concepts',
         'Practical Applications',
         'Best Practices',
         'Common Patterns',
         'Advanced Topics'
     ];
+
+    // Ensure at least 3 keypoints
+    if (topics.length < 3) {
+        topics.push(
+            'Essential Fundamentals',
+            'Practical Implementation',
+            'Common Use Cases'
+        );
+    }
+
+    // Return up to 7 keypoints (ensure minimum 3)
+    return topics.slice(0, 7);
 }
 
 /**
