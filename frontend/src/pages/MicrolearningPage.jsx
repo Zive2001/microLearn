@@ -149,17 +149,17 @@ const MicrolearningPage = () => {
             `/videos/${videoIdParam}/status`
           );
 
-          const { status, message } = statusResponse.data;
-          console.log(`📊 Poll status: ${status} (${Math.round(elapsed / 1000)}s elapsed)`);
+          const { processingStatus } = statusResponse.data.data || statusResponse.data;
+          console.log(`📊 Poll status: ${processingStatus} (${Math.round(elapsed / 1000)}s elapsed)`);
 
-          if (status === 'completed' || status === 'success') {
+          if (processingStatus === 'completed' || processingStatus === 'success') {
             clearInterval(pollInterval);
             console.log('✅ Generation completed successfully');
             resolve(true);
-          } else if (status === 'error' || status === 'failed') {
+          } else if (processingStatus === 'error' || processingStatus === 'failed') {
             clearInterval(pollInterval);
-            console.error('❌ Generation failed:', message);
-            reject(new Error(message || 'Generation failed'));
+            console.error('❌ Generation failed');
+            reject(new Error('Generation failed'));
           }
 
           // Timeout after maxWaitSeconds
