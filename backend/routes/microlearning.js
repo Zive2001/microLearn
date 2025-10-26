@@ -879,8 +879,16 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
 
                 // Step 3b: Generate TTS audio with visemes
                 console.log(`  ├─ Generating TTS audio...`);
+
+                const textForTTS = scriptResult.script || scriptResult.educationalScript;
+                console.log(`  ├─ Text for TTS: type=${typeof textForTTS}, length=${textForTTS?.length || 'N/A'}, preview=${textForTTS?.substring(0, 50) || 'UNDEFINED'}...`);
+
+                if (!textForTTS || typeof textForTTS !== 'string') {
+                    throw new Error(`Invalid text for TTS generation: expected string, got ${typeof textForTTS}`);
+                }
+
                 const ttsResult = await azureTtsService.generateTTSWithVisemes({
-                    text: scriptResult.script || scriptResult.educationalScript,
+                    text: textForTTS,
                     teacher,
                     speed: 0.9
                 });
