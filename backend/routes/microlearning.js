@@ -892,10 +892,23 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
 
                 // Step 3d: Save MicroVideo document
                 console.log(`  └─ Saving to database...`);
+
+                // Calculate time range based on estimated duration
+                const estimatedDuration = scriptResult.estimatedDuration || ttsResult.duration || 360; // Default 6 minutes
+                const startTime = i * estimatedDuration; // Each segment starts after previous one
+                const endTime = startTime + estimatedDuration;
+
                 const microVideo = await MicroVideo.create({
                     originalVideoId: videoId,
                     title: keypoint,
                     sequence: i + 1,
+
+                    // Time segment in the video
+                    timeRange: {
+                        startTime: startTime,
+                        endTime: endTime,
+                        duration: estimatedDuration
+                    },
 
                     // Educational content from script generation
                     cltBlmScript: {
