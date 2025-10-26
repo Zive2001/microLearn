@@ -63,7 +63,7 @@ router.post('/process-youtube', protect, [
 // @route   GET /api/videos/:videoId/status
 // @access  Private
 router.get('/:videoId/status', protect, [
-    param('videoId').isMongoId().withMessage('Invalid video ID')
+    param('videoId').notEmpty().withMessage('Video ID is required')
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -89,7 +89,7 @@ router.get('/:videoId/status', protect, [
 // @route   GET /api/videos/:videoId/micro-videos
 // @access  Private
 router.get('/:videoId/micro-videos', protect, [
-    param('videoId').isMongoId().withMessage('Invalid video ID')
+    param('videoId').notEmpty().withMessage('Video ID is required')
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
