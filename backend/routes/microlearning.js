@@ -775,7 +775,10 @@ router.post('/:videoId/generate-keypoint-based', protect, [
         // Don't await - return response immediately
         generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teacher, userId)
             .catch(error => {
-                console.error('❌ Background generation job failed:', error);
+                console.error('❌ CRITICAL: Background generation job failed!');
+                console.error('Error type:', error.constructor.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
                 // Log error but don't crash the process
             });
 
@@ -805,6 +808,9 @@ router.post('/:videoId/generate-keypoint-based', protect, [
 
 // Background function to generate keypoint-based microlearning videos
 async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teacher, userId) {
+    console.log('\n=== BACKGROUND JOB STARTED ===');
+    console.log('Received params:', { videoId, youtubeUrl, keypoints, teacher, userId });
+
     try {
         console.log(`\n🚀 Starting background generation for video ${videoId}`);
         console.log(`📍 Progress: Initializing...`);
