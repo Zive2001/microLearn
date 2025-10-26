@@ -246,6 +246,7 @@ const assessmentResultSchema = new mongoose.Schema({
 // Indexes for better performance (sessionId already has unique index)
 assessmentSessionSchema.index({ userId: 1, status: 1 });
 assessmentSessionSchema.index({ topic: 1, status: 1 });
+// Note: sessionId has unique: true constraint, no need for separate index
 
 assessmentResultSchema.index({ userId: 1, topic: 1 });
 assessmentResultSchema.index({ userId: 1, createdAt: -1 });

@@ -140,7 +140,6 @@ const microVideoSchema = new mongoose.Schema({
                 }
             }
         }
-        }]
     },
 
     // Processing status for this segment

@@ -133,24 +133,54 @@ const MicrolearningPage = () => {
       setIsLoading(true);
       console.log('🎬 Loading microlearning content for video:', videoId);
 
-      // First, try to get existing content
-      let content = await mockMicrolearningAPI.getMicrolearningContent(videoId);
+      // PHASE 2: Check if keypoints provided (from KeypointSelectionModal)
+      const hasKeypoints = location.state?.keypoints && location.state?.keypoints.length > 0;
 
-      if (!content) {
-        // Generate new content if it doesn't exist
-        console.log('🔄 Generating new microlearning content...');
-        const videoTitle = location.state?.videoTitle || location.state?.videoData?.title || `Tutorial Video ${videoId}`;
+      let content;
+
+      if (hasKeypoints) {
+        // NEW: Prepare for Phase 3 generation with keypoints
+        console.log('🎯 Keypoint-based generation will happen in Phase 3');
+        console.log('Keypoints:', location.state.keypoints);
+        console.log('Teacher:', location.state.teacher);
+
+        // For now, show loading - Phase 3 will add actual generation
+        toast.info('Preparing to generate personalized content...');
+
+        // Fallback for now - will be replaced by Phase 3 generation
+        const videoTitle = location.state?.videoTitle || `Tutorial Video ${videoId}`;
         content = await mockMicrolearningAPI.generateMicrolearningContent(
           videoId,
           videoTitle,
-          9 // Explicitly generate 9 micro-videos
+          location.state.keypoints.length // Generate videos matching keypoint count
         );
 
         if (content) {
-          // Store the generated content
+          // Store keypoint info in content for quiz system
+          content.selectedKeypoints = location.state.keypoints;
+          content.teacher = location.state.teacher;
           await mockMicrolearningAPI.storeMicrolearningContent(videoId, content);
-          toast.success('Microlearning content generated successfully! 🎯');
+          toast.success('Learning content prepared! 🎯');
         }
+      } else {
+        // FALLBACK: Use mock data if no keypoints (existing behavior)
+        console.log('🔄 Using standard microlearning content generation...');
+        let existingContent = await mockMicrolearningAPI.getMicrolearningContent(videoId);
+
+        if (!existingContent) {
+          const videoTitle = location.state?.videoTitle || location.state?.videoData?.title || `Tutorial Video ${videoId}`;
+          existingContent = await mockMicrolearningAPI.generateMicrolearningContent(
+            videoId,
+            videoTitle,
+            9 // Explicitly generate 9 micro-videos
+          );
+
+          if (existingContent) {
+            await mockMicrolearningAPI.storeMicrolearningContent(videoId, existingContent);
+            toast.success('Microlearning content generated successfully! 🎯');
+          }
+        }
+        content = existingContent;
       }
 
       if (content) {

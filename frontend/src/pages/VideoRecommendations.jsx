@@ -4,9 +4,9 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
 import { getTopicMeta, formatNumber, formatDuration } from '../utils/helpers';
 import { microlearningAPI } from '../services/api';
-import { 
-  Play as PlayIcon, 
-  Clock as ClockIcon, 
+import {
+  Play as PlayIcon,
+  Clock as ClockIcon,
   Star as StarIcon,
   Filter as FilterIcon,
   Search as SearchIcon,
@@ -17,6 +17,7 @@ import {
   ArrowLeft as ArrowLeftIcon
 } from 'lucide-react';
 import Loading from '../components/Loading';
+import KeypointSelectionModal from '../components/KeypointSelectionModal';
 import toast from 'react-hot-toast';
 // import TestQuizAPI from '../components/TestQuizAPI'; // Removed for production
 // Removed quiz-related imports as they're now handled in MicrolearningPage
@@ -27,14 +28,17 @@ const VideoRecommendations = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedTopics, fetchRecommendations } = useApp();
-  
+
   const [videos, setVideos] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState(searchParams.get('level') || 'all');
   const [isLoading, setIsLoading] = useState(true);
   const [userLevel, setUserLevel] = useState(null);
   const [recommendationData, setRecommendationData] = useState(null);
-  // Removed microlearning state as it's now handled in dedicated page
+
+  // Modal state for Phase 2
+  const [isKeyPointModalOpen, setIsKeyPointModalOpen] = useState(false);
+  const [selectedVideoForKeypoints, setSelectedVideoForKeypoints] = useState(null);
 
   // Get topic metadata
   const topicMeta = topic ? getTopicMeta(topic) : null;
@@ -214,19 +218,30 @@ const VideoRecommendations = () => {
   };
 
   const handleVideoClick = (video) => {
-    // Navigate to microlearning page instead of opening external video
-    console.log('🎬 Navigating to microlearning page for video:', video.id, video.title);
-    toast.success(`Loading microlearning content for "${video.title}"! 🎯`);
-    navigate(`/app/microlearning/${video.id}`, {
-      state: {
-        videoTitle: video.title,
-        videoData: video,
-        topic: topic
-      }
-    });
+    // UPDATED: Open modal instead of direct navigation
+    console.log('🎬 Opening keypoint selection for video:', video.id, video.title);
+    setSelectedVideoForKeypoints(video);
+    setIsKeyPointModalOpen(true);
   };
 
-  // Removed quiz-related handlers as they're now handled in MicrolearningPage
+  const handleKeyPointConfirm = async (config) => {
+    // Called when user confirms keypoint selection in modal
+    console.log('✅ Confirmed keypoints:', config);
+    toast.success(`Generating learning content for ${config.videoTitle}...`);
+
+    navigate(`/app/microlearning/${config.videoId}`, {
+      state: {
+        videoTitle: config.videoTitle,
+        videoData: selectedVideoForKeypoints,
+        topic: topic,
+        keypoints: config.keypoints,        // NEW: Pass selected keypoints
+        teacher: config.teacher,             // NEW: Pass teacher choice
+        youtubeUrl: selectedVideoForKeypoints.url // NEW: Pass URL for generation
+      }
+    });
+
+    setIsKeyPointModalOpen(false);
+  };
 
   if (isLoading) {
     return <Loading fullScreen text="Loading personalized recommendations..." />;
@@ -507,6 +522,14 @@ const VideoRecommendations = () => {
           </div>
         </div>
       )}
+
+      {/* Phase 2: Keypoint Selection Modal - NEW */}
+      <KeypointSelectionModal
+        isOpen={isKeyPointModalOpen}
+        onClose={() => setIsKeyPointModalOpen(false)}
+        video={selectedVideoForKeypoints}
+        onConfirm={handleKeyPointConfirm}
+      />
     </div>
   );
 };

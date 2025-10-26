@@ -2,6 +2,7 @@
 const express = require('express');
 const { param, query, validationResult } = require('express-validator');
 const recommendationEngine = require('../services/recommendationEngine');
+const keypointExtractionService = require('../services/keypointExtractionService');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -37,7 +38,7 @@ router.get('/recommendations/:topic', protect, [
         const includeAlternative = req.query.includeAlternative === 'true';
 
         const startTime = Date.now();
-        
+
         const recommendations = await recommendationEngine.getPersonalizedRecommendations(
             req.user._id,
             topic,
@@ -47,17 +48,57 @@ router.get('/recommendations/:topic', protect, [
             }
         );
 
+        console.log(`📝 Extracting keypoints for ${recommendations.recommendations?.length || 0} recommendations...`);
+
+        // NEW: Extract keypoints for each recommended video
+        let enrichedRecommendations = recommendations.recommendations || [];
+
+        if (enrichedRecommendations.length > 0) {
+            try {
+                enrichedRecommendations = await keypointExtractionService.extractKeyPointsForMultipleVideos(
+                    enrichedRecommendations.map(video => ({
+                        id: video.id,
+                        title: video.title,
+                        description: video.description || '',
+                        topic: topic,
+                        difficulty: video.level || video.difficulty || 'Intermediate'
+                    }))
+                );
+
+                // Merge keypoints back with original video data
+                enrichedRecommendations = enrichedRecommendations.map((videoWithKeypoints, index) => {
+                    const originalVideo = recommendations.recommendations[index];
+                    return {
+                        ...originalVideo,
+                        keyTopics: videoWithKeypoints.keyTopics,
+                        keyTopicsCount: videoWithKeypoints.keyTopicsCount
+                    };
+                });
+
+                console.log(`✅ Keypoints extracted successfully for ${enrichedRecommendations.length} videos`);
+            } catch (error) {
+                console.error('⚠️ Error extracting keypoints:', error.message);
+                console.log('⚠️ Continuing without keypoints...');
+                // Continue without keypoints if extraction fails
+                enrichedRecommendations = recommendations.recommendations;
+            }
+        }
+
         const responseTime = Date.now() - startTime;
 
         res.json({
             success: true,
             message: `Found ${recommendations.totalVideos} personalized recommendations`,
-            data: recommendations,
+            data: {
+                ...recommendations,
+                recommendations: enrichedRecommendations  // Include enriched videos with keypoints
+            },
             metadata: {
                 responseTime: `${responseTime}ms`,
                 requestedAt: new Date().toISOString(),
                 userId: req.user._id,
-                topic
+                topic,
+                keyPointsExtracted: enrichedRecommendations.every(v => v.keyTopics)
             }
         });
 

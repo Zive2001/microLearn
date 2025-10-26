@@ -289,8 +289,8 @@ const quizPoolSchema = new mongoose.Schema({
 });
 
 // Indexes for better performance
+// Note: sessionId already has unique: true constraint, no need for separate index
 quizSessionSchema.index({ userId: 1, originalVideoId: 1 });
-quizSessionSchema.index({ sessionId: 1 });
 quizSessionSchema.index({ status: 1, sessionType: 1 });
 
 quizPoolSchema.index({ originalVideoId: 1, microVideoId: 1 });

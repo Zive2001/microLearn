@@ -142,8 +142,11 @@ const authRoutes = require("./routes/auth");
 const topicRoutes = require("./routes/topics");
 const testRoutes = require("./routes/test");
 const assessmentRoutes = require("./routes/assessment");
+const quizRoutes = require("./routes/quiz");
+const quizTestRoutes = require("./routes/quiz-test");
 const microlearningRoutes = require("./routes/microlearning");
 const videoRoutes = require("./routes/videos");
+const testVideoRoutes = require("./routes/test-videos");
 const testTranscriptRoutes = require("./routes/test-transcript");
 // TODO: Re-enable when ttsService is implemented
 // const ttsTestRoutes = require("./routes/tts-test");
@@ -159,8 +162,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/topics", topicRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/assessment", assessmentRoutes);
+app.use("/api/quiz", quizRoutes);
+app.use("/api/quiz-test", quizTestRoutes);
 app.use("/api/microlearning", microlearningRoutes);
 app.use("/api/videos", videoRoutes);
+app.use("/api/test-videos", testVideoRoutes);
 app.use("/api/test-transcript", testTranscriptRoutes);
 // TODO: Re-enable when ttsService is implemented
 // app.use("/api/tts-test", ttsTestRoutes);

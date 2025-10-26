@@ -75,7 +75,7 @@ router.get('/:videoId/status', protect, [
             });
         }
 
-        await videoController.getProcessingStatus(req, res);
+        await videoController.getVideoStatus(req, res);
     } catch (error) {
         console.error('Route error in get processing status:', error);
         res.status(500).json({

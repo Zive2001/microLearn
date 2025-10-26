@@ -310,11 +310,6 @@ class VideoController {
             res.status(500).json({
                 success: false,
                 message: 'Failed to get video status',
-                error: error.message
-            console.error('Error getting processing status:', error);
-            res.status(500).json({
-                success: false,
-                message: 'Failed to get processing status',
                 error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
             });
         }
