@@ -926,7 +926,8 @@ async function generateKeyPointMicroVideos(videoId, youtubeUrl, keypoints, teach
                             educationalScript: scriptResult.script || scriptResult.educationalScript,
                             cognitiveLoad: scriptResult.cognitiveLoad || 5,
                             prerequisites: scriptResult.prerequisites || [],
-                            practicalExample: scriptResult.example || scriptResult.practicalExample || '',
+                            // Truncate practical example to 300 chars max (schema limit)
+                            practicalExample: (scriptResult.example || scriptResult.practicalExample || '').substring(0, 300),
                             visualCues: scriptResult.visualCues || []
                         },
 
