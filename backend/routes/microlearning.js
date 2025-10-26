@@ -1189,16 +1189,40 @@ router.get('/:videoId/videos', protect, [
         // Import MicroVideo model
         const MicroVideo = require('../models/MicroVideo');
 
+        // First check how many documents match at all
+        const totalCount = await MicroVideo.countDocuments({ originalVideoId: videoId });
+        console.log(`📊 Total MicroVideos with originalVideoId="${videoId}": ${totalCount}`);
+
+        // Check by status
+        const completedCount = await MicroVideo.countDocuments({
+            originalVideoId: videoId,
+            processingStatus: 'completed'
+        });
+        console.log(`📊 Completed MicroVideos: ${completedCount}`);
+
+        // Get all statuses
+        const allByStatus = await MicroVideo.find({ originalVideoId: videoId }).select('processingStatus sequence title');
+        console.log(`📊 All MicroVideos by status:`, allByStatus.map(m => ({ id: m._id, title: m.title, seq: m.sequence, status: m.processingStatus })));
+
         // Find all microvideos for this video
         const microVideos = await MicroVideo.find({
             originalVideoId: videoId,
             processingStatus: 'completed'
         }).sort({ sequence: 1 });
 
+        console.log(`✅ Found ${microVideos.length} completed microvideos`);
+
         if (!microVideos || microVideos.length === 0) {
+            console.warn(`⚠️ No completed microvideos found for video ${videoId}`);
             return res.status(404).json({
                 success: false,
                 message: 'No microvideos found for this video',
+                data: {
+                    videoId,
+                    totalMicroVideos: totalCount,
+                    completedMicroVideos: completedCount,
+                    allMicroVideos: allByStatus
+                },
                 microVideos: []
             });
         }
