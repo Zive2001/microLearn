@@ -8,6 +8,7 @@ import { OrbitControls, Environment, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { CheckCircle as CheckCircleIcon } from "lucide-react";
 import { Teacher } from "../components/Teacher";
 import { useAvatarTeacher } from "../hooks/useAvatarTeacher";
 
@@ -202,6 +203,7 @@ export default function KeypointPlayer() {
   const [videoData, setVideoData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0); // Which video to display
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Whiteboard settings
@@ -301,27 +303,34 @@ export default function KeypointPlayer() {
       if (stateData && stateData.microVideos && stateData.microVideos.length > 0) {
         console.log('✅ Found microVideos in location.state:', stateData.microVideos.length);
 
-        // Calculate summary stats from microVideos
-        const totalWords = stateData.microVideos.reduce((sum, mv) => {
-          const script = mv.cltBlmScript?.educationalScript || '';
-          return sum + (script.split(/\s+/).length || 0);
-        }, 0);
+        // Get the specific video index to display
+        const videoIndex = stateData.currentVideoIndex !== undefined ? stateData.currentVideoIndex : 0;
+        setCurrentVideoIndex(videoIndex);
+        console.log('📹 Displaying video at index:', videoIndex);
 
-        const totalDuration = stateData.microVideos.reduce((sum, mv) => {
-          return sum + (mv.duration || 0);
-        }, 0);
+        // Get only the single video to display
+        const singleVideo = stateData.microVideos[videoIndex];
+        if (!singleVideo) {
+          throw new Error('Video not found at index ' + videoIndex);
+        }
 
-        // Build video data structure matching component expectations
+        // Calculate stats for this single video
+        const script = singleVideo.cltBlmScript?.educationalScript || singleVideo.educationalScript || '';
+        const totalWords = script.split(/\s+/).filter(w => w.length > 0).length;
+        const totalDuration = singleVideo.duration || 0;
+
+        // Build video data structure with ONLY the current video
         const videoData = {
           video: {
             title: stateData.videoTitle || 'Tutorial Video',
             youtubeUrl: stateData.youtubeUrl
           },
-          microVideos: stateData.microVideos,
+          microVideos: [singleVideo], // Only include the current video
+          allMicroVideos: stateData.microVideos, // Keep reference to all videos
           selectedKeypoints: stateData.selectedKeypoints || [],
           teacher: stateData.teacher || 'Ava',
           summary: {
-            totalSegments: stateData.microVideos.length,
+            totalSegments: 1, // Only displaying 1 segment
             totalWords: totalWords,
             totalDuration: totalDuration
           }
@@ -357,8 +366,26 @@ export default function KeypointPlayer() {
     const segment = videoData.microVideos[index];
     setCurrentSegmentIndex(index);
 
+    // Get educational script from the correct location
+    const educationalScript = segment.cltBlmScript?.educationalScript || segment.educationalScript || '';
+    const keypoint = segment.title || segment.keypoint || 'Learning Content';
+
+    console.log('🎬 Playing segment:', {
+      index,
+      title: segment.title,
+      hasScript: !!educationalScript,
+      scriptLength: educationalScript.length,
+      teacher: segment.teacher || teacher
+    });
+
     // Update whiteboard content with keypoint
-    setWhiteboardContent(segment.keypoint);
+    setWhiteboardContent(keypoint);
+
+    if (!educationalScript) {
+      toast.error("No educational script found for this video");
+      console.error('❌ No educational script found in:', segment);
+      return;
+    }
 
     try {
       // Generate TTS for this segment
@@ -368,7 +395,7 @@ export default function KeypointPlayer() {
       const response = await axios.post(
         `${API_URL}/avatar-tts/generate`,
         {
-          text: segment.educationalScript,
+          text: educationalScript,
           teacher: segment.teacher || teacher,
         },
         {
@@ -397,19 +424,20 @@ export default function KeypointPlayer() {
         // Create message object for avatar lip-sync
         const message = {
           id: index,
-          answer: segment.educationalScript,
+          answer: educationalScript,
           visemes: visemes,
           audioPlayer: player,
         };
 
         // Split script into words for dynamic captions
-        const words = segment.educationalScript.split(" ");
+        const words = educationalScript.split(" ");
         setScriptWords(words);
 
         // Set whiteboard timeline if available from backend
-        if (segment.whiteboardTimeline && segment.whiteboardTimeline.length > 0) {
-          console.log('📊 Using AI-generated whiteboard timeline:', segment.whiteboardTimeline);
-          setWhiteboardTimeline(segment.whiteboardTimeline);
+        const whiteboardTimeline = segment.cltBlmScript?.whiteboardTimeline || segment.whiteboardTimeline;
+        if (whiteboardTimeline && whiteboardTimeline.length > 0) {
+          console.log('📊 Using AI-generated whiteboard timeline:', whiteboardTimeline);
+          setWhiteboardTimeline(whiteboardTimeline);
         } else {
           console.log('⚠️ No whiteboard timeline found, using fallback parsing');
           setWhiteboardTimeline([]);
@@ -514,7 +542,7 @@ export default function KeypointPlayer() {
           return Array.from(foundSegments.values());
         };
 
-        const parsedSegments = parseCodeSegments(segment.educationalScript);
+        const parsedSegments = parseCodeSegments(educationalScript);
         setCodeSegments(parsedSegments);
 
         player.onloadedmetadata = () => {
@@ -540,11 +568,11 @@ export default function KeypointPlayer() {
             setCurrentCaption(captionText);
 
             // PRIORITY 1: Use AI-generated whiteboard timeline if available
-            if (segment.whiteboardTimeline && segment.whiteboardTimeline.length > 0) {
+            if (whiteboardTimeline && whiteboardTimeline.length > 0) {
               let timelineContent = null;
 
               // Find the active timeline item for current time
-              for (const item of segment.whiteboardTimeline) {
+              for (const item of whiteboardTimeline) {
                 if (currentTime >= item.timeStart && currentTime <= item.timeEnd) {
                   timelineContent = item.contentText;
                   break;
@@ -555,7 +583,7 @@ export default function KeypointPlayer() {
               if (timelineContent) {
                 setWhiteboardAutoContent(timelineContent);
               } else {
-                setWhiteboardAutoContent(segment.keypoint);
+                setWhiteboardAutoContent(keypoint);
               }
             } else {
               // FALLBACK: Use old code segment detection if no timeline
@@ -576,7 +604,7 @@ export default function KeypointPlayer() {
               if (codeToDisplay) {
                 setWhiteboardAutoContent(codeToDisplay);
               } else {
-                setWhiteboardAutoContent(segment.keypoint);
+                setWhiteboardAutoContent(keypoint);
               }
             }
           }
@@ -592,12 +620,8 @@ export default function KeypointPlayer() {
           setCodeSegments([]);
           setWhiteboardTimeline([]); // Clear timeline
 
-          // Auto-play next segment
-          if (index < videoData.microVideos.length - 1) {
-            setTimeout(() => playSegment(index + 1), 1000);
-          } else {
-            toast.success("🎉 Completed all segments!");
-          }
+          // Don't auto-play next segment - user will click Complete button
+          toast.success("🎉 Video completed! Click 'Complete Video' to continue.");
         };
 
         player.onerror = (e) => {
@@ -627,7 +651,12 @@ export default function KeypointPlayer() {
 
   // Pause/Resume
   const togglePlayPause = () => {
-    if (!audioPlayer) return;
+    // If no audio loaded yet, generate it first
+    if (!audioPlayer) {
+      console.log('🎬 No audio loaded, generating audio for first time...');
+      playSegment(0); // Generate and play the current segment
+      return;
+    }
 
     if (isPlaying) {
       audioPlayer.pause();
@@ -671,6 +700,31 @@ export default function KeypointPlayer() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Complete video handler
+  const handleCompleteVideo = () => {
+    console.log('✅ Marking video as completed:', currentVideoIndex);
+
+    // Stop any playing audio
+    if (audioPlayer) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+    }
+
+    setIsPlaying(false);
+    setAvatarState("idle");
+    setCurrentMessage(null);
+
+    // Navigate back to MicrolearningPage with completion status
+    navigate(`/app/microlearning/${videoId}`, {
+      state: {
+        videoCompleted: currentVideoIndex,
+        ...location.state // Pass along other state data
+      }
+    });
+
+    toast.success("Video completed! 🎉");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -708,16 +762,16 @@ export default function KeypointPlayer() {
           <div>
             <h1 className="text-2xl font-bold">{videoData.video.title}</h1>
             <p className="text-gray-400 text-sm">
-              {videoData.summary.totalSegments} segments •{" "}
+              Video {currentVideoIndex + 1} of {videoData.allMicroVideos?.length || 1} •{" "}
               {videoData.summary.totalWords.toLocaleString()} words •
               {Math.round(videoData.summary.totalDuration / 60)} min
             </p>
           </div>
           <button
-            onClick={() => navigate("/app/keypoint-learning")}
+            onClick={() => navigate(`/app/microlearning/${videoId}`)}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
           >
-            ← Back
+            ← Back to Videos
           </button>
         </div>
       </div>
@@ -841,25 +895,8 @@ export default function KeypointPlayer() {
               {/* Control Buttons */}
               <div className="flex items-center justify-center gap-4">
                 <button
-                  onClick={() =>
-                    currentSegmentIndex > 0 &&
-                    playSegment(currentSegmentIndex - 1)
-                  }
-                  disabled={currentSegmentIndex === 0}
-                  className="p-3 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-                  </svg>
-                </button>
-
-                <button
                   onClick={togglePlayPause}
-                  disabled={!audioPlayer && !currentSegment}
+                  disabled={!currentSegment}
                   className="p-4 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isPlaying ? (
@@ -894,25 +931,6 @@ export default function KeypointPlayer() {
                     <path d="M6 6h12v12H6z" />
                   </svg>
                 </button>
-
-                <button
-                  onClick={() =>
-                    currentSegmentIndex < videoData.microVideos.length - 1 &&
-                    playSegment(currentSegmentIndex + 1)
-                  }
-                  disabled={
-                    currentSegmentIndex === videoData.microVideos.length - 1
-                  }
-                  className="p-3 bg-gray-700 rounded-full hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M16 18h2V6h-2zm-11-7l8.5-6v12z" />
-                  </svg>
-                </button>
               </div>
             </div>
 
@@ -936,62 +954,53 @@ export default function KeypointPlayer() {
           </div>
         </div>
 
-        {/* Right: Segment List */}
+        {/* Right: Video Details & Complete Button */}
         <div className="lg:col-span-1">
-          <div className="bg-gray-800 rounded-lg p-4">
-            <h2 className="text-xl font-bold mb-4">Learning Segments</h2>
-            <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {videoData.microVideos.map((segment, index) => {
-                // Calculate word count from educational script
-                const script = segment.cltBlmScript?.educationalScript || '';
-                const wordCount = script.split(/\s+/).filter(w => w.length > 0).length;
-
-                return (
-                  <button
-                    key={segment._id || index}
-                    onClick={() => playSegment(index)}
-                    disabled={isPlaying && index === currentSegmentIndex}
-                    className={`w-full text-left p-4 rounded-lg transition-all ${
-                      index === currentSegmentIndex
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-700 hover:bg-gray-600 text-gray-200"
-                    } disabled:opacity-70`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="font-semibold">
-                        {index + 1}. {segment.title || 'Segment'}
-                      </span>
-                      {index === currentSegmentIndex && isPlaying && (
-                        <span className="text-xs bg-red-500 px-2 py-1 rounded">
-                          LIVE
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-xs opacity-75">
-                      <span>⏱️ {Math.round((Number(segment.duration) || 360) / 60)} min</span>
-                    </div>
-                  </button>
-                );
-              })}
+          {/* Current Video Details */}
+          <div className="bg-gray-800 rounded-lg p-6 mb-4">
+            <h2 className="text-xl font-bold mb-4">Current Video</h2>
+            <div className="space-y-4">
+              <div>
+                <span className="text-gray-400 text-sm">Title:</span>
+                <p className="font-semibold text-lg">{currentSegment.title || 'N/A'}</p>
+              </div>
+              <div>
+                <span className="text-gray-400 text-sm">Duration:</span>
+                <p className="font-semibold">{Math.round((Number(currentSegment.duration) || 360) / 60)} minutes</p>
+              </div>
+              <div>
+                <span className="text-gray-400 text-sm">Progress:</span>
+                <p className="font-semibold">
+                  Video {currentVideoIndex + 1} of {videoData.allMicroVideos?.length || 1}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Current Segment Details */}
-          {currentSegment && (
-            <div className="bg-gray-800 rounded-lg p-4 mt-4">
-              <h3 className="font-semibold mb-2">Segment Details</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Title:</span>
-                  <span className="truncate ml-2">{currentSegment.title || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Duration:</span>
-                  <span>{Math.round((Number(currentSegment.duration) || 360) / 60)} min</span>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Complete Button */}
+          <div className="bg-gray-800 rounded-lg p-6">
+            <button
+              onClick={handleCompleteVideo}
+              className="w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg flex items-center justify-center space-x-2"
+            >
+              <CheckCircleIcon className="h-6 w-6" />
+              <span>Complete Video</span>
+            </button>
+            <p className="text-gray-400 text-sm mt-3 text-center">
+              Mark this video as complete and return to the video list
+            </p>
+          </div>
+
+          {/* Instructions */}
+          <div className="bg-gray-700 rounded-lg p-4 mt-4">
+            <h3 className="font-semibold mb-2 text-sm">Instructions</h3>
+            <ul className="text-xs text-gray-300 space-y-2">
+              <li>• Click Play to start the video</li>
+              <li>• Watch the avatar teach the content</li>
+              <li>• Follow along with the whiteboard</li>
+              <li>• Click Complete when finished</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
