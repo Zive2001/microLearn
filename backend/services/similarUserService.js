@@ -5,16 +5,18 @@
  * from similar users for intelligent quiz pool reuse.
  *
  * Phase 2: Foundation for similar user discovery
- * Phase 3: FAISS integration for large-scale similarity search
+ * Phase 3: FAISS integration for large-scale similarity search with graceful fallback
  */
 
 const UserFeatureVectorService = require('./userFeatureVectorService');
+const FAISSIndexService = require('./faissIndexService');
 const { QuizPool } = require('../models/Quiz');
 const User = require('../models/User');
 
 class SimilarUserService {
   /**
    * Find similar users in the system
+   * Uses FAISS if available, falls back to brute force search
    *
    * @param {ObjectId} userId - Target user ID to find similar users for
    * @param {Object} options - Search options
@@ -37,35 +39,55 @@ class SimilarUserService {
       // Generate feature vector for target user
       const targetVector = UserFeatureVectorService.getUserFeatureVector(targetUser);
 
-      // Get all other users (in Phase 3, this will be replaced with FAISS index query)
-      const allUsers = await User.find({
-        _id: {
-          $nin: [userId, ...excludeUserIds]
-        }
-      }).select('-password'); // Exclude password for security
+      // Try FAISS first if available
+      let similarUserVectors = [];
 
-      // Generate vectors for all users (in Phase 3, vectors will be pre-computed)
-      const allVectors = allUsers
-        .map(user => {
-          try {
-            return UserFeatureVectorService.getUserFeatureVector(user);
-          } catch (error) {
-            console.error(`Error generating vector for user ${user._id}:`, error);
-            return null;
+      if (FAISSIndexService.isFAISSAvailable()) {
+        try {
+          console.log('Attempting to use FAISS for similarity search...');
+          const faissResults = await FAISSIndexService.searchSimilar(
+            targetVector.vector,
+            { limit, minSimilarity }
+          );
+
+          if (faissResults && faissResults.length > 0) {
+            console.log(`✓ Found ${faissResults.length} similar users using FAISS`);
+            similarUserVectors = faissResults.map(result => ({
+              userId: result.userId,
+              similarity: result.similarity,
+              metadata: {} // Will be enriched below
+            }));
+          } else {
+            console.log('FAISS search returned no results, falling back to brute force...');
+            similarUserVectors = await this._bruteForceSearch(
+              userId,
+              targetVector,
+              limit,
+              minSimilarity,
+              excludeUserIds
+            );
           }
-        })
-        .filter(v => v !== null);
-
-      // Find similar users
-      const similarUserVectors = UserFeatureVectorService.findSimilarUsers(
-        allVectors,
-        targetVector.vector,
-        {
+        } catch (error) {
+          console.warn('FAISS search failed, falling back to brute force:', error.message);
+          similarUserVectors = await this._bruteForceSearch(
+            userId,
+            targetVector,
+            limit,
+            minSimilarity,
+            excludeUserIds
+          );
+        }
+      } else {
+        // FAISS not available, use brute force
+        console.log('FAISS not available, using brute force search...');
+        similarUserVectors = await this._bruteForceSearch(
+          userId,
+          targetVector,
           limit,
           minSimilarity,
-          excludeUserId: userId
-        }
-      );
+          excludeUserIds
+        );
+      }
 
       // Enrich with user details
       const enrichedResults = await Promise.all(
@@ -82,7 +104,7 @@ class SimilarUserService {
             } : null,
             matchedDimensions: this._getMatchedDimensions(
               targetVector.vector,
-              similarity.metadata
+              similarity.metadata || {}
             )
           };
         })
@@ -93,6 +115,41 @@ class SimilarUserService {
       console.error('Error finding similar users:', error);
       throw error;
     }
+  }
+
+  /**
+   * Brute force search (fallback when FAISS not available)
+   * @private
+   */
+  static async _bruteForceSearch(userId, targetVector, limit, minSimilarity, excludeUserIds) {
+    const allUsers = await User.find({
+      _id: {
+        $nin: [userId, ...excludeUserIds]
+      }
+    }).select('-password');
+
+    // Generate vectors for all users
+    const allVectors = allUsers
+      .map(user => {
+        try {
+          return UserFeatureVectorService.getUserFeatureVector(user);
+        } catch (error) {
+          console.error(`Error generating vector for user ${user._id}:`, error);
+          return null;
+        }
+      })
+      .filter(v => v !== null);
+
+    // Find similar users using brute force
+    return UserFeatureVectorService.findSimilarUsers(
+      allVectors,
+      targetVector.vector,
+      {
+        limit,
+        minSimilarity,
+        excludeUserId: userId
+      }
+    );
   }
 
   /**
@@ -305,6 +362,67 @@ class SimilarUserService {
       };
     } catch (error) {
       console.error('Error building similarity index:', error);
+      throw error;
+    }
+  }
+
+  // ==================== PHASE 3: FAISS MANAGEMENT ====================
+
+  /**
+   * Get FAISS status and availability
+   * @returns {Object} FAISS status information
+   */
+  static getFAISSStatus() {
+    return FAISSIndexService.getStatus();
+  }
+
+  /**
+   * Rebuild FAISS index with all current users
+   * Should be called periodically or after significant user growth
+   *
+   * @returns {Promise<Object>} Rebuild result
+   */
+  static async rebuildFAISSIndex() {
+    try {
+      console.log('Rebuilding FAISS index for all users...');
+      return await FAISSIndexService.rebuildIndex();
+    } catch (error) {
+      console.error('Error rebuilding FAISS index:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Add new user to FAISS index
+   * Called after user registration
+   *
+   * @param {ObjectId} userId - User ID to add
+   * @returns {Promise<Object>} Index update result
+   */
+  static async onUserRegistered(userId) {
+    try {
+      console.log(`User ${userId} registered, updating FAISS index...`);
+      return await FAISSIndexService.addUserToIndex(userId);
+    } catch (error) {
+      console.error('Error updating FAISS index on user registration:', error);
+      // Don't throw - let registration complete even if index update fails
+      return {
+        success: false,
+        message: 'FAISS index update failed (non-critical)',
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Get FAISS index statistics
+   * @returns {Promise<Object>} Index statistics
+   */
+  static async getFAISSStats() {
+    try {
+      return await FAISSIndexService.getIndexStats();
+    } catch (error) {
+      console.error('Error getting FAISS stats:', error);
       throw error;
     }
   }

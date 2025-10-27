@@ -3,6 +3,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { generateToken, protect } = require('../middleware/auth');
+const SimilarUserService = require('../services/similarUserService');
 
 const router = express.Router();
 
@@ -149,6 +150,13 @@ router.post('/register', [
         });
 
         await user.save();
+
+        // Phase 3: Update FAISS index after new user registration
+        // Non-blocking call - registration completes regardless of FAISS status
+        SimilarUserService.onUserRegistered(user._id).catch(error => {
+            console.error('Warning: FAISS index update failed during registration:', error.message);
+            // Don't prevent registration if FAISS update fails
+        });
 
         // Generate JWT token
         const token = generateToken(user._id);
