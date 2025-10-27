@@ -19,53 +19,53 @@ export const TOPICS = {
   CSS_TAILWIND: 'css-tailwind'
 };
 
-// Topic Metadata
+// Topic Metadata - using tech-stack-icons
 export const TOPIC_META = {
   [TOPICS.JAVASCRIPT]: {
     name: 'JavaScript',
-    icon: '⚡',
+    iconName: 'js',
     color: '#F7DF1E',
     category: 'Programming Languages'
   },
   [TOPICS.REACT]: {
     name: 'React',
-    icon: '⚛️',
+    iconName: 'react',
     color: '#61DAFB',
     category: 'Frameworks & Libraries'
   },
   [TOPICS.TYPESCRIPT]: {
     name: 'TypeScript',
-    icon: '🔷',
+    iconName: 'typescript',
     color: '#3178C6',
     category: 'Programming Languages'
   },
   [TOPICS.NODEJS]: {
     name: 'Node.js',
-    icon: '🟢',
+    iconName: 'nodejs',
     color: '#339933',
     category: 'Backend Development'
   },
   [TOPICS.PYTHON]: {
     name: 'Python',
-    icon: '🐍',
+    iconName: 'python',
     color: '#3776AB',
     category: 'Programming Languages'
   },
   [TOPICS.NEXTJS]: {
     name: 'Next.js',
-    icon: '▲',
+    iconName: 'nextjs2',
     color: '#000000',
     category: 'Frameworks & Libraries'
   },
   [TOPICS.MONGODB]: {
     name: 'MongoDB',
-    icon: '🍃',
+    iconName: 'mongodb',
     color: '#47A248',
     category: 'Tools & Technologies'
   },
   [TOPICS.CSS_TAILWIND]: {
     name: 'CSS & Tailwind',
-    icon: '🎨',
+    iconName: 'tailwind',
     color: '#38B2AC',
     category: 'Frontend Development'
   }

@@ -84,7 +84,7 @@ export const getTopicMeta = (topicSlug) => {
     console.warn('⚠️ getTopicMeta called with invalid topicSlug:', topicSlug);
     return {
       name: 'Unknown Topic',
-      icon: '❓',
+      iconName: 'Package',
       color: '#6B7280',
       category: 'Unknown'
     };
@@ -92,14 +92,16 @@ export const getTopicMeta = (topicSlug) => {
 
   return TOPIC_META[topicSlug] || {
     name: topicSlug,
-    icon: '📚',
+    iconName: 'Package',
     color: '#6B7280',
     category: 'Unknown'
   };
 };
 
-export const getTopicIcon = (topicSlug) => {
-  return getTopicMeta(topicSlug).icon;
+// Get icon name from topic
+export const getTopicIconName = (topicSlug) => {
+  const meta = getTopicMeta(topicSlug);
+  return meta.iconName || 'Package';
 };
 
 export const getTopicColor = (topicSlug) => {
