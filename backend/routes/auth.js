@@ -73,7 +73,25 @@ router.post('/register', [
     body('learningPreferences.enableNotifications')
         .optional()
         .isBoolean()
-        .withMessage('Enable notifications must be a boolean')
+        .withMessage('Enable notifications must be a boolean'),
+    // NEW: FAISS Metadata Fields - Step 2
+    body('profile.learningPace')
+        .optional()
+        .isIn(['Slow', 'Moderate', 'Fast'])
+        .withMessage('Please select a valid learning pace'),
+    body('profile.problemSolvingApproach')
+        .optional()
+        .isIn(['Analytical', 'Practical', 'Creative'])
+        .withMessage('Please select a valid problem-solving approach'),
+    // NEW: FAISS Metadata Fields - Step 3
+    body('learningPreferences.availableSessionTime')
+        .optional()
+        .isIn(['Micro (5-10 min)', 'Short (15-30 min)', 'Medium (30-60 min)', 'Long (60+ min)'])
+        .withMessage('Please select a valid session time'),
+    body('learningPreferences.learningFocus')
+        .optional()
+        .isIn(['Conceptual', 'Practical-Projects', 'Interview-Prep', 'Certification', 'Mixed'])
+        .withMessage('Please select a valid learning focus')
 ], async (req, res) => {
     try {
         // Check for validation errors
@@ -114,7 +132,9 @@ router.post('/register', [
                 experienceLevel: profile.experienceLevel || 'Complete Beginner',
                 dateOfBirth: profile.dateOfBirth || null,
                 location: profile.location || '',
-                bio: profile.bio || ''
+                bio: profile.bio || '',
+                learningPace: profile.learningPace || 'Moderate',
+                problemSolvingApproach: profile.problemSolvingApproach || 'Practical'
             },
             learningPreferences: {
                 interestedAreas: learningPreferences.interestedAreas || [],
@@ -122,7 +142,9 @@ router.post('/register', [
                 learningGoal: learningPreferences.learningGoal,
                 learningStyle: learningPreferences.learningStyle || 'visual',
                 preferredSchedule: learningPreferences.preferredSchedule || [],
-                enableNotifications: learningPreferences.enableNotifications !== false
+                enableNotifications: learningPreferences.enableNotifications !== false,
+                availableSessionTime: learningPreferences.availableSessionTime || 'Short (15-30 min)',
+                learningFocus: learningPreferences.learningFocus || 'Mixed'
             }
         });
 

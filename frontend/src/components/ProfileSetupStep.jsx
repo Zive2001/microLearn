@@ -224,6 +224,70 @@ const ProfileSetupStep = ({ formData, setFormData, errors }) => {
             </div>
           )}
         </div>
+
+        {/* NEW: Learning Pace */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Learning Pace
+          </label>
+          <div className="space-y-3">
+            {['Slow', 'Moderate', 'Fast'].map((pace) => (
+              <label key={pace} className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="learningPace"
+                  value={pace}
+                  checked={formData.learningPace === pace}
+                  onChange={(e) => handleInputChange('learningPace', e.target.value)}
+                  className="h-4 w-4 text-gray-900 border-gray-300 focus:ring-gray-900"
+                />
+                <span className="ml-3 text-sm text-gray-700">
+                  {pace === 'Slow' && 'Slow - I prefer detailed explanations'}
+                  {pace === 'Moderate' && 'Moderate - Balanced pace works best for me'}
+                  {pace === 'Fast' && 'Fast - I learn quickly and like to move ahead'}
+                </span>
+              </label>
+            ))}
+          </div>
+          {errors.learningPace && (
+            <div className="flex items-center mt-2 text-sm text-red-600">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.learningPace}
+            </div>
+          )}
+        </div>
+
+        {/* NEW: Problem-Solving Approach */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Problem-Solving Approach
+          </label>
+          <div className="space-y-3">
+            {['Analytical', 'Practical', 'Creative'].map((approach) => (
+              <label key={approach} className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="problemSolvingApproach"
+                  value={approach}
+                  checked={formData.problemSolvingApproach === approach}
+                  onChange={(e) => handleInputChange('problemSolvingApproach', e.target.value)}
+                  className="h-4 w-4 text-gray-900 border-gray-300 focus:ring-gray-900"
+                />
+                <span className="ml-3 text-sm text-gray-700">
+                  {approach === 'Analytical' && 'Analytical - I like understanding the "why"'}
+                  {approach === 'Practical' && 'Practical - I learn by doing and building'}
+                  {approach === 'Creative' && 'Creative - I like exploring new ideas'}
+                </span>
+              </label>
+            ))}
+          </div>
+          {errors.problemSolvingApproach && (
+            <div className="flex items-center mt-2 text-sm text-red-600">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.problemSolvingApproach}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -251,6 +251,89 @@ const LearningPreferencesStep = ({ formData, setFormData, errors }) => {
           )}
         </div>
 
+        {/* NEW: Available Session Time */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            <Clock className="inline h-4 w-4 mr-2" />
+            How much time do you typically have per session?
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { value: 'Micro (5-10 min)', label: 'Micro (5-10 min)', description: 'Very short breaks' },
+              { value: 'Short (15-30 min)', label: 'Short (15-30 min)', description: 'Quick learning sessions' },
+              { value: 'Medium (30-60 min)', label: 'Medium (30-60 min)', description: 'Focused study time' },
+              { value: 'Long (60+ min)', label: 'Long (60+ min)', description: 'Extended learning sessions' }
+            ].map((time) => (
+              <label key={time.value} className="flex items-start cursor-pointer">
+                <input
+                  type="radio"
+                  name="availableSessionTime"
+                  value={time.value}
+                  checked={formData.availableSessionTime === time.value}
+                  onChange={(e) => handleInputChange('availableSessionTime', e.target.value)}
+                  className="mt-1 h-4 w-4 text-gray-900 border-gray-300 focus:ring-gray-900 focus:ring-2"
+                />
+                <div className="ml-3">
+                  <div className="text-sm font-medium text-gray-900">
+                    {time.label}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {time.description}
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+          {errors.availableSessionTime && (
+            <div className="flex items-center mt-2 text-sm text-red-600">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.availableSessionTime}
+            </div>
+          )}
+        </div>
+
+        {/* NEW: Learning Focus */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            <Target className="inline h-4 w-4 mr-2" />
+            What is your primary learning focus?
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { value: 'Conceptual', label: 'Conceptual', description: 'Understanding theory and concepts' },
+              { value: 'Practical-Projects', label: 'Practical & Projects', description: 'Building real-world projects' },
+              { value: 'Interview-Prep', label: 'Interview Preparation', description: 'Prepare for tech interviews' },
+              { value: 'Certification', label: 'Certification', description: 'Prepare for certifications/exams' },
+              { value: 'Mixed', label: 'Mixed', description: 'Combination of everything' }
+            ].map((focus) => (
+              <label key={focus.value} className="flex items-start cursor-pointer">
+                <input
+                  type="radio"
+                  name="learningFocus"
+                  value={focus.value}
+                  checked={formData.learningFocus === focus.value}
+                  onChange={(e) => handleInputChange('learningFocus', e.target.value)}
+                  className="mt-1 h-4 w-4 text-gray-900 border-gray-300 focus:ring-gray-900 focus:ring-2"
+                />
+                <div className="ml-3">
+                  <div className="text-sm font-medium text-gray-900">
+                    {focus.label}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {focus.description}
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+          {errors.learningFocus && (
+            <div className="flex items-center mt-2 text-sm text-red-600">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              {errors.learningFocus}
+            </div>
+          )}
+        </div>
+
         {/* Notifications */}
         <div>
           <div className="flex items-center justify-between">

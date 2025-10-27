@@ -71,6 +71,18 @@ const userSchema = new mongoose.Schema({
             trim: true,
             maxlength: [200, 'Bio cannot exceed 200 characters'],
             default: ''
+        },
+        // NEW: Learning pace preference
+        learningPace: {
+            type: String,
+            enum: ['Slow', 'Moderate', 'Fast'],
+            default: 'Moderate'
+        },
+        // NEW: Problem-solving approach
+        problemSolvingApproach: {
+            type: String,
+            enum: ['Analytical', 'Practical', 'Creative'],
+            default: 'Practical'
         }
     },
 
@@ -111,6 +123,18 @@ const userSchema = new mongoose.Schema({
         enableNotifications: {
             type: Boolean,
             default: true
+        },
+        // NEW: Available session time
+        availableSessionTime: {
+            type: String,
+            enum: ['Micro (5-10 min)', 'Short (15-30 min)', 'Medium (30-60 min)', 'Long (60+ min)'],
+            default: 'Short (15-30 min)'
+        },
+        // NEW: Learning focus
+        learningFocus: {
+            type: String,
+            enum: ['Conceptual', 'Practical-Projects', 'Interview-Prep', 'Certification', 'Mixed'],
+            default: 'Mixed'
         }
     },
 

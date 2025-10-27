@@ -40,11 +40,15 @@ const Profile = () => {
     dateOfBirth: user?.profile?.dateOfBirth ? user.profile.dateOfBirth.split('T')[0] : '',
     location: user?.profile?.location || '',
     bio: user?.profile?.bio || '',
+    learningPace: user?.profile?.learningPace || 'Moderate',  // NEW
+    problemSolvingApproach: user?.profile?.problemSolvingApproach || 'Practical',  // NEW
     // Step 3: Learning Preferences
     learningGoal: user?.learningPreferences?.learningGoal || '',
     learningStyle: user?.learningPreferences?.learningStyle || 'visual',
     preferredSchedule: user?.learningPreferences?.preferredSchedule || [],
-    enableNotifications: user?.learningPreferences?.enableNotifications !== false
+    enableNotifications: user?.learningPreferences?.enableNotifications !== false,
+    availableSessionTime: user?.learningPreferences?.availableSessionTime || 'Short (15-30 min)',  // NEW
+    learningFocus: user?.learningPreferences?.learningFocus || 'Mixed'  // NEW
   });
 
   const handleChange = (e) => {
@@ -78,10 +82,14 @@ const Profile = () => {
       dateOfBirth: user?.profile?.dateOfBirth ? user.profile.dateOfBirth.split('T')[0] : '',
       location: user?.profile?.location || '',
       bio: user?.profile?.bio || '',
+      learningPace: user?.profile?.learningPace || 'Moderate',
+      problemSolvingApproach: user?.profile?.problemSolvingApproach || 'Practical',
       learningGoal: user?.learningPreferences?.learningGoal || '',
       learningStyle: user?.learningPreferences?.learningStyle || 'visual',
       preferredSchedule: user?.learningPreferences?.preferredSchedule || [],
-      enableNotifications: user?.learningPreferences?.enableNotifications !== false
+      enableNotifications: user?.learningPreferences?.enableNotifications !== false,
+      availableSessionTime: user?.learningPreferences?.availableSessionTime || 'Short (15-30 min)',
+      learningFocus: user?.learningPreferences?.learningFocus || 'Mixed'
     });
     setIsEditing(false);
   };
@@ -575,6 +583,55 @@ const Profile = () => {
                 ) : (
                   <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
                     Not specified
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="availableSessionTime" className="block text-sm font-medium text-[#37352F] mb-3">
+                  Available Session Time
+                </label>
+                {isEditing ? (
+                  <select
+                    name="availableSessionTime"
+                    id="availableSessionTime"
+                    value={formData.availableSessionTime}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-[#E9E9E7] rounded-lg bg-white text-[#37352F] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2383E2] focus:border-transparent hover:border-[#D0D0CE]"
+                  >
+                    <option value="Micro (5-10 min)">Micro (5-10 min)</option>
+                    <option value="Short (15-30 min)">Short (15-30 min)</option>
+                    <option value="Medium (30-60 min)">Medium (30-60 min)</option>
+                    <option value="Long (60+ min)">Long (60+ min)</option>
+                  </select>
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                    {formData.availableSessionTime || 'Not provided'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="learningFocus" className="block text-sm font-medium text-[#37352F] mb-3">
+                  Learning Focus
+                </label>
+                {isEditing ? (
+                  <select
+                    name="learningFocus"
+                    id="learningFocus"
+                    value={formData.learningFocus}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-[#E9E9E7] rounded-lg bg-white text-[#37352F] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2383E2] focus:border-transparent hover:border-[#D0D0CE]"
+                  >
+                    <option value="Conceptual">Conceptual</option>
+                    <option value="Practical-Projects">Practical & Projects</option>
+                    <option value="Interview-Prep">Interview Preparation</option>
+                    <option value="Certification">Certification</option>
+                    <option value="Mixed">Mixed</option>
+                  </select>
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                    {formData.learningFocus || 'Not provided'}
                   </p>
                 )}
               </div>

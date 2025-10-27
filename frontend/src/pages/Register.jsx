@@ -40,14 +40,18 @@ const Register = () => {
     currentRole: '',
     experienceLevel: 'Complete Beginner', // Default value
     bio: '',
-    
+    learningPace: 'Moderate',  // NEW
+    problemSolvingApproach: 'Practical',  // NEW
+
     // Step 3: Learning Preferences
     learningGoal: '',
     interestedTopics: [],
     timeCommitment: '',
     learningStyle: '',
     preferredSchedule: [],
-    enableNotifications: true
+    enableNotifications: true,
+    availableSessionTime: 'Short (15-30 min)',  // NEW
+    learningFocus: 'Mixed'  // NEW
   });
 
   // Validation errors state
@@ -127,7 +131,9 @@ const Register = () => {
           experienceLevel: formData.experienceLevel || 'Complete Beginner',
           dateOfBirth: formData.dateOfBirth || null,
           location: formData.location || '',
-          bio: formData.bio || ''
+          bio: formData.bio || '',
+          learningPace: formData.learningPace || 'Moderate',  // NEW
+          problemSolvingApproach: formData.problemSolvingApproach || 'Practical'  // NEW
         },
         learningPreferences: {
           learningGoal: mapLearningGoal(formData.learningGoal),
@@ -135,7 +141,9 @@ const Register = () => {
           preferredContentLength: mapTimeCommitment(formData.timeCommitment),
           learningStyle: formData.learningStyle || 'visual',
           preferredSchedule: formData.preferredSchedule || [],
-          enableNotifications: formData.enableNotifications !== false
+          enableNotifications: formData.enableNotifications !== false,
+          availableSessionTime: formData.availableSessionTime || 'Short (15-30 min)',  // NEW
+          learningFocus: formData.learningFocus || 'Mixed'  // NEW
         }
       };
 
