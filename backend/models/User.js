@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters'],
+        minlength: [8, 'Password must be at least 8 characters'],
         select: false // Don't return password in queries by default
     },
     
@@ -49,12 +49,28 @@ const userSchema = new mongoose.Schema({
         gender: {
             type: String,
             enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
-            required: [true, 'Gender is required']
+            default: 'Prefer not to say'
         },
         experienceLevel: {
             type: String,
             enum: ['Complete Beginner', 'Some Experience', 'Intermediate', 'Advanced'],
             default: 'Complete Beginner'
+        },
+        dateOfBirth: {
+            type: Date,
+            default: null
+        },
+        location: {
+            type: String,
+            trim: true,
+            maxlength: [100, 'Location cannot exceed 100 characters'],
+            default: ''
+        },
+        bio: {
+            type: String,
+            trim: true,
+            maxlength: [200, 'Bio cannot exceed 200 characters'],
+            default: ''
         }
     },
 
@@ -82,6 +98,19 @@ const userSchema = new mongoose.Schema({
             type: String,
             enum: ['Career Change', 'Skill Enhancement', 'Academic Requirements', 'Personal Interest'],
             required: [true, 'Learning goal is required']
+        },
+        learningStyle: {
+            type: String,
+            enum: ['visual', 'hands_on', 'reading', 'interactive'],
+            default: 'visual'
+        },
+        preferredSchedule: [{
+            type: String,
+            enum: ['morning', 'afternoon', 'evening', 'night']
+        }],
+        enableNotifications: {
+            type: Boolean,
+            default: true
         }
     },
 

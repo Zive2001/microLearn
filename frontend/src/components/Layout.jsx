@@ -23,6 +23,7 @@ const Layout = () => {
     { name: 'Dashboard', href: '/app/dashboard', icon: HomeIcon },
     { name: 'Topics', href: '/app/topics', icon: BookOpenIcon },
     { name: 'Assessment', href: '/app/assessment', icon: AcademicCapIcon },
+    { name: 'Profile', href: '/app/profile', icon: UserIcon },
     // { name: 'Videos', href: '/app/recommendations', icon: VideoCameraIcon },
   ];
 
@@ -75,7 +76,7 @@ const Layout = () => {
           
           {/* User menu */}
           <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <div className="flex-shrink-0 w-full group block">
+            <Link to="/app/profile" className="flex-shrink-0 w-full group block rounded-md p-2 hover:bg-gray-50 transition-colors">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
                   <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
@@ -91,13 +92,16 @@ const Layout = () => {
                   </p>
                 </div>
                 <button
-                  onClick={handleLogout}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLogout();
+                  }}
                   className="ml-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                 >
                   <LogOutIcon className="h-4 w-4" />
                 </button>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
@@ -147,28 +151,31 @@ const Layout = () => {
               </nav>
             </div>
             <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
+              <Link to="/app/profile" className="flex-shrink-0 w-full rounded-md p-2 hover:bg-gray-50 transition-colors" onClick={() => setSidebarOpen(false)}>
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
+                      <UserIcon className="h-5 w-5 text-gray-400" />
+                    </div>
                   </div>
+                  <div className="ml-3 flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.profile?.firstName} {user?.profile?.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSidebarOpen(false);
+                      handleLogout();
+                    }}
+                    className="ml-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md"
+                  >
+                    <LogOutIcon className="h-4 w-4" />
+                  </button>
                 </div>
-                <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    {user?.profile?.firstName} {user?.profile?.lastName}
-                  </p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setSidebarOpen(false);
-                    handleLogout();
-                  }}
-                  className="ml-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md"
-                >
-                  <LogOutIcon className="h-4 w-4" />
-                </button>
-              </div>
+              </Link>
             </div>
           </div>
         </div>

@@ -16,8 +16,14 @@ router.post('/register', [
         .normalizeEmail()
         .withMessage('Please provide a valid email'),
     body('password')
-        .isLength({ min: 6 })
-        .withMessage('Password must be at least 6 characters'),
+        .isLength({ min: 8 })
+        .withMessage('Password must be at least 8 characters')
+        .matches(/[a-z]/)
+        .withMessage('Password must contain at least one lowercase letter')
+        .matches(/[A-Z]/)
+        .withMessage('Password must contain at least one uppercase letter')
+        .matches(/[0-9]/)
+        .withMessage('Password must contain at least one number'),
     body('profile.firstName')
         .trim()
         .isLength({ min: 2, max: 50 })
@@ -30,11 +36,44 @@ router.post('/register', [
         .isIn(['Student', 'Software Developer', 'Web Developer', 'Data Scientist', 'UI/UX Designer', 'Product Manager', 'Other'])
         .withMessage('Please select a valid profession'),
     body('profile.gender')
+        .optional()
         .isIn(['Male', 'Female', 'Other', 'Prefer not to say'])
         .withMessage('Please select a valid gender'),
     body('learningPreferences.learningGoal')
         .isIn(['Career Change', 'Skill Enhancement', 'Academic Requirements', 'Personal Interest'])
-        .withMessage('Please select a valid learning goal')
+        .withMessage('Please select a valid learning goal'),
+    // Step 2: Profile Setup - New Fields
+    body('profile.dateOfBirth')
+        .optional()
+        .isISO8601()
+        .withMessage('Please provide a valid date'),
+    body('profile.location')
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage('Location must be between 2-100 characters'),
+    body('profile.bio')
+        .optional()
+        .trim()
+        .isLength({ max: 200 })
+        .withMessage('Bio must be less than 200 characters'),
+    // Step 3: Learning Preferences - New Fields
+    body('learningPreferences.learningStyle')
+        .optional()
+        .isIn(['visual', 'hands_on', 'reading', 'interactive'])
+        .withMessage('Please select a valid learning style'),
+    body('learningPreferences.preferredSchedule')
+        .optional()
+        .isArray()
+        .withMessage('Preferred schedule must be an array'),
+    body('learningPreferences.preferredSchedule.*')
+        .optional()
+        .isIn(['morning', 'afternoon', 'evening', 'night'])
+        .withMessage('Invalid schedule option'),
+    body('learningPreferences.enableNotifications')
+        .optional()
+        .isBoolean()
+        .withMessage('Enable notifications must be a boolean')
 ], async (req, res) => {
     try {
         // Check for validation errors
@@ -72,12 +111,18 @@ router.post('/register', [
                 lastName: profile.lastName,
                 profession: profile.profession,
                 gender: profile.gender,
-                experienceLevel: profile.experienceLevel || 'Complete Beginner'
+                experienceLevel: profile.experienceLevel || 'Complete Beginner',
+                dateOfBirth: profile.dateOfBirth || null,
+                location: profile.location || '',
+                bio: profile.bio || ''
             },
             learningPreferences: {
                 interestedAreas: learningPreferences.interestedAreas || [],
                 preferredContentLength: learningPreferences.preferredContentLength || 'Short (5-10 min)',
-                learningGoal: learningPreferences.learningGoal
+                learningGoal: learningPreferences.learningGoal,
+                learningStyle: learningPreferences.learningStyle || 'visual',
+                preferredSchedule: learningPreferences.preferredSchedule || [],
+                enableNotifications: learningPreferences.enableNotifications !== false
             }
         });
 
