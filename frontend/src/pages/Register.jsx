@@ -124,12 +124,18 @@ const Register = () => {
           lastName: formData.lastName,
           profession: formData.currentRole, // Map currentRole to profession
           gender: 'Prefer not to say', // Default value since not collected in current form
-          experienceLevel: formData.experienceLevel || 'Complete Beginner'
+          experienceLevel: formData.experienceLevel || 'Complete Beginner',
+          dateOfBirth: formData.dateOfBirth || null,
+          location: formData.location || '',
+          bio: formData.bio || ''
         },
         learningPreferences: {
           learningGoal: mapLearningGoal(formData.learningGoal),
           interestedAreas: formData.interestedTopics || [],
-          preferredContentLength: mapTimeCommitment(formData.timeCommitment)
+          preferredContentLength: mapTimeCommitment(formData.timeCommitment),
+          learningStyle: formData.learningStyle || 'visual',
+          preferredSchedule: formData.preferredSchedule || [],
+          enableNotifications: formData.enableNotifications !== false
         }
       };
 
@@ -164,9 +170,9 @@ const Register = () => {
   const mapTimeCommitment = (commitment) => {
     const commitmentMap = {
       '5-10': 'Short (5-10 min)',
-      '15-30': 'Medium (15-30 min)',
-      '30-60': 'Long (30-60 min)',
-      '60+': 'Long (30-60 min)'
+      '15-30': 'Medium (10-20 min)',
+      '30-60': 'Long (20+ min)',
+      '60+': 'Long (20+ min)'
     };
     return commitmentMap[commitment] || 'Short (5-10 min)';
   };

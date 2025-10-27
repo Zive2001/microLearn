@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { 
-  User as UserIcon, 
-  Mail as MailIcon, 
+import {
+  User as UserIcon,
+  Mail as MailIcon,
   Briefcase as BriefcaseIcon,
   Edit as EditIcon,
   Save as SaveIcon,
@@ -14,7 +14,12 @@ import {
   Calendar,
   Settings,
   Shield,
-  Trash2
+  Trash2,
+  MapPin as MapPinIcon,
+  Heart as HeartIcon,
+  Eye as EyeIcon,
+  Palette as PaletteIcon,
+  Bell as BellIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authAPI } from '../services/api';
@@ -24,10 +29,22 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    // Step 1: Basic Info
     firstName: user?.profile?.firstName || '',
     lastName: user?.profile?.lastName || '',
     email: user?.email || '',
-    profession: user?.profile?.profession || ''
+    // Step 2: Profile Setup
+    profession: user?.profile?.profession || '',
+    experienceLevel: user?.profile?.experienceLevel || 'Complete Beginner',
+    gender: user?.profile?.gender || 'Prefer not to say',
+    dateOfBirth: user?.profile?.dateOfBirth ? user.profile.dateOfBirth.split('T')[0] : '',
+    location: user?.profile?.location || '',
+    bio: user?.profile?.bio || '',
+    // Step 3: Learning Preferences
+    learningGoal: user?.learningPreferences?.learningGoal || '',
+    learningStyle: user?.learningPreferences?.learningStyle || 'visual',
+    preferredSchedule: user?.learningPreferences?.preferredSchedule || [],
+    enableNotifications: user?.learningPreferences?.enableNotifications !== false
   });
 
   const handleChange = (e) => {
@@ -55,7 +72,16 @@ const Profile = () => {
       firstName: user?.profile?.firstName || '',
       lastName: user?.profile?.lastName || '',
       email: user?.email || '',
-      profession: user?.profile?.profession || ''
+      profession: user?.profile?.profession || '',
+      experienceLevel: user?.profile?.experienceLevel || 'Complete Beginner',
+      gender: user?.profile?.gender || 'Prefer not to say',
+      dateOfBirth: user?.profile?.dateOfBirth ? user.profile.dateOfBirth.split('T')[0] : '',
+      location: user?.profile?.location || '',
+      bio: user?.profile?.bio || '',
+      learningGoal: user?.learningPreferences?.learningGoal || '',
+      learningStyle: user?.learningPreferences?.learningStyle || 'visual',
+      preferredSchedule: user?.learningPreferences?.preferredSchedule || [],
+      enableNotifications: user?.learningPreferences?.enableNotifications !== false
     });
     setIsEditing(false);
   };
@@ -269,6 +295,121 @@ const Profile = () => {
                   </p>
                 )}
               </div>
+
+              <div>
+                <label htmlFor="gender" className="block text-sm font-medium text-[#37352F] mb-3">
+                  Gender
+                </label>
+                {isEditing ? (
+                  <select
+                    name="gender"
+                    id="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-[#E9E9E7] rounded-lg bg-white text-[#37352F] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2383E2] focus:border-transparent hover:border-[#D0D0CE]"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                    {formData.gender || 'Not provided'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="experienceLevel" className="block text-sm font-medium text-[#37352F] mb-3">
+                  Experience Level
+                </label>
+                {isEditing ? (
+                  <select
+                    name="experienceLevel"
+                    id="experienceLevel"
+                    value={formData.experienceLevel}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-[#E9E9E7] rounded-lg bg-white text-[#37352F] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2383E2] focus:border-transparent hover:border-[#D0D0CE]"
+                  >
+                    <option value="Complete Beginner">Complete Beginner</option>
+                    <option value="Some Experience">Some Experience</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                    {formData.experienceLevel || 'Not provided'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="dateOfBirth" className="block text-sm font-medium text-[#37352F] mb-3">
+                  Date of Birth
+                </label>
+                {isEditing ? (
+                  <input
+                    type="date"
+                    name="dateOfBirth"
+                    id="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-[#E9E9E7] rounded-lg bg-white text-[#37352F] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2383E2] focus:border-transparent hover:border-[#D0D0CE]"
+                  />
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7] flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-[#6B6B6B]" />
+                    {formData.dateOfBirth ? new Date(formData.dateOfBirth).toLocaleDateString() : 'Not provided'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-[#37352F] mb-3">
+                  Location
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="location"
+                    id="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="City, Country"
+                    className="w-full px-4 py-3 border border-[#E9E9E7] rounded-lg bg-white text-[#37352F] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2383E2] focus:border-transparent hover:border-[#D0D0CE]"
+                  />
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7] flex items-center">
+                    <MapPinIcon className="h-4 w-4 mr-2 text-[#6B6B6B]" />
+                    {formData.location || 'Not provided'}
+                  </p>
+                )}
+              </div>
+
+              <div className="sm:col-span-2">
+                <label htmlFor="bio" className="block text-sm font-medium text-[#37352F] mb-3">
+                  Bio
+                </label>
+                {isEditing ? (
+                  <textarea
+                    name="bio"
+                    id="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
+                    rows="3"
+                    placeholder="Tell us about yourself..."
+                    className="w-full px-4 py-3 border border-[#E9E9E7] rounded-lg bg-white text-[#37352F] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2383E2] focus:border-transparent hover:border-[#D0D0CE] resize-none"
+                  />
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                    {formData.bio || 'Not provided'}
+                  </p>
+                )}
+                <div className="text-xs text-[#6B6B6B] mt-1">
+                  {formData.bio?.length || 0}/200 characters
+                </div>
+              </div>
             </div>
             
             {/* Account Info */}
@@ -292,6 +433,150 @@ const Profile = () => {
                     <span className="text-green-800">Active</span>
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Learning Preferences */}
+        <div className="bg-white rounded-2xl border border-[#E9E9E7]">
+          <div className="px-8 py-6 border-b border-[#E9E9E7]">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center mr-3">
+                <PaletteIcon className="h-4 w-4 text-purple-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-[#37352F]">
+                Learning Preferences
+              </h2>
+            </div>
+          </div>
+
+          <div className="px-8 py-8">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-[#37352F] mb-3">
+                  Learning Goal
+                </label>
+                <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                  {formData.learningGoal || 'Not provided'}
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="learningStyle" className="block text-sm font-medium text-[#37352F] mb-3">
+                  Learning Style
+                </label>
+                {isEditing ? (
+                  <select
+                    name="learningStyle"
+                    id="learningStyle"
+                    value={formData.learningStyle}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-[#E9E9E7] rounded-lg bg-white text-[#37352F] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2383E2] focus:border-transparent hover:border-[#D0D0CE]"
+                  >
+                    <option value="visual">Visual</option>
+                    <option value="hands_on">Hands-On</option>
+                    <option value="reading">Reading</option>
+                    <option value="interactive">Interactive</option>
+                  </select>
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7] flex items-center">
+                    <EyeIcon className="h-4 w-4 mr-2 text-[#6B6B6B]" />
+                    {formData.learningStyle === 'hands_on' ? 'Hands-On' :
+                     formData.learningStyle.charAt(0).toUpperCase() + formData.learningStyle.slice(1) || 'Not provided'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#37352F] mb-3">
+                  Preferred Schedule
+                </label>
+                <div className="space-y-2">
+                  {Array.isArray(formData.preferredSchedule) && formData.preferredSchedule.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {formData.preferredSchedule.map((time) => (
+                        <span
+                          key={time}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                        >
+                          {time.charAt(0).toUpperCase() + time.slice(1)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                      Not specified
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#37352F] mb-3">
+                  Notifications
+                </label>
+                <div className="flex items-center space-x-3">
+                  {isEditing ? (
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="enableNotifications"
+                        checked={formData.enableNotifications}
+                        onChange={(e) =>
+                          setFormData(prev => ({
+                            ...prev,
+                            enableNotifications: e.target.checked
+                          }))
+                        }
+                        className="w-4 h-4 rounded border-[#E9E9E7] text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-[#37352F]">
+                        {formData.enableNotifications ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </label>
+                  ) : (
+                    <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7] flex items-center">
+                      <BellIcon className="h-4 w-4 mr-2 text-[#6B6B6B]" />
+                      {formData.enableNotifications ? (
+                        <span className="text-green-600 font-medium">Enabled</span>
+                      ) : (
+                        <span className="text-gray-600">Disabled</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#37352F] mb-3">
+                  Preferred Content Length
+                </label>
+                <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                  {user?.learningPreferences?.preferredContentLength || 'Not provided'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#37352F] mb-3">
+                  Interested Areas
+                </label>
+                {user?.learningPreferences?.interestedAreas && user.learningPreferences.interestedAreas.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {user.learningPreferences.interestedAreas.map((topic) => (
+                      <span
+                        key={topic}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 border border-green-200"
+                      >
+                        {topic.charAt(0).toUpperCase() + topic.slice(1)}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-base text-[#37352F] py-3 px-4 bg-[#F7F6F3] rounded-lg border border-[#E9E9E7]">
+                    Not specified
+                  </p>
+                )}
               </div>
             </div>
           </div>
