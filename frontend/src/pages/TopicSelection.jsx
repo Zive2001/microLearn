@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
-import { 
+import {
   CheckCircle2 as CheckCircleIcon,
   Circle as CircleIcon,
   BookOpen as BookOpenIcon,
@@ -15,6 +15,8 @@ import {
   Users,
   TrendingUp
 } from 'lucide-react';
+import StackIcon from 'tech-stack-icons';
+import { getTopicIconName, getTopicColor } from '../utils/helpers';
 import Loading from '../components/Loading';
 import toast from 'react-hot-toast';
 
@@ -217,11 +219,8 @@ const TopicSelection = () => {
                     {/* Topic Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-start space-x-3 flex-1">
-                        <div 
-                          className="text-2xl w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: `${topic.color}20`, color: topic.color }}
-                        >
-                          {topic.icon}
+                        <div className="w-12 h-12 flex items-center justify-center flex-shrink-0">
+                          <StackIcon name={getTopicIconName(topic.slug)} variant="dark" className="w-6 h-6" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">

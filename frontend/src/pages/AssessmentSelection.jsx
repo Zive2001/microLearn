@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../hooks/useAuth';
-import { getTopicMeta } from '../utils/helpers';
+import StackIcon from 'tech-stack-icons';
+import { getTopicMeta, getTopicIconName } from '../utils/helpers';
 import { assessmentAPI } from '../services/api';
 import {
   Clock as ClockIcon,
@@ -86,7 +87,7 @@ const AssessmentSelection = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 flex items-center justify-center">
               <TargetIcon className="h-6 w-6 text-gray-600" />
             </div>
           </div>
@@ -138,10 +139,11 @@ const AssessmentSelection = () => {
                   const sessionKey = session.sessionId || session.id || session._id || `session-${index}`;
                   const topicSlug = session.topic || session.topicSlug || 'unknown';
                   const meta = getTopicMeta(topicSlug);
+                  const iconName = getTopicIconName(topicSlug);
                   return (
                     <div key={sessionKey} className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
                       <div className="flex items-center space-x-3">
-                        <div className="text-lg">{meta.icon}</div>
+                        <StackIcon name={iconName} variant="dark" className="w-6 h-6" />
                         <div>
                           <p className="font-medium text-gray-900">{meta.name}</p>
                           <p className="text-sm text-gray-500">
@@ -209,6 +211,7 @@ const AssessmentSelection = () => {
               }
 
               const meta = getTopicMeta(topicSlug);
+              const iconName = getTopicIconName(topicSlug);
               const hasActive = hasActiveSession(topicSlug);
               const topicProgress = getTopicProgress(topicSlug);
 
@@ -225,7 +228,9 @@ const AssessmentSelection = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center mb-3">
-                        <div className="text-xl mr-3">{meta.icon}</div>
+                        <div className="mr-3 w-6 h-6 flex items-center justify-center">
+                          <StackIcon name={iconName} variant="dark" />
+                        </div>
                         <div>
                           <h3 className="text-base font-medium text-gray-900">
                             {meta.name} Assessment

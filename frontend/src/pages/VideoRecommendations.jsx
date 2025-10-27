@@ -54,10 +54,25 @@ const VideoRecommendations = () => {
 
   useEffect(() => {
     const loadRecommendations = async (retryCount = 0) => {
-      if (!topic) return;
+      if (!topic) {
+        console.warn('⚠️ Topic not provided');
+        return;
+      }
 
       try {
         setIsLoading(true);
+
+        // Check if user has token before making request
+        const token = localStorage.getItem('authToken');
+        console.log('🔐 Auth token status:', token ? '✅ Present' : '❌ Missing');
+
+        if (!token) {
+          toast.error('Authentication required. Please log in again.');
+          window.location.href = '/auth/login';
+          return;
+        }
+
+        console.log('📡 Requesting recommendations for topic:', topic);
 
         // Use backend service to get recommendations
         // Note: Backend limits maxVideos to 1-10, so we'll request 10
@@ -98,9 +113,23 @@ const VideoRecommendations = () => {
         console.error('❌ Error details:', {
           message: error.message,
           status: error.response?.status,
+          statusText: error.response?.statusText,
           data: error.response?.data,
-          url: error.config?.url
+          url: error.config?.url,
+          headers: error.config?.headers
         });
+
+        // Handle 401 Unauthorized separately
+        if (error.response?.status === 401) {
+          console.error('❌ Unauthorized (401) - Token may be invalid or expired');
+          toast.error('Your session has expired. Please log in again.');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          setTimeout(() => {
+            window.location.href = '/auth/login';
+          }, 1000);
+          return;
+        }
 
         // Handle specific error types
         if (error.response?.status === 400 && error.response?.data?.action === 'complete_assessment') {

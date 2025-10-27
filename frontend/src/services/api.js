@@ -15,12 +15,22 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('🔐 Added auth token to request:', {
+        url: config.url,
+        hasToken: !!token,
+        tokenLength: token.length
+      });
+    } else {
+      console.warn('⚠️ No auth token found in localStorage for request:', config.url);
     }
+
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -32,14 +42,27 @@ api.interceptors.response.use(
   },
   (error) => {
     const { response } = error;
-    
+
     // Handle different error scenarios
     if (response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = '/auth/login';
-      toast.error('Session expired. Please log in again.');
+      // Unauthorized - only redirect if we're not already on auth page
+      const currentPath = window.location.pathname;
+      if (!currentPath.includes('/auth/')) {
+        console.warn('⚠️ Unauthorized access - clearing session and redirecting to login');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+
+        // Use a small delay to allow the error to be caught first
+        setTimeout(() => {
+          window.location.href = '/auth/login';
+        }, 300);
+      }
+
+      if (!toast) {
+        console.error('Toast not available');
+      } else {
+        toast.error('Session expired. Please log in again.');
+      }
     } else if (response?.status === 403) {
       toast.error('Access denied. You do not have permission.');
     } else if (response?.status === 404) {
@@ -51,7 +74,7 @@ api.interceptors.response.use(
     } else if (!response) {
       toast.error('Network error. Please check your internet connection.');
     }
-    
+
     return Promise.reject(error);
   }
 );
