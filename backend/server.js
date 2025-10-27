@@ -158,6 +158,8 @@ const avatarTtsRoutes = require("./routes/avatar-tts");
 const keypointGenerationRoutes = require("./routes/keypointGeneration");
 // Phase 3: FAISS routes for similar user discovery
 const faissRoutes = require("./routes/faiss");
+// Phase 4: Recommendation routes for advanced quizzes and learning paths
+const recommendationRoutes = require("./routes/recommendations");
 
 // Use routes
 app.use("/api/auth", authRoutes);
@@ -180,6 +182,8 @@ app.use("/api/avatar-tts", avatarTtsRoutes);
 app.use("/api/keypoint-generation", keypointGenerationRoutes);
 // Phase 3: FAISS routes for similar user discovery
 app.use("/api/faiss", faissRoutes);
+// Phase 4: Recommendation routes for advanced quizzes and learning paths
+app.use("/api/recommendations", recommendationRoutes);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {
