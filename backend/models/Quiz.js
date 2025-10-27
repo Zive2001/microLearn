@@ -281,6 +281,103 @@ const quizPoolSchema = new mongoose.Schema({
     generationVersion: {
         type: String,
         default: '1.0'
+    },
+
+    // ==================== PHASE 2: USER SIMILARITY TRACKING ====================
+    // User similarity metadata for finding similar user quizzes
+    similarityMetadata: {
+        // Original user who generated this quiz in assessment
+        originUserId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        // User profile characteristics at time of generation
+        originUserProfile: {
+            learningPace: String,
+            problemSolvingApproach: String,
+            availableSessionTime: String,
+            learningFocus: String,
+            experienceLevel: String,
+            learningGoal: String
+        }
+    },
+
+    // Performance analytics for quality assessment
+    performanceAnalytics: {
+        // Overall statistics about how this quiz performs
+        totalUsesCount: {
+            type: Number,
+            default: 0
+        },
+        totalAttempters: {
+            type: Number,
+            default: 0
+        },
+        averageAccuracy: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        },
+        averageTimeSpent: {
+            type: Number,
+            default: 0 // seconds
+        },
+        // Track effectiveness for different user groups
+        performanceByDifficulty: {
+            beginnerAccuracy: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            },
+            intermediateAccuracy: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            },
+            advancedAccuracy: {
+                type: Number,
+                default: 0,
+                min: 0,
+                max: 100
+            }
+        },
+        // Quality metrics
+        lastUpdatedAt: {
+            type: Date,
+            default: Date.now
+        }
+    },
+
+    // Recommendation tracking
+    recommendationMetrics: {
+        // Track how often this quiz was recommended
+        recommendationCount: {
+            type: Number,
+            default: 0
+        },
+        // Track users for whom this was recommended
+        recommendedToUsers: [{
+            userId: mongoose.Schema.Types.ObjectId,
+            similarity: Number, // similarity score with origin user
+            recommendedAt: {
+                type: Date,
+                default: Date.now
+            },
+            wasUsed: {
+                type: Boolean,
+                default: false
+            }
+        }],
+        // Average satisfaction/effectiveness for similar users
+        effectivenessForSimilarUsers: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 100
+        }
     }
 }, {
     timestamps: true,
@@ -295,6 +392,10 @@ quizSessionSchema.index({ status: 1, sessionType: 1 });
 
 quizPoolSchema.index({ originalVideoId: 1, microVideoId: 1 });
 quizPoolSchema.index({ microVideoId: 1 });
+// Phase 2 indexes for similarity tracking and recommendation
+quizPoolSchema.index({ 'similarityMetadata.originUserId': 1 });
+quizPoolSchema.index({ 'performanceAnalytics.totalUsesCount': -1 }); // For sorting by popularity
+quizPoolSchema.index({ 'recommendationMetrics.recommendationCount': -1 });
 
 // Virtual for session progress percentage
 quizSessionSchema.virtual('progressPercentage').get(function() {
