@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import {
   User as UserIcon,
@@ -28,6 +28,8 @@ const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
     firstName: user?.profile?.firstName || '',
@@ -51,6 +53,25 @@ const Profile = () => {
     learningFocus: user?.learningPreferences?.learningFocus || 'Mixed'  // NEW
   });
 
+  // Fetch dashboard data on component mount
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setStatsLoading(true);
+        const response = await authAPI.getDashboard();
+        if (response.data && response.data.stats) {
+          setDashboardData(response.data.stats);
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   const handleChange = (e) => {
     setFormData(prev => ({
       ...prev,
@@ -64,6 +85,11 @@ const Profile = () => {
       await authAPI.updateProfile({ profile: formData });
       toast.success('Profile updated successfully! 🎉');
       setIsEditing(false);
+      // Refresh dashboard data after profile update
+      const response = await authAPI.getDashboard();
+      if (response.data && response.data.stats) {
+        setDashboardData(response.data.stats);
+      }
     } catch (error) {
       toast.error(error.message || 'Failed to update profile');
     } finally {
@@ -97,28 +123,28 @@ const Profile = () => {
   const stats = [
     {
       label: 'Topics Completed',
-      value: '0',
+      value: statsLoading ? '...' : dashboardData?.totalSelectedTopics || '0',
       icon: Trophy,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50'
     },
     {
       label: 'Assessments Taken',
-      value: '0',
+      value: statsLoading ? '...' : dashboardData?.assessedTopics || '0',
       icon: BookOpen,
       color: 'text-[#495057]',
       bgColor: 'bg-gray-50'
     },
     {
       label: 'Videos Watched',
-      value: '0',
+      value: statsLoading ? '...' : dashboardData?.completedVideos || '0',
       icon: Clock,
       color: 'text-green-600',
       bgColor: 'bg-green-50'
     },
     {
       label: 'Learning Streak',
-      value: '0 days',
+      value: statsLoading ? '...' : '0 days',
       icon: TrendingUp,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50'
