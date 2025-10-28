@@ -154,6 +154,7 @@ const MicrolearningPage = () => {
               completed: q.completed
             }))
           });
+          return prev;
         }
       });
 

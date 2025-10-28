@@ -113,6 +113,13 @@ QUESTION REQUIREMENTS:
 - Create plausible distractors that test common misconceptions
 - Questions should be clear, concise, and unambiguous
 
+IMPORTANT - ANSWER RANDOMIZATION:
+- RANDOMIZE the position of the correct answer across all questions
+- The correct answer should be in position A, B, C, or D randomly
+- DO NOT always put the correct answer in position A
+- Vary the correct answer position for each question to prevent pattern recognition
+- After placing options, set "correctAnswer" to the letter (A, B, C, or D) where you placed the correct option
+
 Respond with valid JSON in this exact format:
 {
   "questions": [
@@ -124,7 +131,7 @@ Respond with valid JSON in this exact format:
         "C": "Third option",
         "D": "Fourth option"
       },
-      "correctAnswer": "A",
+      "correctAnswer": "B",
       "explanation": "Why this answer is correct and relates to the learning objective",
       "hint": "Helpful hint for learners who get it wrong (not too obvious)",
       "keyPoint": "Which key point this question tests",
@@ -138,8 +145,11 @@ Respond with valid JSON in this exact format:
   }
 }
 
+Note: In the example above, "correctAnswer" is "B" - but YOU must randomize this for each question (A, B, C, or D).
+
 Focus on creating questions that reinforce the learning objective and test practical understanding, not just memorization.`;
     }
+    
 
     /**
      * Validate and format questions from OpenAI response
@@ -192,7 +202,9 @@ Focus on creating questions that reinforce the learning objective and test pract
                     correctRate: 0
                 };
 
-                formattedQuestions.push(formattedQuestion);
+                // Randomize answer positions to prevent pattern recognition
+                const randomizedQuestion = this.randomizeAnswerPositions(formattedQuestion);
+                formattedQuestions.push(randomizedQuestion);
 
             } catch (error) {
                 console.error(`Error formatting question ${index + 1}:`, error);
@@ -200,6 +212,55 @@ Focus on creating questions that reinforce the learning objective and test pract
         });
 
         return formattedQuestions;
+    }
+
+    /**
+     * Randomize answer positions to prevent users from recognizing patterns
+     * @param {Object} question - Formatted question with options
+     * @returns {Object} Question with randomized answer positions
+     */
+    randomizeAnswerPositions(question) {
+        // Extract all options with their labels
+        const optionEntries = [
+            { label: 'A', text: question.options.A },
+            { label: 'B', text: question.options.B },
+            { label: 'C', text: question.options.C },
+            { label: 'D', text: question.options.D }
+        ];
+
+        // Find which option is the correct answer
+        const correctOption = optionEntries.find(opt => opt.label === question.correctAnswer);
+        if (!correctOption) {
+            console.warn('Correct answer not found, returning question unchanged');
+            return question;
+        }
+
+        // Shuffle the options using Fisher-Yates algorithm
+        for (let i = optionEntries.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [optionEntries[i], optionEntries[j]] = [optionEntries[j], optionEntries[i]];
+        }
+
+        // Rebuild the options object with shuffled positions
+        const shuffledOptions = {};
+        const labels = ['A', 'B', 'C', 'D'];
+        let newCorrectAnswer = null;
+
+        optionEntries.forEach((entry, index) => {
+            const newLabel = labels[index];
+            shuffledOptions[newLabel] = entry.text;
+
+            // Track where the correct answer moved to
+            if (entry.text === correctOption.text) {
+                newCorrectAnswer = newLabel;
+            }
+        });
+
+        return {
+            ...question,
+            options: shuffledOptions,
+            correctAnswer: newCorrectAnswer
+        };
     }
 
     /**

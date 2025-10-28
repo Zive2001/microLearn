@@ -317,7 +317,7 @@ export default function KeypointPlayer() {
         // Calculate stats for this single video
         const script = singleVideo.cltBlmScript?.educationalScript || singleVideo.educationalScript || '';
         const totalWords = script.split(/\s+/).filter(w => w.length > 0).length;
-        const totalDuration = singleVideo.duration || 0;
+        const totalDuration = singleVideo.duration || 'N/A';
 
         // Build video data structure with ONLY the current video
         const videoData = {
@@ -388,28 +388,45 @@ export default function KeypointPlayer() {
     }
 
     try {
-      // Generate TTS for this segment
-      toast.loading("Generating audio...");
+      let audioBase64, visemes;
 
-      const token = localStorage.getItem("authToken");
-      const response = await axios.post(
-        `${API_URL}/avatar-tts/generate`,
-        {
-          text: educationalScript,
-          teacher: segment.teacher || teacher,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+      // Check if audio was already generated during Phase 3
+      if (segment.avatarData?.audioBase64 && segment.avatarData?.visemes) {
+        console.log('✅ Using pre-generated audio from Phase 3 avatarData');
+        audioBase64 = segment.avatarData.audioBase64;
+        visemes = segment.avatarData.visemes;
+      } else {
+        // Fallback: Generate TTS if not available
+        console.log('⚠️ Audio not found in avatarData, generating new audio...');
+        toast.loading("Generating audio...");
+
+        const token = localStorage.getItem("authToken");
+        const response = await axios.post(
+          `${API_URL}/avatar-tts/generate`,
+          {
+            text: educationalScript,
+            teacher: segment.teacher || teacher,
           },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        toast.dismiss();
+
+        if (response.data.success) {
+          audioBase64 = response.data.data.audioBase64;
+          visemes = response.data.data.visemes;
+        } else {
+          toast.error("Failed to generate audio");
+          return;
         }
-      );
+      }
 
-      toast.dismiss();
-
-      if (response.data.success) {
-        const { audioBase64, visemes } = response.data.data;
+      if (audioBase64 && visemes) {
 
         // Stop current audio if playing
         if (audioPlayer) {
@@ -763,8 +780,8 @@ export default function KeypointPlayer() {
             <h1 className="text-2xl font-bold">{videoData.video.title}</h1>
             <p className="text-gray-400 text-sm">
               Video {currentVideoIndex + 1} of {videoData.allMicroVideos?.length || 1} •{" "}
-              {videoData.summary.totalWords.toLocaleString()} words •
-              {Math.round(videoData.summary.totalDuration / 60)} min
+              {videoData.summary.totalWords.toLocaleString()} words •{" "}
+              {videoData.summary.totalDuration}
             </p>
           </div>
           <button
@@ -966,7 +983,7 @@ export default function KeypointPlayer() {
               </div>
               <div>
                 <span className="text-gray-400 text-sm">Duration:</span>
-                <p className="font-semibold">{Math.round((Number(currentSegment.duration) || 360) / 60)} minutes</p>
+                <p className="font-semibold">{currentSegment.duration || 'N/A'}</p>
               </div>
               <div>
                 <span className="text-gray-400 text-sm">Progress:</span>

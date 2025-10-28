@@ -119,67 +119,80 @@ class MicroContentService {
      * Build the prompt for content generation
      */
     buildContentGenerationPrompt({ segment, videoData, segmentTranscript, previousSegment, nextSegment, isFirst, isLast, totalSegments }) {
-        return `You are an expert technical instructor. Create a structured educational script divided into 3 frames for a micro-learning video.
-
-**SEGMENT REQUIREMENTS:**
-- Topic: ${videoData.topic}
-- Title: "${segment.title}"
-- Learning Objective: ${segment.cltBlmScript.learningObjective}
-- MUST COVER ALL KEY POINTS: ${segment.cltBlmScript.keypoints.join(', ')}
-
-**ORIGINAL TRANSCRIPT CONTENT:**
-${segmentTranscript}
-
-**FRAME STRUCTURE REQUIREMENTS:**
-Create content for exactly 3 frames that will be combined into one video:
-
-**FRAME 1 (Introduction & Setup - 25% of content):**
-- Introduce the main concept
-- Provide context and prerequisites
-- Set up the learning foundation
-
-**FRAME 2 (Core Implementation - 50% of content):**
-- Detailed technical explanations
-- Step-by-step procedures
-- Code examples and demonstrations
-- Cover majority of keypoints
-
-**FRAME 3 (Examples & Summary - 25% of content):**
-- Practical examples
-- Real-world applications
-- Key takeaways and next steps
-
-**OUTPUT FORMAT:**
-Return a JSON object with this exact structure:
-
-{
-  "frame1": {
-    "keypoints": ["2-3 main bullet points for slide display"],
-    "audioScript": "Detailed narration for frame 1 (300+ words)",
-    "estimatedDuration": 140
-  },
-  "frame2": {
-    "keypoints": ["3-4 main bullet points for slide display"],
-    "audioScript": "Detailed narration for frame 2 (600+ words)",
-    "estimatedDuration": 280
-  },
-  "frame3": {
-    "keypoints": ["2-3 main bullet points for slide display"],
-    "audioScript": "Detailed narration for frame 3 (300+ words)",
-    "estimatedDuration": 140
-  }
-}
-
-**CRITICAL RULES:**
-1. Focus ONLY on technical education - NO motivational content
-2. Cover ALL keypoints across the 3 frames
-3. Each audioScript should be detailed technical narration
-4. Keypoints should be concise slide-friendly bullet points
-5. Use appropriate technical terminology for ${segment.cltBlmScript.difficulty || 'beginner'} level
-6. Total duration should be ~560 seconds (7 minutes)
-
-Return ONLY the JSON object, no other text:`;
+        return `You are an expert technical instructor who designs micro-learning scripts using the Cognitive Load Theory-based Lecture Model (CLT-bLM). 
+    
+    Your goal is to create instruction that **reduces extraneous cognitive load**, **manages intrinsic load**, and **stimulates germane cognitive processing**—focusing only on essential information that directly supports schema construction and learner understanding.
+    
+    **CLT-bLM PRINCIPLES TO APPLY:**
+    - **Prepare phase:** Activate prior knowledge and introduce the topic clearly. Segment the information logically and avoid cognitive overload.
+    - **Initiate phase:** Use attention-capturing cues (questions, analogies, relatable examples). Guide learners to focus on core learning objectives.
+    - **Deliver phase:** Present content with visual-verbal balance (modality effect), avoid redundant or split attention materials, and provide clear worked examples.
+    - **End phase:** Reinforce schema construction through summarization, application, and reflection. Provide closure that links new knowledge to prior concepts.
+    
+    Each frame should *minimize unnecessary information*, *optimize clarity*, and *enhance learner engagement* using CLT principles.
+    
+    **SEGMENT DETAILS:**
+    - Topic: ${videoData.topic}
+    - Title: "${segment.title}"
+    - Learning Objective: ${segment.cltBlmScript.learningObjective}
+    - MUST COVER ALL KEY POINTS: ${segment.cltBlmScript.keypoints.join(', ')}
+    
+    **ORIGINAL TRANSCRIPT CONTENT:**
+    ${segmentTranscript}
+    
+    **FRAME STRUCTURE REQUIREMENTS:**
+    Create content for exactly 3 frames that will be combined into one micro-learning video:
+    
+    **FRAME 1 (Prepare & Initiate - 25% of content):**
+    - Introduce and connect prior knowledge
+    - State learning objectives clearly
+    - Present essential context only (no overload)
+    - Stimulate attention using a question, analogy, or real-world relevance
+    
+    **FRAME 2 (Deliver - 50% of content):**
+    - Explain technical concepts step-by-step
+    - Provide clear examples and guided reasoning
+    - Avoid redundant words or visuals; use integrated explanations
+    - Include cognitive aids (signaling, sequencing, voice clarity)
+    
+    **FRAME 3 (End - 25% of content):**
+    - Summarize core concepts and link back to the learning objective
+    - Provide a simple real-world example or practical takeaway
+    - Reinforce schema through short reflection or application
+    - Maintain closure with low extraneous load
+    
+    **OUTPUT FORMAT:**
+    Return a JSON object with this exact structure:
+    
+    {
+      "frame1": {
+        "keypoints": ["2-3 main bullet points for slide display"],
+        "audioScript": "Detailed narration for frame 1 (300+ words)",
+        "estimatedDuration": 140
+      },
+      "frame2": {
+        "keypoints": ["3-4 main bullet points for slide display"],
+        "audioScript": "Detailed narration for frame 2 (600+ words)",
+        "estimatedDuration": 280
+      },
+      "frame3": {
+        "keypoints": ["2-3 main bullet points for slide display"],
+        "audioScript": "Detailed narration for frame 3 (300+ words)",
+        "estimatedDuration": 140
+      }
     }
+    
+    **CRITICAL RULES:**
+    1. All content must follow CLT-bLM — reduce extraneous load, manage intrinsic load, stimulate germane load.
+    2. Focus on concept clarity, not motivation or filler.
+    3. Each audioScript should be detailed, logically sequenced, and visually mappable.
+    4. Keypoints must be concise and slide-friendly.
+    5. Use examples and explanations appropriate to the learner’s level (${segment.cltBlmScript.difficulty || 'beginner'}).
+    6. Total estimated duration ≈ 560 seconds (7 minutes).
+    
+    Return ONLY the JSON object, no other text.`;
+    }
+    
 
     /**
      * Parse the LLM response into structured content
