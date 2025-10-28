@@ -1,3 +1,5 @@
+//  - Main page managing quiz progression after micro-videos
+//     - Implements "every 3 videos" quiz logic
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../services/api';  // Use configured axios instance with baseURL
@@ -922,7 +924,7 @@ const MicrolearningPage = () => {
               .map(quiz => renderQuizButton(quiz))}
 
             {/* Progress Summary */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            {/* <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-lg font-semibold text-[#212529]">Learning Progress</span>
                 <span className="text-sm text-[#212529]">
@@ -942,7 +944,7 @@ const MicrolearningPage = () => {
               <div className="text-sm text-[#212529]">
                 Track your progress through the {Math.ceil((microlearningContent.microVideos?.length || 0) / 3)} intermediate quizzes and final comprehensive assessment
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
