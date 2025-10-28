@@ -77,7 +77,7 @@ class QuizController {
                 sessionConfig = schedule.find(s => s.sessionType === 'final');
             }
 
-            // Determine which micro-videos to include based on session type and schedule
+            // Determine which micro-videos to include
             let includedMicroVideos;
             if (sessionType === 'intermediate') {
                 // For intermediate, include micro-videos up to the scheduled point
@@ -87,39 +87,28 @@ class QuizController {
                 includedMicroVideos = microVideos;
             }
 
-            // Check if quiz pools exist for these micro-videos
-            const microVideoIds = includedMicroVideos.map(mv => mv._id);
-            const quizPools = await QuizPool.find({ microVideoId: { $in: microVideoIds } });
+            // Generate questions dynamically for included micro-videos
+            console.log(`🧠 Generating questions for ${includedMicroVideos.length} micro-videos...`);
 
-            if (quizPools.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'No quiz pools found for this video. Generate quiz pools first.',
-                    recommendedAction: 'Use the batch quiz pool creation endpoint to generate questions.'
-                });
-            }
+            const questionsByMicroVideo = await quizGenerationService.batchGenerateQuestions(
+                includedMicroVideos,
+                3 // Generate 3 questions per micro-video
+            );
 
-            // Collect questions from quiz pools
+            // Collect all generated questions
             const allQuestions = [];
-            quizPools.forEach(pool => {
-                // Take up to 2 questions per micro-video to avoid overwhelming
-                const questionsToTake = Math.min(pool.questions.length, 2);
-                allQuestions.push(...pool.questions.slice(0, questionsToTake));
+            Object.values(questionsByMicroVideo).forEach(questions => {
+                allQuestions.push(...questions);
             });
 
             if (allQuestions.length === 0) {
-                return res.status(400).json({
+                return res.status(500).json({
                     success: false,
-                    message: 'No questions available in quiz pools.'
+                    message: 'Failed to generate quiz questions. Please try again.'
                 });
             }
 
-            // Limit total questions based on session type
-            const maxQuestions = sessionType === 'intermediate' ?
-                Math.min(allQuestions.length, sessionConfig.questionsCount) :
-                Math.min(allQuestions.length, 10);
-
-            const selectedQuestions = allQuestions.slice(0, maxQuestions);
+            console.log(`✅ Generated ${allQuestions.length} questions from ${includedMicroVideos.length} micro-videos`);
 
             // Determine session number
             const existingSessionsCount = await QuizSession.countDocuments({
@@ -133,10 +122,10 @@ class QuizController {
                 originalVideoId: videoId,
                 sessionType,
                 sessionNumber: existingSessionsCount + 1,
-                microVideoIds: microVideoIds,
-                totalQuestions: selectedQuestions.length,
-                questionsPerMicroVideo: Math.ceil(selectedQuestions.length / includedMicroVideos.length),
-                questions: selectedQuestions,
+                microVideoIds: includedMicroVideos.map(mv => mv._id),
+                totalQuestions: allQuestions.length,
+                questionsPerMicroVideo: 3,
+                questions: allQuestions,
                 status: 'active'
             });
 
@@ -153,7 +142,7 @@ class QuizController {
                     sessionNumber: quizSession.sessionNumber,
                     totalQuestions: quizSession.totalQuestions,
                     coveredMicroVideos: includedMicroVideos.length,
-                    estimatedTime: `${Math.ceil(selectedQuestions.length * 1.5)}-${selectedQuestions.length * 2} minutes`,
+                    estimatedTime: `${Math.ceil(allQuestions.length * 1.5)}-${allQuestions.length * 2} minutes`,
                     microVideos: includedMicroVideos.map(mv => ({
                         id: mv._id,
                         title: mv.title,

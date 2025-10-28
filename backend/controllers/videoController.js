@@ -240,6 +240,7 @@ class VideoController {
                     teacher: defaultTeacher,
                     videoPath: avatarVideoPath,
                     audioPath: ttsResult.audioPath,
+                    audioBase64: ttsResult.audioBase64, // Save base64 for frontend use
                     visemes: ttsResult.visemes,
                     visemeCount: ttsResult.visemes.length,
                     generatedAt: new Date()

@@ -309,9 +309,40 @@ const TutorialQuiz = () => {
   };
 
   const handleQuizComplete = () => {
-    if (!microlearningContent?.videoId || !quizProgression) {
-      toast.error('Unable to save quiz results');
+    // Get videoId from multiple possible sources
+    const currentVideoId = videoId || microlearningContent?.videoId || quizSession?.video?.id;
+
+    if (!currentVideoId) {
+      console.error('❌ No videoId found:', { videoId, microlearningContent, quizSession });
+      toast.error('Unable to save quiz results: No video ID');
+      // Still navigate back even without saving
       navigate(-1);
+      return;
+    }
+
+    // Initialize quizProgression if it doesn't exist
+    let currentProgression = quizProgression;
+    if (!currentProgression && microlearningContent) {
+      console.log('⚠️ Quiz progression not found, initializing now...');
+      currentProgression = quizProgressionAPI.initializeProgression(currentVideoId, microlearningContent);
+      setQuizProgression(currentProgression);
+    }
+
+    if (!currentProgression) {
+      console.error('❌ Unable to initialize quiz progression');
+      toast.error('Unable to save quiz results: Progression tracking failed');
+      // Still navigate back
+      if (currentVideoId) {
+        navigate(`/app/microlearning/${currentVideoId}`, {
+          state: {
+            quizCompleted: true,
+            quizType: currentQuizType,
+            quizResults: null
+          }
+        });
+      } else {
+        navigate(-1);
+      }
       return;
     }
 
@@ -322,7 +353,7 @@ const TutorialQuiz = () => {
       if (currentQuizType === 'intermediate') {
         // Record intermediate quiz completion
         updatedProgression = quizProgressionAPI.recordIntermediateQuizCompletion(
-          microlearningContent.videoId,
+          currentVideoId,
           quizSession,
           userAnswers,
           aiQuestions
@@ -337,7 +368,7 @@ const TutorialQuiz = () => {
       } else if (currentQuizType === 'final') {
         // Record final quiz completion
         updatedProgression = quizProgressionAPI.recordFinalQuizCompletion(
-          microlearningContent.videoId,
+          currentVideoId,
           quizSession,
           userAnswers,
           aiQuestions
@@ -359,50 +390,48 @@ const TutorialQuiz = () => {
 
       // Legacy completion tracking
       const completionData = {
-        videoId: microlearningContent.videoId,
+        videoId: currentVideoId,
         completedAt: new Date().toISOString(),
         totalQuestions: aiQuestions.length,
         correctAnswers: userAnswers.filter(answer => answer.isCorrect).length,
         quizType: currentQuizType
       };
 
-      localStorage.setItem(`quiz_completed_${microlearningContent.videoId}`, JSON.stringify(completionData));
+      localStorage.setItem(`quiz_completed_${currentVideoId}`, JSON.stringify(completionData));
 
       // Remove active session
-      localStorage.removeItem(`quiz_active_${microlearningContent.videoId}`);
+      localStorage.removeItem(`quiz_active_${currentVideoId}`);
 
       console.log('✅ Quiz completion recorded:', {
         quizType: currentQuizType,
         performance: completionData,
-        progressionUpdate: updatedProgression ? 'success' : 'failed'
+        progressionUpdate: updatedProgression ? 'success' : 'failed',
+        videoId: currentVideoId
       });
 
-      // Navigate back to microlearning page if we have a videoId
-      if (videoId) {
-        navigate(`/app/microlearning/${videoId}`, {
-          state: {
-            quizCompleted: true,
-            quizType: currentQuizType,
-            quizResults: completionData,
-            completedSegment: quizProgression?.currentQuizNumber || 1 // Pass which segment was completed
-          }
-        });
-      } else {
-        navigate(-1);
-      }
+      // Navigate back to microlearning page
+      navigate(`/app/microlearning/${currentVideoId}`, {
+        state: {
+          quizCompleted: true,
+          quizType: currentQuizType,
+          quizResults: completionData,
+          completedSegment: currentProgression?.currentQuizNumber || 1 // Pass which segment was completed
+        }
+      });
 
     } catch (error) {
       console.error('❌ Error recording quiz completion:', error);
       toast.error('Quiz completed but failed to save progress');
 
       // Still navigate back even if saving failed, but without quiz results
-      if (videoId) {
-        navigate(`/app/microlearning/${videoId}`, {
+      const fallbackVideoId = videoId || microlearningContent?.videoId || quizSession?.video?.id;
+      if (fallbackVideoId) {
+        navigate(`/app/microlearning/${fallbackVideoId}`, {
           state: {
             quizCompleted: true,
             quizType: currentQuizType,
             quizResults: null, // No results due to error
-            completedSegment: quizProgression?.currentQuizNumber || 1 // Pass which segment was completed
+            completedSegment: currentProgression?.currentQuizNumber || 1 // Pass which segment was completed
           }
         });
       } else {

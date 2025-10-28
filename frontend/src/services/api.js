@@ -1394,7 +1394,7 @@ export const aiQuestionAPI = {
           adaptiveReason: `Generated to address weakness in: ${targetKeyPoint}`
         };
 
-        questions.push(question);
+        questions.push(randomizeAnswerOptions(question));
       }
 
       return questions;
@@ -1445,7 +1445,7 @@ export const aiQuestionAPI = {
           adaptiveReason: 'Tests comprehensive understanding across multiple learning segments'
         };
 
-        integrationQuestions.push(integrationQuestion);
+        integrationQuestions.push(randomizeAnswerOptions(integrationQuestion));
       }
 
       return integrationQuestions;
@@ -1712,6 +1712,43 @@ export const aiQuestionAPI = {
 
 // Mock AI question generation (simulates real AI)
 // TODO: Replace with actual backend API call
+// Helper function to randomize answer positions
+function randomizeAnswerOptions(question) {
+  const options = [
+    { label: 'A', text: question.options.A },
+    { label: 'B', text: question.options.B },
+    { label: 'C', text: question.options.C },
+    { label: 'D', text: question.options.D }
+  ];
+
+  // Find the correct answer text
+  const correctText = question.options[question.correctAnswer];
+
+  // Shuffle using Fisher-Yates algorithm
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+
+  // Rebuild options and find new correct answer position
+  const shuffledOptions = {};
+  let newCorrectAnswer = 'A';
+
+  options.forEach((option, index) => {
+    const newLabel = ['A', 'B', 'C', 'D'][index];
+    shuffledOptions[newLabel] = option.text;
+    if (option.text === correctText) {
+      newCorrectAnswer = newLabel;
+    }
+  });
+
+  return {
+    ...question,
+    options: shuffledOptions,
+    correctAnswer: newCorrectAnswer
+  };
+}
+
 async function mockAIQuestionGeneration(microVideo) {
   // Simulate AI processing time
   await new Promise(resolve => setTimeout(resolve, 800));
@@ -1724,7 +1761,7 @@ async function mockAIQuestionGeneration(microVideo) {
   const transcript = microVideo.transcript || '';
 
   // Question 1: Knowledge check based on first key point
-  questions.push({
+  const question1 = {
     questionId: `ai_q_${microVideo.id}_1`,
     question: generateContentBasedQuestion(keyPoints[0], microVideo.difficulty, 'knowledge'),
     options: {
@@ -1741,20 +1778,21 @@ async function mockAIQuestionGeneration(microVideo) {
     sourceSegment: microVideo.title,
     cognitiveLoad: microVideo.cognitiveLoad,
     questionType: 'knowledge-check'
-  });
+  };
+  questions.push(randomizeAnswerOptions(question1));
 
   // Question 2: Application question if multiple key points
   if (keyPoints.length > 1) {
-    questions.push({
+    const question2 = {
       questionId: `ai_q_${microVideo.id}_2`,
       question: generateContentBasedQuestion(keyPoints[1], microVideo.difficulty, 'application'),
       options: {
-        A: generateRelevantOption(keyPoints[1], 'distractor'),
-        B: generateRelevantOption(keyPoints[1], 'correct'),
+        A: generateRelevantOption(keyPoints[1], 'correct'),
+        B: generateRelevantOption(keyPoints[1], 'distractor'),
         C: generateRelevantOption(keyPoints[1], 'distractor'),
         D: generateRelevantOption(keyPoints[1], 'distractor')
       },
-      correctAnswer: 'B',
+      correctAnswer: 'A',
       explanation: `This demonstrates practical application of ${keyPoints[1]} from the "${microVideo.title}" segment.`,
       hint: `Consider how you would implement ${keyPoints[1]} in practice.`,
       difficulty: microVideo.difficulty,
@@ -1762,7 +1800,8 @@ async function mockAIQuestionGeneration(microVideo) {
       sourceSegment: microVideo.title,
       cognitiveLoad: microVideo.cognitiveLoad,
       questionType: 'application'
-    });
+    };
+    questions.push(randomizeAnswerOptions(question2));
   }
 
   return questions;

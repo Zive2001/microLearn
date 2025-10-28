@@ -1,3 +1,5 @@
+//  - Main page managing quiz progression after micro-videos
+//     - Implements "every 3 videos" quiz logic
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import api from '../services/api';  // Use configured axios instance with baseURL
@@ -23,6 +25,11 @@ const MicrolearningPage = () => {
   // State for microlearning content and quiz progression
   const [microlearningContent, setMicrolearningContent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [completedVideos, setCompletedVideos] = useState(() => {
+    // Load from localStorage
+    const saved = localStorage.getItem(`completed_videos_${videoId}`);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [quizProgression, setQuizProgression] = useState({
     completedQuizzes: [],
     availableQuizzes: [],
@@ -34,6 +41,34 @@ const MicrolearningPage = () => {
   useEffect(() => {
     loadMicrolearningContent();
   }, [videoId]);
+
+  // Re-check quiz availability when videos are completed
+  useEffect(() => {
+    if (microlearningContent) {
+      initializeQuizProgression(microlearningContent);
+    }
+  }, [completedVideos]);
+
+  // Handle video completion when returning from KeypointPlayer
+  useEffect(() => {
+    if (location.state?.videoCompleted !== undefined) {
+      const completedIndex = location.state.videoCompleted;
+      console.log('🎯 Video completed:', completedIndex);
+
+      setCompletedVideos(prev => {
+        if (!prev.includes(completedIndex)) {
+          const updated = [...prev, completedIndex];
+          localStorage.setItem(`completed_videos_${videoId}`, JSON.stringify(updated));
+          toast.success(`Video ${completedIndex + 1} completed! 🎉`);
+          return updated;
+        }
+        return prev;
+      });
+
+      // Clear the navigation state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state?.videoCompleted]);
 
   // Handle quiz completion when returning from quiz
   useEffect(() => {
@@ -121,6 +156,7 @@ const MicrolearningPage = () => {
               completed: q.completed
             }))
           });
+          return prev;
         }
       });
 
@@ -287,18 +323,8 @@ const MicrolearningPage = () => {
               await mockMicrolearningAPI.storeMicrolearningContent(videoId, content);
               console.log('✅ Content stored and ready for display');
 
-              // PHASE 3: Navigate to 3D KeypointPlayer environment
-              console.log('🚀 Navigating to KeypointPlayer (3D avatar environment)...');
-              navigate(`/keypoint-player/${videoId}`, {
-                state: {
-                  microVideos: content.microVideos,
-                  selectedKeypoints: location.state.keypoints,
-                  teacher: location.state.teacher,
-                  youtubeUrl: location.state.youtubeUrl,
-                  videoTitle: content.originalTitle
-                },
-                replace: false
-              });
+              // UPDATED: Stay on MicrolearningPage to show thumbnails
+              // Don't navigate to KeypointPlayer automatically
 
             } catch (pollingError) {
               console.warn('⚠️ Generation polling failed:', pollingError.message);
@@ -379,21 +405,25 @@ const MicrolearningPage = () => {
     const intermediateQuizCount = Math.floor(totalVideos / 3);
     const availableQuizzes = [];
 
-    // Create intermediate quiz entries - all available from start
+    // Create intermediate quiz entries - available when segment videos are completed
     for (let i = 0; i < intermediateQuizCount; i++) {
       const startIndex = i * 3;
       const endIndex = Math.min(startIndex + 3, totalVideos);
       const videosInQuiz = microVideos.slice(startIndex, endIndex);
+
+      // Check if all videos in this segment are completed
+      const segmentVideoIndices = Array.from({ length: endIndex - startIndex }, (_, idx) => startIndex + idx);
+      const allVideosCompleted = segmentVideoIndices.every(idx => completedVideos.includes(idx));
 
       availableQuizzes.push({
         id: `intermediate-${i + 1}`,
         type: 'intermediate',
         title: `Quiz ${i + 1}: Videos ${startIndex + 1}-${endIndex}`,
         description: `Test your understanding of ${videosInQuiz.map(v => v.title).join(', ')}`,
-        videoIndices: Array.from({ length: endIndex - startIndex }, (_, idx) => startIndex + idx),
+        videoIndices: segmentVideoIndices,
         microVideos: videosInQuiz,
         completed: false,
-        available: true, // All quizzes are available from the start
+        available: allVideosCompleted, // Available only when all segment videos are completed
         segmentNumber: i + 1 // Add segment number for tracking
       });
     }
@@ -428,6 +458,13 @@ const MicrolearningPage = () => {
   const handleQuizStart = async (quiz) => {
     try {
       console.log('🎯 Starting quiz:', quiz.title);
+      console.log('📚 Quiz will use educational scripts from these micro-videos:',
+        quiz.microVideos.map(v => ({
+          title: v.title,
+          hasEducationalScript: !!v.cltBlmScript?.educationalScript || !!v.educationalScript,
+          scriptLength: (v.cltBlmScript?.educationalScript || v.educationalScript || '').length
+        }))
+      );
 
       if (quiz.type === 'intermediate') {
         toast.success(`Starting ${quiz.title}! 🎯`);
@@ -436,13 +473,18 @@ const MicrolearningPage = () => {
       }
 
       // Navigate to quiz page with microlearning context
+      // The quiz generation will use the educational scripts from quiz.microVideos
       navigate(`/app/quiz/start/${videoId}`, {
         state: {
           fromMicrolearning: true,
           quizType: quiz.type,
-          microVideos: quiz.microVideos,
-          microlearningContent: microlearningContent,
-          quizTitle: quiz.title
+          microVideos: quiz.microVideos, // Contains cltBlmScript.educationalScript
+          microlearningContent: {
+            ...microlearningContent,
+            videoId: videoId // Ensure videoId is always included
+          },
+          quizTitle: quiz.title,
+          segmentNumber: quiz.segmentNumber // For tracking which segment quiz this is
         }
       });
 
@@ -483,27 +525,53 @@ const MicrolearningPage = () => {
   };
 
 
-  const renderMicroVideo = (microVideo, index) => (
-    <div
-      key={microVideo.id}
-      className="bg-white rounded-lg shadow-sm border border-[#E9E9E7] overflow-hidden hover:shadow-md transition-all"
-    >
-      {/* Video Thumbnail */}
-      <div className="relative aspect-video bg-gradient-to-br from-[#212529] to-[#495057]">
-        <div className="w-full h-full flex items-center justify-center">
-          <PlayIcon className="h-12 w-12 text-white/80" />
-        </div>
+  const handleVideoClick = (microVideo, index) => {
+    console.log('🎬 Navigating to KeypointPlayer for video:', index, microVideo.title);
+    navigate(`/keypoint-player/${videoId}`, {
+      state: {
+        microVideos: microlearningContent.microVideos,
+        currentVideoIndex: index,
+        selectedKeypoints: microlearningContent.selectedKeypoints,
+        teacher: microlearningContent.teacher,
+        youtubeUrl: location.state?.youtubeUrl,
+        videoTitle: microlearningContent.originalTitle
+      }
+    });
+  };
 
-        {/* Video Info Overlay */}
-        <div className="absolute top-2 left-2 bg-black/75 text-white text-xs px-2 py-1 rounded">
-          {index + 1} of {microlearningContent.microVideos.length}
-        </div>
+  const renderMicroVideo = (microVideo, index) => {
+    const isCompleted = completedVideos.includes(index);
 
-        <div className="absolute bottom-2 right-2 bg-black/75 text-white text-xs px-2 py-1 rounded flex items-center">
-          <ClockIcon className="h-3 w-3 mr-1" />
-          {microVideo.duration}
+    return (
+      <div
+        key={microVideo.id}
+        onClick={() => handleVideoClick(microVideo, index)}
+        className="bg-white rounded-lg shadow-sm border border-[#E9E9E7] overflow-hidden hover:shadow-md transition-all cursor-pointer"
+      >
+        {/* Video Thumbnail */}
+        <div className="relative aspect-video bg-gradient-to-br from-[#212529] to-[#495057]">
+          <div className="w-full h-full flex items-center justify-center">
+            <PlayIcon className="h-12 w-12 text-white/80" />
+          </div>
+
+          {/* Completed Badge */}
+          {isCompleted && (
+            <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center">
+              <CheckCircleIcon className="h-3 w-3 mr-1" />
+              Completed
+            </div>
+          )}
+
+          {/* Video Info Overlay */}
+          <div className="absolute top-2 left-2 bg-black/75 text-white text-xs px-2 py-1 rounded">
+            {index + 1} of {microlearningContent.microVideos.length}
+          </div>
+
+          <div className="absolute bottom-2 right-2 bg-black/75 text-white text-xs px-2 py-1 rounded flex items-center">
+            <ClockIcon className="h-3 w-3 mr-1" />
+            {microVideo.duration}
+          </div>
         </div>
-      </div>
 
       {/* Video Content */}
       <div className="p-4">
@@ -554,7 +622,8 @@ const MicrolearningPage = () => {
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   const renderQuizButton = (quiz) => {
     const isCompleted = quiz.completed;
@@ -855,7 +924,7 @@ const MicrolearningPage = () => {
               .map(quiz => renderQuizButton(quiz))}
 
             {/* Progress Summary */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            {/* <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-lg font-semibold text-[#212529]">Learning Progress</span>
                 <span className="text-sm text-[#212529]">
@@ -875,7 +944,7 @@ const MicrolearningPage = () => {
               <div className="text-sm text-[#212529]">
                 Track your progress through the {Math.ceil((microlearningContent.microVideos?.length || 0) / 3)} intermediate quizzes and final comprehensive assessment
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
