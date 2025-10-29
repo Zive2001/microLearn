@@ -1,6 +1,5 @@
 # 🎓 microLearn - AI-Powered Adaptive Learning Platform
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19.1.1-blue)](https://reactjs.org/)
 
@@ -25,7 +24,6 @@ An intelligent adaptive learning platform that leverages AI/GPT, natural languag
 - [Testing](#testing)
 - [Contributing](#contributing)
 - [Research Team](#research-team)
-- [License](#license)
 
 ---
 
@@ -88,34 +86,34 @@ An AI-driven adaptive learning system that:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Frontend (React + Vite)                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │ Landing  │  │Dashboard │  │ Learning │  │Assessment│   │
-│  │   Page   │  │   & UI   │  │  Paths   │  │  System  │   │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
+│                     Frontend (React + Vite)                 │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
+│  │ Landing  │  │Dashboard │  │ Learning │  │Assessment│     │
+│  │   Page   │  │   & UI   │  │  Paths   │  │  System  │     │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘     │
 └─────────────────────────────────────────────────────────────┘
                               ↕ REST API
 ┌─────────────────────────────────────────────────────────────┐
-│              Backend (Node.js + Express)                     │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              API Controllers & Routes                  │  │
-│  │  • Auth  • Videos  • Quiz  • Assessment  • Avatar     │  │
-│  └──────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                  Services Layer                       │  │
-│  │  • GPT Service  • YouTube API  • FAISS Search         │  │
-│  │  • TTS Service  • NLP Processing  • Video Processing  │  │
-│  └──────────────────────────────────────────────────────┘  │
+│              Backend (Node.js + Express)                    │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              API Controllers & Routes                │   │
+│  │  • Auth  • Videos  • Quiz  • Assessment  • Avatar    │   │
+│  └──────────────────────────────────────────────────────┘   │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │                  Services Layer                      │   │
+│  │  • GPT Service  • YouTube API  • FAISS Search        │   │
+│  │  • TTS Service  • NLP Processing  • Video Processing │   │
+│  └──────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
                               ↕
 ┌─────────────────────────────────────────────────────────────┐
-│                  Data Layer (MongoDB)                        │
+│                  Data Layer (MongoDB)                       │
 │  • User Profiles  • Topics  • Videos  • Quizzes             │
 │  • Assessments  • FAISS Indexes  • MicroVideos              │
 └─────────────────────────────────────────────────────────────┘
                               ↕
 ┌─────────────────────────────────────────────────────────────┐
-│                   External Services                          │
+│                   External Services                         │
 │  • OpenAI GPT API  • YouTube Data API  • Azure Speech       │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -732,121 +730,16 @@ We welcome contributions from the research community! Please follow these steps:
 
 ---
 
-## 👥 Research Team
-
-**Project Type:** Undergraduate Research Project  
-**Institution:** [Your University Name]  
-**Program:** [Your Program Name]  
-**Year:** 2024/2025
-
 ### Team Members
 
-| Name | Role | GitHub | Email |
-|------|------|--------|-------|
-| [Member 1] | Project Lead & Backend Developer | [@username](https://github.com/username) | email@example.com |
-| [Member 2] | Frontend Developer | [@username](https://github.com/username) | email@example.com |
-| [Member 3] | AI/ML Engineer | [@username](https://github.com/username) | email@example.com |
-| [Member 4] | UI/UX Designer | [@username](https://github.com/username) | email@example.com |
+**IT21833298 - Hettiarachchi R.D.**
+**IT21833120 - Seneviratne S.T.**
+**IT21800450 - Mapa M.M.S.S.**
+**IT21828898 - Thusithan S.**
 
-### Supervisors
+**GroupID - R25-041**
 
-- **Academic Supervisor:** [Dr. Name] - [email@university.edu]
-- **Industry Mentor:** [Name] - [company]
+### Supervisor
 
+- **Academic Supervisor:** [Dr. Prasanna Sumathipala]
 ---
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License
-
-Copyright (c) 2024 microLearn Research Team
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-```
-
----
-
-## 📞 Support & Contact
-
-For questions, issues, or suggestions:
-
-- **GitHub Issues:** [Report a bug or request a feature](https://github.com/Zive2001/microLearn/issues)
-- **Email:** [team-email@example.com]
-- **Documentation:** [Link to detailed documentation]
-
----
-
-## 🙏 Acknowledgments
-
-- OpenAI for GPT API
-- YouTube Data API
-- Azure Speech Services
-- MongoDB Atlas
-- All open-source contributors
-
----
-
-## 📚 References & Research
-
-1. [AI in Education Research Paper]
-2. [Adaptive Learning Systems Study]
-3. [Microlearning Effectiveness Study]
-
----
-
-## 🗺️ Roadmap
-
-### Completed ✅
-- [x] User authentication system
-- [x] Video integration with YouTube API
-- [x] AI-powered quiz generation
-- [x] Microlearning module creation
-- [x] FAISS-based recommendations
-- [x] Avatar with TTS functionality
-- [x] Assessment system
-- [x] Dashboard and analytics
-
-### In Progress 🚧
-- [ ] Advanced progress tracking
-- [ ] Mobile responsive design improvements
-- [ ] Performance optimization
-
-### Planned 📅
-- [ ] Mobile application (React Native)
-- [ ] Collaborative learning features
-- [ ] Gamification enhancements
-- [ ] Offline mode
-- [ ] Multi-language support
-- [ ] Advanced analytics dashboard
-- [ ] Integration with LMS platforms
-
----
-
-## 📊 Project Metrics
-
-- **Lines of Code:** ~15,000+
-- **API Endpoints:** 20+
-- **Database Models:** 7
-- **React Components:** 30+
-- **AI Models Integrated:** 3 (GPT, FAISS, Natural NLP)
-
----
-
-**Built with ❤️ by the microLearn Research Team**
-
-*Last Updated: October 2024*
