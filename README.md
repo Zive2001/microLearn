@@ -19,9 +19,7 @@ An intelligent adaptive learning platform that leverages AI/GPT, natural languag
 - [Database Models](#database-models)
 - [Git Workflow](#git-workflow)
 - [Testing](#testing)
-- [Contributing](#contributing)
-- [Research Team](#research-team)
-- [License](#license)
+
 
 ---
 
@@ -752,22 +750,3 @@ Import this into Postman to test all API endpoints.
 
 ---
 
-## 🤝 Contributing
-
-We welcome contributions from the research community! Please follow these steps:
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Commit your changes** (`git commit -m 'feat: add amazing feature'`)
-4. **Push to branch** (`git push origin feature/amazing-feature`)
-5. **Open a Pull Request**
-
-### Code Style Guidelines
-
-- Follow ESLint configuration
-- Use meaningful variable and function names
-- Add comments for complex logic
-- Write self-documenting code
-- Keep functions small and focused
-
----
