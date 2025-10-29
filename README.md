@@ -732,10 +732,10 @@ We welcome contributions from the research community! Please follow these steps:
 
 ### Team Members
 
-**IT21833298 - Hettiarachchi R.D.**
-**IT21833120 - Seneviratne S.T.**
-**IT21800450 - Mapa M.M.S.S.**
-**IT21828898 - Thusithan S.**
+- **IT21833298 - Hettiarachchi R.D.**
+- **IT21833120 - Seneviratne S.T.**
+- **IT21800450 - Mapa M.M.S.S.**
+- **IT21828898 - Thusithan S.**
 
 **GroupID - R25-041**
 
