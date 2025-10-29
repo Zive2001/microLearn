@@ -7,26 +7,6 @@ An intelligent adaptive learning platform that leverages AI/GPT, natural languag
 
 ---
 
-## 📑 Table of Contents
-
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [System Architecture](#system-architecture)
-- [Technology Stack](#technology-stack)
-- [Prerequisites](#prerequisites)
-- [Installation & Setup](#installation--setup)
-- [Environment Configuration](#environment-configuration)
-- [Running the Application](#running-the-application)
-- [Project Structure](#project-structure)
-- [API Documentation](#api-documentation)
-- [Database Models](#database-models)
-- [Git Workflow](#git-workflow)
-- [Testing](#testing)
-- [Contributing](#contributing)
-- [Research Team](#research-team)
-
----
-
 ## 🎯 Overview
 
 **microLearn** is an undergraduate research project that addresses the challenges of traditional one-size-fits-all learning approaches. Our platform uses artificial intelligence to create personalized learning paths, generate adaptive content, and provide real-time assessments tailored to each learner's pace and comprehension level.
