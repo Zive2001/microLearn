@@ -147,7 +147,8 @@ router.post('/:sessionId/answer', protect, [
     param('sessionId').notEmpty().withMessage('Session ID is required'),
     body('questionId').notEmpty().withMessage('Question ID is required'),
     body('userAnswer').isIn(['A', 'B', 'C', 'D']).withMessage('Answer must be A, B, C, or D'),
-    body('timeSpent').optional().isNumeric().withMessage('Time spent must be a number')
+    body('timeSpent').optional().isNumeric().withMessage('Time spent must be a number'),
+    body('totalTimeSpent').optional().isNumeric().withMessage('Total time spent must be a number')
 ], async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -160,7 +161,7 @@ router.post('/:sessionId/answer', protect, [
         }
 
         const { sessionId } = req.params;
-        const { questionId, userAnswer, timeSpent = 0 } = req.body;
+        const { questionId, userAnswer, timeSpent = 0, totalTimeSpent = 0 } = req.body;
 
         // Verify session belongs to user
         const session = await AssessmentSession.findOne({ 
@@ -177,7 +178,7 @@ router.post('/:sessionId/answer', protect, [
         }
 
         const startTime = Date.now();
-        const result = await assessmentAlgorithm.submitAnswer(sessionId, questionId, userAnswer, timeSpent);
+        const result = await assessmentAlgorithm.submitAnswer(sessionId, questionId, userAnswer, timeSpent, totalTimeSpent);
         const responseTime = Date.now() - startTime;
 
         res.json({

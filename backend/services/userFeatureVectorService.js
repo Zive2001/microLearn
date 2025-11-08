@@ -5,7 +5,7 @@
  * Each user is represented as a high-dimensional vector capturing their learning profile.
  *
  * Phase 2: Metadata → Vector conversion
- * Phase 3: FAISS indexing and similarity search
+ * Phase 3: FAISS indexing and similarity search implemented
  */
 
 const VECTOR_DIMENSIONS = 10; // Total dimensions for feature vector

@@ -159,8 +159,9 @@ class AssessmentAlgorithm {
      * @param {string} questionId - Question ID
      * @param {string} userAnswer - User's answer (A, B, C, D)
      * @param {number} timeSpent - Time spent on question in seconds
+     * @param {number} totalTimeSpent - Total time spent on assessment so far in seconds
      */
-    async submitAnswer(sessionId, questionId, userAnswer, timeSpent = 0) {
+    async submitAnswer(sessionId, questionId, userAnswer, timeSpent = 0, totalTimeSpent = 0) {
         try {
             const session = await AssessmentSession.findOne({ sessionId, status: 'active' });
             if (!session) {
@@ -169,6 +170,12 @@ class AssessmentAlgorithm {
 
             // Submit answer and get immediate results
             const result = session.submitAnswer(questionId, userAnswer, timeSpent);
+
+            // Track total time spent on assessment at session level
+            if (totalTimeSpent > 0) {
+                session.totalTimeSpent = Math.max(session.totalTimeSpent || 0, totalTimeSpent);
+            }
+
             await session.save();
 
             // Calculate updated performance metrics
@@ -453,7 +460,7 @@ class AssessmentAlgorithm {
                     totalQuestions: performance.totalQuestions,
                     correctAnswers: performance.correctAnswers,
                     accuracy: performance.overallAccuracy,
-                    timeSpent: this.calculateTotalTime(session.questions),
+                    timeSpent: Math.max(session.totalTimeSpent || 0, this.calculateTotalTime(session.questions)),
                     averageTimePerQuestion: performance.averageTimePerQuestion,
                     beginnerPerformance: this.mapDifficultyPerformance(performance.difficultyBreakdown.beginner),
                     intermediatePerformance: this.mapDifficultyPerformance(performance.difficultyBreakdown.intermediate),
@@ -491,7 +498,7 @@ class AssessmentAlgorithm {
                 recommendations: recommendations,
                 sessionSummary: {
                     totalQuestions: performance.totalQuestions,
-                    timeSpent: this.calculateTotalTime(session.questions),
+                    timeSpent: Math.max(session.totalTimeSpent || 0, this.calculateTotalTime(session.questions)),
                     topicAssessed: session.topic
                 }
             };

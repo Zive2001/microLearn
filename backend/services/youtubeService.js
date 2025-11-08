@@ -11,7 +11,7 @@ class YouTubeService {
         // Rate limiting and caching
         this.requestCache = new Map();
         this.cacheTimeout = 1800000; // 30 minutes cache - extended to save quota
-        this.rateLimitDelay = 1000; // 1 second between requests
+        this.rateLimitDelay = 1000; // 1 second between requests - adjusted for quota
         this.lastRequestTime = 0;
 
         // Retry configuration

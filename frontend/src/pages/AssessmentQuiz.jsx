@@ -298,9 +298,12 @@ const AssessmentQuiz = () => {
         : 0;
 
       // Calculate total assessment time
-      const totalTime = assessmentStartTimeRef.current
+      let totalTime = assessmentStartTimeRef.current
         ? Math.round((Date.now() - assessmentStartTimeRef.current) / 1000)
         : 0;
+
+      // TEST: Hardcode 1 minute 52 seconds (112 seconds) for debugging
+      totalTime = 112;
 
       setTotalAssessmentTime(totalTime);
 

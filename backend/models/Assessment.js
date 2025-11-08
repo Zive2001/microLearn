@@ -131,7 +131,11 @@ const assessmentSessionSchema = new mongoose.Schema({
     },
     completedAt: Date,
     estimatedTimeRemaining: Number, // minutes
-    
+    totalTimeSpent: {
+        type: Number,
+        default: 0 // seconds, updated as user answers questions
+    },
+
     // Final Results (populated when completed)
     finalResults: {
         level: {
